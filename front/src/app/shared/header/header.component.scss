@@ -1,0 +1,163 @@
+/* Aligne horizontalement les boutons dans app-header-buttons en mode large */
+:host(app-header-buttons) {
+    display: flex;
+    flex-direction: row;
+    gap: 1.5rem;
+}
+
+@media (max-width: 800px) {
+    :host(app-header-buttons) {
+        flex-direction: column;
+        gap: 1rem;
+        width: 100%;
+    }
+}
+
+.header {
+    width: 100%;
+    min-height: 70px;
+    max-height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    padding: 0 2rem;
+    position: relative;
+    box-sizing: border-box;
+    overflow-x: hidden;
+}
+
+.header__logo img {
+    height: 48px;
+    width: auto;
+}
+
+.header__nav {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.header__btn {
+    border: none;
+    background: none;
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 0;
+    border-radius: 0;
+    cursor: pointer;
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+
+
+.header__btn.profile img {
+    height: 32px;
+    width: 32px;
+    border-radius: 50%;
+    vertical-align: middle;
+}
+
+.header__menu {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    height: 40px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    gap: 5px;
+}
+
+.header__menu span {
+    display: block;
+    width: 28px;
+    height: 4px;
+    background: #333;
+    border-radius: 2px;
+}
+
+
+.header__drawer-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-start;
+}
+
+
+
+.header__drawer-content {
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.5rem 2rem;
+    border-radius: 0 0 1rem 1rem;
+    display: flex;
+    min-height: 80vh;
+    max-height: 80vh;
+}
+
+@media (max-width: 800px) {
+    .header__nav {
+        display: none;
+    }
+
+    .header__menu {
+        display: flex;
+    }
+
+    .header {
+        width: 100%;
+        padding: 0 0.5rem;
+        box-sizing: border-box;
+        min-width: 0;
+    }
+
+    /* Place le bouton profil absolument en bas à droite du drawer */
+    .header__drawer-content {
+        position: relative;
+    }
+
+    :host(app-header-buttons) button.header__btn.profile {
+        position: absolute;
+        right: 2rem;
+        bottom: 1.5rem;
+        margin-top: 0;
+        align-self: auto;
+    }
+
+    :host(app-header-buttons) {
+        padding-bottom: 3.5rem;
+
+        :host(app-header-buttons) button.header__btn {
+            align-self: flex-end;
+        }
+
+        :host(app-header-buttons) button.header__btn.profile {
+            margin-top: auto;
+        }
+    }
+
+    /* Ajuste le drawer pour qu'il soit collé sous le header */
+    .header__drawer-overlay {
+        top: 70px;
+        height: auto;
+        min-height: calc(100vh - 70px);
+        align-items: flex-start;
+    }
+
+
+}
