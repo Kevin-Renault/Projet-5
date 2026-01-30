@@ -1,0 +1,20 @@
+<header class="header">
+    <div class="header__logo">
+        <img src="/assets/logo_p6.png" alt="Logo" />
+    </div>
+    <nav class="header__nav">
+        <app-header-buttons [buttons]="buttons" [onButtonClick]="onButtonClick.bind(this)">
+        </app-header-buttons>
+    </nav>
+    <button class="header__menu" aria-label="Menu" (click)="toggleMenu()">
+        <span></span><span></span><span></span>
+    </button>
+    @if (menuOpen) {
+    <div class="header__drawer-overlay">
+        <div class="header__drawer-content">
+            <app-header-buttons [buttons]="buttons" [onButtonClick]="onButtonClick.bind(this)">
+            </app-header-buttons>
+        </div>
+    </div>
+    }
+</header>
