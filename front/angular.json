@@ -26,7 +26,10 @@
             ],
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
-            "assets": ["src/favicon.png", "src/assets"],
+            "assets": [
+              "src/favicon.png",
+              "src/assets"
+            ],
             "styles": [
               "./node_modules/@angular/material/prebuilt-themes/deeppurple-amber.css",
               "src/styles/styles.scss"
@@ -56,6 +59,17 @@
               ],
               "outputHashing": "all"
             },
+            "normal": {
+              "fileReplacements": []
+            },
+            "dev": {
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.dev.ts"
+                }
+              ]
+            },
             "development": {
               "optimization": false,
               "extractLicenses": false,
@@ -70,6 +84,12 @@
           "configurations": {
             "production": {
               "buildTarget": "front:build:production"
+            },
+            "normal": {
+              "buildTarget": "front:build:normal"
+            },
+            "dev": {
+              "buildTarget": "front:build:dev"
             },
             "development": {
               "buildTarget": "front:build:development"
@@ -91,7 +111,10 @@
             "tsConfig": "tsconfig.spec.json",
             "karmaConfig": "karma.conf.js",
             "inlineStyleLanguage": "scss",
-            "assets": ["src/favicon.png", "src/assets"],
+            "assets": [
+              "src/favicon.png",
+              "src/assets"
+            ],
             "styles": [
               "./node_modules/@angular/material/prebuilt-themes/deeppurple-amber.css",
               "src/styles/styles.scss"
