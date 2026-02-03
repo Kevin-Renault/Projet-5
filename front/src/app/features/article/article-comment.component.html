@@ -1,0 +1,28 @@
+<div class="article-card">
+    <div class="article-title">{{ article.title }}</div>
+    <div class="article-meta">
+        <span class="article-date">{{ article.createdAt | date:'dd/MM/yyyy' }}</span>
+        <span class="article-author">{{ article.authorId }}</span>
+    </div>
+    <div class="article-content">
+        {{ article.content | slice:0:220 }}
+        @if (article.content.length > 220) {
+        <span>...</span>
+        }
+    </div>
+</div>
+
+
+<hr>
+Commentaires :
+<div class="articles-list">
+    @for (comment of comments; track $index) {
+    <div class="article-card">
+        <div class="article-title">{{ comment.author }}</div>
+
+        <div class="article-content">
+            {{ comment.content }}
+        </div>
+    </div>
+    }
+</div>
