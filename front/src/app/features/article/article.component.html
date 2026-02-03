@@ -1,0 +1,32 @@
+<div class="article-toolbar">
+    <button mat-raised-button color="primary" (click)="createArticle()">Créer un article</button>
+    <div>
+        Trier
+        <button class="sort-btn" type="button" (click)="toggleSortOrder()">
+            @if (sortOrder === 'desc') {
+            <span>&#8595;</span>
+            }
+            @if (sortOrder === 'asc') {
+            <span>&#8593;</span>
+            }
+        </button>
+    </div>
+</div>
+
+<div class="articles-list">
+    @for (article of articles; track $index) {
+    <div class="article-card">
+        <div class="article-title">{{ article.title }}</div>
+        <div class="article-meta">
+            <span class="article-date">{{ article.createdAt | date:'dd/MM/yyyy' }}</span>
+            <span class="article-author">{{ article.author }}</span>
+        </div>
+        <div class="article-content">
+            {{ article.content | slice:0:220 }}
+            @if (article.content.length > 220) {
+            <span>...</span>
+            }
+        </div>
+    </div>
+    }
+</div>
