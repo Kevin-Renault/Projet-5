@@ -13,8 +13,8 @@ import { Router } from '@angular/router';
 export class HomeComponent {
     constructor(private readonly router: Router) { }
 
-    start() {
-        alert('Commencez par lire le README et à vous de jouer !');
+    goToLogin() {
+        this.router.navigate(['/user/login']);
     }
 
     goToRegister() {
