@@ -1,13 +1,3 @@
-.article-toolbar {
-    margin-left: 0rem;
-    margin-right: 0rem;
-
-    @media (min-width: 800px) {
-        margin-left: 4rem;
-        margin-right: 4rem;
-    }
-}
-
 .articles-list {
     display: grid;
     grid-template-columns: 1fr;
@@ -68,6 +58,9 @@
         flex-direction: column;
         align-items: center;
         gap: 1.2rem;
+
+        margin-left: 4rem;
+        margin-right: 4rem;
 
         .create-btn,
         .sort-select {

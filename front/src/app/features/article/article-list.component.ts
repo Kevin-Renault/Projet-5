@@ -3,12 +3,12 @@ import { DatePipe, SlicePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 @Component({
-  selector: 'app-article',
+  selector: 'app-article-list',
   imports: [FormsModule, DatePipe, SlicePipe],
-  templateUrl: './article.component.html',
-  styleUrls: ['./article.component.scss']
+  templateUrl: './article-list.component.html',
+  styleUrls: ['./article-list.component.scss']
 })
-export class ArticleComponent {
+export class ArticleListComponent {
 
   sortOrder: 'asc' | 'desc' = 'desc';
 
