@@ -1,4 +1,4 @@
-import { Component, HostListener, Input } from '@angular/core';
+import { Component, HostListener, Input, OnInit } from '@angular/core';
 import { HeaderButtonsComponent } from "./header-buttons.component";
 
 @Component({
@@ -9,7 +9,7 @@ import { HeaderButtonsComponent } from "./header-buttons.component";
     imports: [HeaderButtonsComponent]
 })
 export class HeaderComponent {
-    @Input() buttons!: HeaderButton[]
+    @Input() buttons!: HeaderButton[];
     menuOpen = false;
 
     @HostListener('window:resize')
@@ -41,8 +41,6 @@ export class HeaderComponent {
 
 
 
-
-
 }
 
 export interface HeaderButton {
@@ -54,3 +52,6 @@ export interface HeaderButton {
     cssClass?: string;
     action?: () => void;
 }
+
+
+
