@@ -5,5 +5,6 @@ export const routes: Routes = [
   { path: 'test', loadComponent: () => import('./features/header-test.component').then(m => m.HeaderTestComponent) },
   { path: 'user/register', loadComponent: () => import('./features/user/register/register.component').then(m => m.RegisterComponent) },
   { path: 'user/login', loadComponent: () => import('./features/user/login/login.component').then(m => m.LoginComponent) },
-  { path: 'articles', loadComponent: () => import('./features/article/article.component').then(m => m.ArticleComponent) }
+  { path: 'articles', loadComponent: () => import('./features/article/article.component').then(m => m.ArticleComponent) },
+  { path: 'topics', loadComponent: () => import('./features/topic/topic.component').then(m => m.TopicComponent) }
 ];
