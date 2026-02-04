@@ -38,14 +38,14 @@ export class AppComponent {
       },
       {
         label: 'Thèmes',
-        link: '/',
+        link: '/topics',
         icon: '',
         alt: 'Icône Thèmes',
         cssClass: 'header__btn themes',
       },
       {
         label: '',
-        link: '/profil',
+        link: '/user/profile',
         icon: '/assets/profil.svg',
         alt: 'Icône Profil',
         cssClass: 'header__btn profile',
