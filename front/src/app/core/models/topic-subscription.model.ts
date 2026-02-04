@@ -1,4 +1,4 @@
-export interface Subscription {
+export interface TopicSubscription {
     userId: number;
     topicId: number;
 }

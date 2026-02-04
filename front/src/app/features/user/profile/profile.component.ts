@@ -3,9 +3,9 @@ import { Component, Inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { combineLatest, map, Observable } from 'rxjs';
-import { Subscription } from 'src/app/core/models/subscription.model';
+import { TopicSubscription } from 'src/app/core/models/topic-subscription.model';
 import { Topic } from 'src/app/core/models/topic.model';
-import { SUBSCRIPTION_DATASOURCE, SubscriptionDatasource } from 'src/app/core/services/subscription-datasource.interface';
+import { SUBSCRIPTION_DATASOURCE, TopicSubscriptionDatasource } from 'src/app/core/services/topic-subscription-datasource.interface';
 import { TOPIC_DATASOURCE, TopicDataSource } from 'src/app/core/services/topic-datasource.interface';
 import { FormElement, DynamicFormComponent } from 'src/app/shared/form/dynamic-form.component';
 
@@ -39,14 +39,14 @@ export class ProfileComponent {
 
   constructor(
     @Inject(TOPIC_DATASOURCE) private readonly topicDataSource: TopicDataSource,
-    @Inject(SUBSCRIPTION_DATASOURCE) private readonly subscriptionDataSource: SubscriptionDatasource,
+    @Inject(SUBSCRIPTION_DATASOURCE) private readonly subscriptionDataSource: TopicSubscriptionDatasource,
     private readonly router: Router
   ) {
 
     this.userId = 1; // TODO: Remplacer par l'ID de l'utilisateur connecté
     this.myTopics$ = combineLatest([
       this.topicDataSource.getAll(),
-      this.subscriptionDataSource.getUserSubscriptions(this.userId)
+      this.subscriptionDataSource.getUserTopicSubscriptions(this.userId)
     ]).pipe(
       map(([topics, subs]) => {
         const abonneIds = new Set(subs.map(s => s.topicId));
@@ -57,18 +57,18 @@ export class ProfileComponent {
 
 
 
-  public toggleSubscription(topicId: number) {
+  public toggleTopicSubscription(topicId: number) {
     this.subscriptionDataSource.unsubscribeFromTopic(this.userId, topicId).subscribe(() => {
-      this.refreshSubscriptions();
+      this.refreshTopicSubscriptions();
     });
   }
 
-  private refreshSubscriptions() {
+  private refreshTopicSubscriptions() {
 
     // Met à jour la liste des topics auxquels l'utilisateur est abonné
     this.myTopics$ = combineLatest([
       this.topicDataSource.getAll(),
-      this.subscriptionDataSource.getUserSubscriptions(this.userId)
+      this.subscriptionDataSource.getUserTopicSubscriptions(this.userId)
     ]).pipe(
       map(([topics, subs]) => {
         const abonneIds = new Set(subs.map(s => s.topicId));
