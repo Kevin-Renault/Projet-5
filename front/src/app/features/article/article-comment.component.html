@@ -26,3 +26,7 @@
     }
     }
 </div>
+
+<app-dynamic-form [title]="'Profil Utilisateur'" [formElements]="commentFormElements" [submitLabel]="'Sauvegarder'"
+    (formSubmit)="onFormSubmit($event)">
+</app-dynamic-form>
