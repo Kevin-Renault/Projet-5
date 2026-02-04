@@ -1,4 +1,5 @@
 import { Component, Inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { DatePipe, SlicePipe, AsyncPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Article } from 'src/app/core/models/article.model';
@@ -20,9 +21,13 @@ export class ArticleListComponent {
   private readonly authorCache = new Map<number, Observable<string>>();
   articles$: Observable<Article[]> | null = null;
 
-  constructor(@Inject(USER_DATASOURCE) private readonly userDataSource: UserDataSource,
-    @Inject(ARTICLE_DATASOURCE) private readonly articleDataSource: ArticleDataSource) {
-    this.articles$ = this.articleDataSource.getAll();
+  constructor(
+    @Inject(USER_DATASOURCE) private readonly userDataSource: UserDataSource,
+    @Inject(ARTICLE_DATASOURCE) private readonly articleDataSource: ArticleDataSource,
+    private readonly router: Router
+  ) {
+    this.articles$ = this.articleDataSource.getAll().pipe(
+      map(articles => this.articleDataSource.sortByDateDesc(articles)));
   }
   public authorById(id: number): Observable<string> {
     if (!this.authorCache.has(id)) {
@@ -34,13 +39,20 @@ export class ArticleListComponent {
     return this.authorCache.get(id)!;
   }
 
-
   public createArticle() {
-
+    this.router.navigate(['/articles/create']);
   }
 
   public toggleSortOrder() {
-    this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
+    if (this.articles$) {
+      this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
+      this.articles$ = this.articleDataSource.getAll().pipe(
+        map(articles =>
+          this.sortOrder === 'asc'
+            ? this.articleDataSource.sortByDateAsc(articles)
+            : this.articleDataSource.sortByDateDesc(articles)
+        )
+      );
+    }
   }
-
 }
