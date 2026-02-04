@@ -5,7 +5,10 @@ import { UserDataSource } from '../user-datasource.interface';
 
 const MOCK_USERS: User[] = [
     { id: 1, username: 'alice', email: 'alice@email.com', role: 'user' },
-    { id: 2, username: 'bob', email: 'bob@email.com', role: 'user' }
+    { id: 2, username: 'bob', email: 'bob@email.com', role: 'user' },
+    { id: 3, username: 'charlie', email: 'charlie@email.com', role: 'user' },
+    { id: 4, username: 'diana', email: 'diana@email.com', role: 'user' },
+    { id: 5, username: 'eve', email: 'eve@email.com', role: 'user' }
 ];
 
 @Injectable({ providedIn: 'root' })

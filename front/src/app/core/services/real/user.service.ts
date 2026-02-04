@@ -5,9 +5,9 @@ import { User } from '../../models/user.model';
 
 @Injectable({ providedIn: 'root' })
 export class UserService {
-    private apiUrl = '/api/users';
+    private readonly apiUrl = '/api/users';
 
-    constructor(private http: HttpClient) { }
+    constructor(private readonly http: HttpClient) { }
 
     getAll(): Observable<User[]> {
         return this.http.get<User[]>(this.apiUrl);
