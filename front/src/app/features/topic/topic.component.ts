@@ -1,8 +1,6 @@
 import { Component } from '@angular/core';
 import { SlicePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { subscribe } from 'diagnostics_channel';
-import { Topic } from 'src/app/core/models/topic.model';
 
 @Component({
   selector: 'app-topic',

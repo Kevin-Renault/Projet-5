@@ -36,4 +36,11 @@ export class ArticleCommentComponent {
       content: 'Content of comment 4...'
     }
   ];
+
+  public authorNamebyId(id: number): string {
+    return 'Author Name';
+  }
+  public topicNamebyId(id: number): string {
+    return 'Topic Name';
+  }
 }
