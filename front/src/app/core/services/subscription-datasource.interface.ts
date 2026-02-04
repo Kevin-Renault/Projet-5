@@ -4,8 +4,8 @@ import { InjectionToken } from '@angular/core';
 
 export const SUBSCRIPTION_DATASOURCE = new InjectionToken<SubscriptionDatasource>('SubscriptionDataSource');
 export interface SubscriptionDatasource {
-    subscribe(userId: number, topicId: number): Observable<void>;
-    unsubscribe(userId: number, topicId: number): Observable<void>;
+    subscribeOnTopic(userId: number, topicId: number): Observable<Subscription[]>;
+    unsubscribeFromTopic(userId: number, topicId: number): Observable<Subscription[]>;
     getUserSubscriptions(userId: number): Observable<Subscription[]>;
     getTopicSubscribers(topicId: number): Observable<Subscription[]>;
 }

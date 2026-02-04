@@ -10,14 +10,14 @@ export class SubscriptionService implements SubscriptionDatasource {
 
     constructor(private readonly http: HttpClient) { }
 
-    subscribe(userId: number, topicId: number): Observable<void> {
+    subscribeOnTopic(userId: number, topicId: number): Observable<Subscription[]> {
         // Remplacer l'URL par celle de l'API réelle
-        return this.http.post<void>(this.API_PATH, { userId, topicId });
+        return this.http.post<Subscription[]>(this.API_PATH, { userId, topicId });
     }
 
-    unsubscribe(userId: number, topicId: number): Observable<void> {
+    unsubscribeFromTopic(userId: number, topicId: number): Observable<Subscription[]> {
         // Remplacer l'URL par celle de l'API réelle
-        return this.http.delete<void>(`${this.API_PATH}?userId=${userId}&topicId=${topicId}`);
+        return this.http.delete<Subscription[]>(`${this.API_PATH}?userId=${userId}&topicId=${topicId}`);
     }
 
     getUserSubscriptions(userId: number): Observable<Subscription[]> {

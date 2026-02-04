@@ -3,7 +3,7 @@ import { Observable, of } from 'rxjs';
 import { Subscription } from '../../models/subscription.model';
 import { SubscriptionDatasource } from '../subscription-datasource.interface';
 
-const MOCK_SUBSCRIPTIONS: Subscription[] = [
+let MOCK_SUBSCRIPTIONS: Subscription[] = [
     // alice (1) : Java (1), Base de données (6)
     { userId: 1, topicId: 1 },
     { userId: 1, topicId: 6 },
@@ -29,17 +29,17 @@ const MOCK_SUBSCRIPTIONS: Subscription[] = [
 export class SubscriptionMockService implements SubscriptionDatasource {
     private subscriptions: Subscription[] = [...MOCK_SUBSCRIPTIONS];
 
-    subscribe(userId: number, topicId: number): Observable<void> {
+    subscribeOnTopic(userId: number, topicId: number): Observable<Subscription[]> {
         const exists = this.subscriptions.some(s => s.userId === userId && s.topicId === topicId);
         if (!exists) {
             this.subscriptions.push({ userId, topicId });
         }
-        return of();
+        return this.getUserSubscriptions(userId);
     }
 
-    unsubscribe(userId: number, topicId: number): Observable<void> {
+    unsubscribeFromTopic(userId: number, topicId: number): Observable<Subscription[]> {
         this.subscriptions = this.subscriptions.filter(s => !(s.userId === userId && s.topicId === topicId));
-        return of();
+        return this.getUserSubscriptions(userId);
     }
 
     getUserSubscriptions(userId: number): Observable<Subscription[]> {
