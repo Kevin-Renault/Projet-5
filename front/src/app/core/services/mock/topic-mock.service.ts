@@ -5,7 +5,11 @@ import { TopicDataSource } from '../topic-datasource.interface';
 
 const MOCK_TOPICS: Topic[] = [
     { id: 1, name: 'Java', description: 'Tout sur Java' },
-    { id: 2, name: 'Angular', description: 'Tout sur Angular' }
+    { id: 2, name: 'Angular', description: 'Tout sur Angular' },
+    { id: 3, name: 'Python', description: 'Programmation et écosystème Python' },
+    { id: 4, name: 'Web', description: 'Développement web, HTML, CSS, JS' },
+    { id: 5, name: 'DevOps', description: 'CI/CD, Docker, Kubernetes, Cloud' },
+    { id: 6, name: 'Base de données', description: 'SQL, NoSQL, optimisation, requêtes' }
 ];
 
 @Injectable({ providedIn: 'root' })
