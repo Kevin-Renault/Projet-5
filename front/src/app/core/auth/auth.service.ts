@@ -12,6 +12,10 @@ export class AuthService implements AuthDataSource {
 
     constructor(private readonly http: HttpClient) { }
 
+    getCurrentUserId(): number | null {
+        throw new Error('Method not implemented.');
+    }
+
     login(email: string, password: string): Observable<AuthResponse> {
         return this.http.post<AuthResponse>(`${this.apiUrl}/login`, { email, password }).pipe(
             tap(() => this.authState.next(true))

@@ -13,4 +13,5 @@ export interface AuthDataSource {
     logout(): void;
     isAuthenticated$(): Observable<boolean>;
     getCurrentUser(): Observable<User>;
+    getCurrentUserId(): number | null;
 }

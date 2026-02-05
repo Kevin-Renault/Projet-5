@@ -12,6 +12,20 @@ export class AuthMockService implements AuthDataSource, OnDestroy {
     constructor() {
         const token = this.getToken();
         this.setAuthState(!!token);
+        if (token) {
+            // Restaure l'utilisateur courant depuis le mock si un token est présent
+            try {
+                const parsed = JSON.parse(token);
+                if (parsed?.userId) {
+                    const user = MOCK_USERS.find(u => u.id === parsed.userId) || null;
+                    if (user) {
+                        this.currentUserSubject.next(user);
+                    }
+                }
+            } catch {
+                // fallback: ignore
+            }
+        }
     }
     private readonly currentUserSubject = new BehaviorSubject<User | null>(null);
     private readonly destroy$ = new Subject<void>();
@@ -31,7 +45,7 @@ export class AuthMockService implements AuthDataSource, OnDestroy {
         );
 
         if (user) {
-            const token = 'mock-jwt-token';
+            const token = JSON.stringify({ token: 'mock-jwt-token', userId: user.id });
             this.setToken(token);
             this.setAuthState(true);
             this.currentUserSubject.next(user);
@@ -43,7 +57,6 @@ export class AuthMockService implements AuthDataSource, OnDestroy {
     }
 
     register(data: Omit<User, 'id' | 'role'> & { password?: string }): Observable<AuthResponse> {
-        const token = 'mock-jwt-token';
         const newId = Math.max(...MOCK_USERS.map(u => u.id), 0) + 1;
         const newUser: User = {
             id: newId,
@@ -52,7 +65,7 @@ export class AuthMockService implements AuthDataSource, OnDestroy {
             password: data.password || `Mock-password${newId}`,
             role: 'user'
         };
-
+        const token = JSON.stringify({ token: 'mock-jwt-token', userId: newUser.id });
         this.setToken(token);
         this.setAuthState(true);
         this.currentUserSubject.next(newUser);
@@ -91,5 +104,11 @@ export class AuthMockService implements AuthDataSource, OnDestroy {
             filter((user): user is User => user !== null),
             takeUntil(this.destroy$)
         );
+    }
+
+    getCurrentUserId(): number | null {
+        const user = this.currentUserSubject.value;
+        console.log('Current user in getCurrentUserId:', user);
+        return user ? user.id : null;
     }
 }
