@@ -1,6 +1,7 @@
 import { Component, Inject, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
+import { AUTH_DATASOURCE, AuthDataSource } from 'src/app/core/auth/auth-datasource.interface';
 import { Article } from 'src/app/core/models/article.model';
 import { Topic } from 'src/app/core/models/topic.model';
 import { ARTICLE_DATASOURCE, ArticleDataSource } from 'src/app/core/services/article-datasource.interface';
@@ -25,6 +26,7 @@ export class ArticleCreateComponent implements OnDestroy {
 
   constructor(@Inject(TOPIC_DATASOURCE) private readonly topicDataSource: TopicDataSource,
     @Inject(ARTICLE_DATASOURCE) private readonly articleDataSource: ArticleDataSource,
+    @Inject(AUTH_DATASOURCE) private readonly authDataSource: AuthDataSource,
     private readonly router: Router) {
     this.topicDataSource.getAll().subscribe((topics: Topic[]) => {
       this.articleFormElements[0].options = topics.map(t => ({
@@ -44,13 +46,18 @@ export class ArticleCreateComponent implements OnDestroy {
 
     values.createdAt = new Date().toISOString();
     values.updatedAt = new Date().toISOString();
-    //TODO: Remplacer par l'ID de l'utilisateur connecté
-    values.authorId = 1; // Utilisateur fictif
-    this.articleDataSource.create(values as Article).pipe(
-      takeUntil(this.destroy$)
-    ).subscribe({
-      next: () => { this.router.navigate(['/articles']); },
-      error: () => alert('Erreur lors de la création de l\'article'),
-    });
+
+    const authorId = this.authDataSource.getCurrentUserId();
+    if (typeof authorId === 'number') {
+      values.authorId = authorId;
+      this.articleDataSource.create(values as Article).pipe(
+        takeUntil(this.destroy$)
+      ).subscribe({
+        next: () => { this.router.navigate(['/articles']); },
+        error: () => alert('Erreur lors de la création de l\'article'),
+      });
+    } else {
+      alert('No authenticated user. Cannot create article.');
+    }
   }
 }
