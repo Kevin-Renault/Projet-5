@@ -3,8 +3,6 @@ import { Router } from '@angular/router';
 import { AUTH_DATASOURCE, AuthDataSource } from 'src/app/core/auth/auth-datasource.interface';
 import { FormElement, DynamicFormComponent } from 'src/app/shared/form/dynamic-form.component';
 import { ErrorComponent } from "src/app/shared/error/error.component";
-import { AsyncPipe } from '@angular/common';
-import { User } from 'src/app/core/models/user.model';
 
 @Component({
   selector: 'app-login',
@@ -14,11 +12,11 @@ import { User } from 'src/app/core/models/user.model';
 })
 export class LoginComponent {
   connnectionFormElements: FormElement[] = [
-    { type: 'text', name: 'name', label: 'E-mail ou Nom d\'utilisateur', required: true },
+    { type: 'text', name: 'login', label: 'E-mail ou Nom d\'utilisateur', required: true },
     {
       type: 'password',
       name: 'password',
-      label: 'Password',
+      label: 'Mot de passe',
       required: true,
       pattern: '^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[#?!@$%^&*-]).{8,}$'
     }
@@ -30,10 +28,10 @@ export class LoginComponent {
     private readonly router: Router
   ) { }
 
-  onFormSubmit(values: User) {
-    this.authDataSource.login(values.username, values.password).subscribe({
+  onFormSubmit(values: { login: string, password: string }) {
+    this.authDataSource.login(values.login, values.password).subscribe({
       next: () => {
-        this.router.navigate(['/articles']);
+        this.router.navigateByUrl('/articles');
       },
       error: () => {
         this.errorMessage = 'Authentication failed: invalid credentials';
