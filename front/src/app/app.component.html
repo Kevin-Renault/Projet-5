@@ -1,4 +1,6 @@
-@if (isAuthenticated) {<app-header [buttons]="buttons"></app-header>}
+@if (isAuthenticated$ | async) {
+<app-header [buttons]="buttons"></app-header>
+}
 
 
 <router-outlet></router-outlet>
