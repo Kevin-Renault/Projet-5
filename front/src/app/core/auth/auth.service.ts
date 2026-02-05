@@ -1,44 +1,48 @@
 
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, BehaviorSubject, tap, map } from 'rxjs';
 import { AuthDataSource, AuthResponse } from './auth-datasource.interface';
+import { User } from '../models/user.model';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService implements AuthDataSource {
+    private readonly authState = new BehaviorSubject<boolean>(false);
     private readonly apiUrl = '/api/auth';
-    private readonly tokenKey = 'auth_token';
 
     constructor(private readonly http: HttpClient) { }
 
     login(email: string, password: string): Observable<AuthResponse> {
-        return this.http.post<AuthResponse>(`${this.apiUrl}/login`, { email, password });
+        return this.http.post<AuthResponse>(`${this.apiUrl}/login`, { email, password }, { withCredentials: true }).pipe(
+            tap(() => this.authState.next(true))
+        );
     }
 
     register(data: any): Observable<AuthResponse> {
-        return this.http.post<AuthResponse>(`${this.apiUrl}/register`, data);
+        return this.http.post<AuthResponse>(`${this.apiUrl}/register`, data, { withCredentials: true });
     }
 
     logout(): void {
-        localStorage.removeItem(this.tokenKey);
+        this.http.post(`${this.apiUrl}/logout`, {}, { withCredentials: true }).subscribe({
+            next: () => this.authState.next(false),
+            error: () => this.authState.next(false)
+        });
     }
 
-    setToken(token: string): void {
-        localStorage.setItem(this.tokenKey, token);
+
+
+
+    isAuthenticated$(): Observable<boolean> {
+        return this.authState.asObservable();
     }
 
-    getToken(): string | null {
-        return localStorage.getItem(this.tokenKey);
-    }
-
-    isAuthenticated(): boolean {
-        return !!this.getToken();
-    }
-
-    // À adapter selon ton backend pour récupérer l'utilisateur courant
-    getCurrentUser(): Observable<any> {
-        // Option 1 : décoder le token côté front (si JWT contient les infos)
-        // Option 2 : requête API dédiée
-        return this.http.get<any>(`${this.apiUrl}/me`);
+    // Récupère l'utilisateur courant via l'API (cookie httpOnly envoyé automatiquement)
+    getCurrentUser(): Observable<User> {
+        return this.http.get<User>(`${this.apiUrl}/me`, { withCredentials: true }).pipe(
+            tap({
+                next: () => this.authState.next(true),
+                error: () => this.authState.next(false)
+            })
+        );
     }
 }

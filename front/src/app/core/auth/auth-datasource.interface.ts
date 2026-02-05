@@ -11,8 +11,6 @@ export interface AuthDataSource {
     login(email: string, password: string): Observable<AuthResponse>;
     register(data: any): Observable<AuthResponse>;
     logout(): void;
-    setToken(token: string): void;
-    getToken(): string | null;
-    isAuthenticated(): boolean;
+    isAuthenticated$(): Observable<boolean>;
     getCurrentUser(): Observable<any>;
 }

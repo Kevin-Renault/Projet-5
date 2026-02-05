@@ -7,7 +7,7 @@ export class AuthGuard implements CanActivate {
     constructor(private readonly auth: AuthService, private readonly router: Router) { }
 
     canActivate(): boolean | UrlTree {
-        if (this.auth.isAuthenticated()) {
+        if (this.auth.isAuthenticated$()) {
             return true;
         }
         // Redirige vers /home si non authentifié
