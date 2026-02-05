@@ -1,0 +1,100 @@
+// Style responsive et centré pour le composant d'erreur
+.error-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 30vh;
+    padding: 2rem 1rem;
+    background: #fff;
+    border-radius: 1.2rem;
+    box-shadow: 0 2px 16px 0 rgba(0, 0, 0, 0.08);
+    margin: 2rem auto;
+    max-width: 480px;
+}
+
+.error-container h1 {
+    color: #d32f2f;
+    font-size: 2rem;
+    margin-bottom: 1.2rem;
+    text-align: center;
+}
+
+.error-details {
+    color: #333;
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.error-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+
+
+.error-actions button.back-home {
+    background: #7763c5;
+}
+
+.error-actions button.back-articles {
+    background: #7763c5;
+}
+
+
+// Couleur violette principale (harmonisée avec le reste de l'app)
+.error-actions button {
+    background: #7763c5;
+    /* violet principal */
+    color: #fff;
+    border: none;
+    border-radius: 2rem;
+    padding: 0.7rem 1.6rem;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.2s;
+    box-shadow: 0 1px 4px 0 rgba(124, 58, 237, 0.10);
+}
+
+.error-actions button:hover {
+    filter: brightness(1.1);
+}
+
+@media (max-width: 600px) {
+    .error-container {
+        max-width: 100vw;
+        min-height: unset;
+        margin: 0;
+        box-shadow: none;
+        border-radius: 0;
+        padding: 0.1rem 0.1rem 0.2rem 0.1rem;
+    }
+
+    .error-details {
+        font-size: 0.95rem;
+        margin-bottom: 0.7rem;
+    }
+
+    .error-actions {
+        flex-direction: column;
+        gap: 0.2rem;
+        width: 100%;
+        align-items: center;
+        margin-bottom: 0;
+    }
+
+    .error-actions button {
+        width: 99vw;
+        max-width: 340px;
+        font-size: 1rem;
+        padding: 0.5rem 0;
+    }
+
+    .error-container h1 {
+        font-size: 1rem;
+        margin-bottom: 0.3rem;
+    }
+}

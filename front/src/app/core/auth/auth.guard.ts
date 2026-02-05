@@ -1,16 +1,19 @@
-import { Injectable } from '@angular/core';
+import { Inject, Injectable } from '@angular/core';
 import { CanActivate, Router, UrlTree } from '@angular/router';
-import { AuthService } from './auth.service';
+import { map, Observable } from 'rxjs';
+import { AUTH_DATASOURCE, AuthDataSource } from './auth-datasource.interface';
 
 @Injectable({ providedIn: 'root' })
 export class AuthGuard implements CanActivate {
-    constructor(private readonly auth: AuthService, private readonly router: Router) { }
+    constructor(
+        @Inject(AUTH_DATASOURCE) private readonly authDataSource: AuthDataSource,
+        private readonly router: Router) { }
 
-    canActivate(): boolean | UrlTree {
-        if (this.auth.isAuthenticated$()) {
-            return true;
-        }
-        // Redirige vers /home si non authentifié
-        return this.router.parseUrl('/home');
+    canActivate(): Observable<boolean | UrlTree> {
+        return this.authDataSource.isAuthenticated$().pipe(
+            map(isAuth => {
+                return isAuth ? true : this.router.parseUrl('/user/login');
+            })
+        );
     }
 }

@@ -25,5 +25,9 @@ export const routes: Routes = [
   {
     path: 'user/profile', loadComponent: () => import('./features/user/profile/profile.component').then(m => m.ProfileComponent),
     canActivate: [AuthGuard]
+  },
+  {
+    path: '**', loadComponent: () => import('./shared/error/error.component').then(m => m.ErrorComponent),
+    canActivate: [AuthGuard]
   }
 ];

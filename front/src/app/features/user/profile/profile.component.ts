@@ -1,13 +1,12 @@
 import { SlicePipe, AsyncPipe } from '@angular/common';
 import { Component, Inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
 import { combineLatest, map, Observable } from 'rxjs';
-import { TopicSubscription } from 'src/app/core/models/topic-subscription.model';
 import { Topic } from 'src/app/core/models/topic.model';
 import { SUBSCRIPTION_DATASOURCE, TopicSubscriptionDatasource } from 'src/app/core/services/topic-subscription-datasource.interface';
 import { TOPIC_DATASOURCE, TopicDataSource } from 'src/app/core/services/topic-datasource.interface';
 import { FormElement, DynamicFormComponent } from 'src/app/shared/form/dynamic-form.component';
+import { AUTH_DATASOURCE, AuthDataSource } from 'src/app/core/auth/auth-datasource.interface';
 
 @Component({
   selector: 'app-profile',
@@ -39,10 +38,19 @@ export class ProfileComponent {
 
   constructor(
     @Inject(TOPIC_DATASOURCE) private readonly topicDataSource: TopicDataSource,
+    @Inject(AUTH_DATASOURCE) private readonly authDataSource: AuthDataSource,
     @Inject(SUBSCRIPTION_DATASOURCE) private readonly subscriptionDataSource: TopicSubscriptionDatasource
   ) {
 
-    this.userId = 1; // TODO: Remplacer par l'ID de l'utilisateur connecté
+
+    const userId = this.authDataSource.getCurrentUserId();
+    if (typeof userId === 'number') {
+      this.userId = userId;
+    } else {
+      alert('No authenticated user. Cannot load profile.');
+      // Optionally redirect to login or handle error
+      this.userId = -1;
+    }
     this.myTopics$ = combineLatest([
       this.topicDataSource.getAll(),
       this.subscriptionDataSource.getUserTopicSubscriptions(this.userId)

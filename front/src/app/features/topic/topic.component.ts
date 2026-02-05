@@ -7,6 +7,7 @@ import { Observable } from 'rxjs/internal/Observable';
 import { Topic } from 'src/app/core/models/topic.model';
 import { TopicSubscription } from 'src/app/core/models/topic-subscription.model';
 import { SUBSCRIPTION_DATASOURCE, TopicSubscriptionDatasource } from 'src/app/core/services/topic-subscription-datasource.interface';
+import { AUTH_DATASOURCE, AuthDataSource } from 'src/app/core/auth/auth-datasource.interface';
 
 @Component({
   selector: 'app-topic',
@@ -29,11 +30,19 @@ export class TopicComponent {
 
   constructor(
     @Inject(TOPIC_DATASOURCE) private readonly topicDataSource: TopicDataSource,
+    @Inject(AUTH_DATASOURCE) private readonly authDataSource: AuthDataSource,
     @Inject(SUBSCRIPTION_DATASOURCE) private readonly subscriptionDataSource: TopicSubscriptionDatasource,
     private readonly router: Router
   ) {
     this.topics$ = this.topicDataSource.getAll();
-    this.userId = 1; // TODO: Remplacer par l'ID de l'utilisateur connecté
+    const userId = this.authDataSource.getCurrentUserId();
+    if (typeof userId === 'number') {
+      this.userId = userId;
+    } else {
+      alert('No authenticated user. Cannot load profile.');
+      // Optionally redirect to login or handle error
+      this.userId = -1;
+    }
     this.subscription$ = this.subscriptionDataSource.getUserTopicSubscriptions(this.userId);
     this.subscription$.subscribe(subs => {
       this.subscribedTopicIds = new Set(subs.map(s => s.topicId));
