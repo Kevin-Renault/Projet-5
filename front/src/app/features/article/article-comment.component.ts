@@ -10,6 +10,7 @@ import { ActivatedRoute } from '@angular/router';
 import { ArticleComment } from 'src/app/core/models/article-comment.model';
 import { DynamicFormComponent, FormElement } from "src/app/shared/form/dynamic-form.component";
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { AUTH_DATASOURCE, AuthDataSource } from 'src/app/core/auth/auth-datasource.interface';
 
 @Component({
   selector: 'app-comment',
@@ -33,6 +34,7 @@ export class ArticleCommentComponent implements OnDestroy {
 
 
   constructor(
+    @Inject(AUTH_DATASOURCE) private readonly authDataSource: AuthDataSource,
     @Inject(USER_DATASOURCE) private readonly userDataSource: UserDataSource,
     @Inject(TOPIC_DATASOURCE) private readonly topicDataSource: TopicDataSource,
     @Inject(ARTICLE_DATASOURCE) private readonly articleDataSource: ArticleDataSource,
@@ -76,19 +78,24 @@ export class ArticleCommentComponent implements OnDestroy {
   onFormSubmit(values: Partial<ArticleComment>): void {
 
     values.createdAt = new Date().toISOString();
-    //TODO: Remplacer par l'ID de l'utilisateur connecté
-    values.authorId = 1; // Utilisateur fictif
-    values.articleId = this.articleID!; // Utilisateur fictif
-    this.commentDataSource.create(values as ArticleComment).pipe(
-      takeUntil(this.destroy$)
-    ).subscribe({
-      next: () => {
-        this.articleComments$ = this.commentDataSource.getAllByArticleId(this.articleID!);
-        // Réinitialise le formulaire dynamique
-        const form = document.querySelector('form.dynamic-form') as HTMLFormElement;
-        if (form) form.reset();
-      },
-      error: () => alert('Erreur lors de la création de l\'article'),
-    });
+    const authorId = this.authDataSource.getCurrentUserId();
+    console.log('Current user ID:', authorId);
+    if (typeof authorId === 'number') {
+      values.authorId = authorId;
+      values.articleId = this.articleID!;
+      this.commentDataSource.create(values as ArticleComment).pipe(
+        takeUntil(this.destroy$)
+      ).subscribe({
+        next: () => {
+          this.articleComments$ = this.commentDataSource.getAllByArticleId(this.articleID!);
+          // Réinitialise le formulaire dynamique
+          const form = document.querySelector('form.dynamic-form') as HTMLFormElement;
+          if (form) form.reset();
+        },
+        error: () => alert('Erreur lors de la création de l\'article'),
+      });
+    } else {
+      alert('No authenticated user. Cannot post comment.');
+    }
   }
 }
