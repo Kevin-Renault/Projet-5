@@ -1,3 +1,7 @@
 <app-dynamic-form [title]="'Se connecter'" [formElements]="connnectionFormElements" [submitLabel]="'Se connecter'"
     (formSubmit)="onFormSubmit($event)">
 </app-dynamic-form>
+@if (errorMessage) {
+<app-error [errorMessage]="errorMessage" [attemptedAction]="'connexion'">
+</app-error>
+}

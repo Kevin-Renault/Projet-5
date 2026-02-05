@@ -1,14 +1,16 @@
 import { Component, Inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { AUTH_DATASOURCE, AuthDataSource } from 'src/app/core/auth/auth-datasource.interface';
 import { FormElement, DynamicFormComponent } from 'src/app/shared/form/dynamic-form.component';
+import { ErrorComponent } from "src/app/shared/error/error.component";
+import { AsyncPipe } from '@angular/common';
+import { User } from 'src/app/core/models/user.model';
 
 @Component({
   selector: 'app-login',
-  imports: [DynamicFormComponent],
+  imports: [DynamicFormComponent, ErrorComponent],
   templateUrl: './login.component.html',
-  styleUrl: './login.component.scss'
+  styleUrls: ['./login.component.scss']
 })
 export class LoginComponent {
   connnectionFormElements: FormElement[] = [
@@ -21,22 +23,20 @@ export class LoginComponent {
       pattern: '^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[#?!@$%^&*-]).{8,}$'
     }
   ];
-
+  errorMessage: string | null = null;
 
   constructor(
     @Inject(AUTH_DATASOURCE) private readonly authDataSource: AuthDataSource,
-    private readonly router: Router,
-    private readonly snackBar: MatSnackBar
+    private readonly router: Router
   ) { }
 
-  onFormSubmit(values: any) {
-    this.authDataSource.login(values.name, values.password).subscribe({
+  onFormSubmit(values: User) {
+    this.authDataSource.login(values.username, values.password).subscribe({
       next: () => {
         this.router.navigate(['/articles']);
-        alert('Form submitted: ' + JSON.stringify(values, null, 2));
       },
       error: () => {
-        this.snackBar.open('Authentication failed: invalid credentials', 'Close', { duration: 3000 });
+        this.errorMessage = 'Authentication failed: invalid credentials';
       }
     });
   }
