@@ -1,6 +1,6 @@
 
 import { Injectable } from '@angular/core';
-import { Observable, of, BehaviorSubject } from 'rxjs';
+import { Observable, of, BehaviorSubject, throwError } from 'rxjs';
 import { AuthDataSource, AuthResponse } from './auth-datasource.interface';
 import { User } from '../models/user.model';
 import { MOCK_USERS } from '../../shared/mock/mock-users.data';
@@ -28,7 +28,7 @@ export class AuthMockService implements AuthDataSource {
             return of({ token, user });
         } else {
             this.authState.next(false);
-            throw new Error('Invalid credentials');
+            return throwError(() => new Error('Invalid credentials'));
         }
     }
 
