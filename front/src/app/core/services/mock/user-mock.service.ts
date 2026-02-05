@@ -1,15 +1,10 @@
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { User } from '../../models/user.model';
+import { MOCK_USERS } from '../../../shared/mock/mock-users.data';
 import { UserDataSource } from '../user-datasource.interface';
 
-const MOCK_USERS: User[] = [
-    { id: 1, username: 'alice', email: 'alice@email.com', role: 'user' },
-    { id: 2, username: 'bob', email: 'bob@email.com', role: 'user' },
-    { id: 3, username: 'charlie', email: 'charlie@email.com', role: 'user' },
-    { id: 4, username: 'diana', email: 'diana@email.com', role: 'user' },
-    { id: 5, username: 'eve', email: 'eve@email.com', role: 'user' }
-];
+
 
 @Injectable({ providedIn: 'root' })
 export class UserMockService implements UserDataSource {
@@ -17,13 +12,13 @@ export class UserMockService implements UserDataSource {
         return of(MOCK_USERS);
     }
     getById(id: number): Observable<User> {
-        return of(MOCK_USERS.find(u => u.id === id)!);
+        return of(MOCK_USERS.find(user => user.id === id)!);
     }
     create(user: User): Observable<User> {
         return of({ ...user, id: Date.now() });
     }
     update(id: number, user: Partial<User>): Observable<User> {
-        return of({ ...MOCK_USERS.find(u => u.id === id), ...user } as User);
+        return of({ ...MOCK_USERS.find(userMock => userMock.id === id), ...user } as User);
     }
     delete(id: number): Observable<void> {
         return of(void 0);
