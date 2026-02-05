@@ -1,0 +1,13 @@
+<div class="error-container">
+    <h1>Une erreur est survenue</h1>
+    <div class="error-details">
+        <p><strong>Action tentée&nbsp;:</strong> {{ attemptedAction || 'Navigation vers une page inconnue' }}</p>
+        <p><strong>Résultat&nbsp;:</strong> {{ errorMessage || 'La ressource demandée est introuvable (404)' }}</p>
+    </div>
+    <div class="error-actions">
+        <button (click)="goHome()" class="back-home">Retour à l’accueil</button>
+        @if(displayArticlesButton) {
+        <button (click)="goArticles()" class="back-articles">Retour aux articles</button>
+        }
+    </div>
+</div>
