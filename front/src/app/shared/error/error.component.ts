@@ -1,4 +1,6 @@
-import { Component, Input } from '@angular/core';
+import { Component, Inject, Input } from '@angular/core';
+import { Observable } from 'rxjs';
+import { AUTH_DATASOURCE, AuthDataSource } from 'src/app/core/auth/auth-datasource.interface';
 
 @Component({
   selector: 'app-error',
@@ -8,9 +10,15 @@ import { Component, Input } from '@angular/core';
   standalone: true
 })
 export class ErrorComponent {
-  @Input() displayArticlesButton: boolean = false;
   @Input() attemptedAction?: string;
   @Input() errorMessage?: string;
+
+  isAuthenticated$: Observable<boolean>;
+
+  public constructor(@Inject(AUTH_DATASOURCE) private readonly authDataSource: AuthDataSource) {
+    this.isAuthenticated$ = this.authDataSource.isAuthenticated$();
+  }
+
 
   goHome() {
     globalThis.location.href = '/';
