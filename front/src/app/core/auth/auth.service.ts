@@ -1,7 +1,7 @@
 
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject, tap, map } from 'rxjs';
+import { Observable, BehaviorSubject, tap } from 'rxjs';
 import { AuthDataSource, AuthResponse } from './auth-datasource.interface';
 import { User } from '../models/user.model';
 
@@ -13,24 +13,21 @@ export class AuthService implements AuthDataSource {
     constructor(private readonly http: HttpClient) { }
 
     login(email: string, password: string): Observable<AuthResponse> {
-        return this.http.post<AuthResponse>(`${this.apiUrl}/login`, { email, password }, { withCredentials: true }).pipe(
+        return this.http.post<AuthResponse>(`${this.apiUrl}/login`, { email, password }).pipe(
             tap(() => this.authState.next(true))
         );
     }
 
     register(data: any): Observable<AuthResponse> {
-        return this.http.post<AuthResponse>(`${this.apiUrl}/register`, data, { withCredentials: true });
+        return this.http.post<AuthResponse>(`${this.apiUrl}/register`, data);
     }
 
     logout(): void {
-        this.http.post(`${this.apiUrl}/logout`, {}, { withCredentials: true }).subscribe({
+        this.http.post(`${this.apiUrl}/logout`, {}).subscribe({
             next: () => this.authState.next(false),
             error: () => this.authState.next(false)
         });
     }
-
-
-
 
     isAuthenticated$(): Observable<boolean> {
         return this.authState.asObservable();
@@ -38,7 +35,7 @@ export class AuthService implements AuthDataSource {
 
     // Récupère l'utilisateur courant via l'API (cookie httpOnly envoyé automatiquement)
     getCurrentUser(): Observable<User> {
-        return this.http.get<User>(`${this.apiUrl}/me`, { withCredentials: true }).pipe(
+        return this.http.get<User>(`${this.apiUrl}/me`).pipe(
             tap({
                 next: () => this.authState.next(true),
                 error: () => this.authState.next(false)
