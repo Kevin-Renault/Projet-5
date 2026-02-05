@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
-import { Subscription } from '../../models/subscription.model';
-import { SubscriptionDatasource } from '../subscription-datasource.interface';
+import { TopicSubscription } from '../../models/topic-subscription.model';
+import { TopicSubscriptionDatasource } from '../topic-subscription-datasource.interface';
 
-const MOCK_SUBSCRIPTIONS: Subscription[] = [
+let MOCK_SUBSCRIPTIONS: TopicSubscription[] = [
     // alice (1) : Java (1), Base de données (6)
     { userId: 1, topicId: 1 },
     { userId: 1, topicId: 6 },
@@ -26,27 +26,27 @@ const MOCK_SUBSCRIPTIONS: Subscription[] = [
 ];
 
 @Injectable({ providedIn: 'root' })
-export class SubscriptionMockService implements SubscriptionDatasource {
-    private subscriptions: Subscription[] = [...MOCK_SUBSCRIPTIONS];
+export class TopicSubscriptionMockService implements TopicSubscriptionDatasource {
+    private subscriptions: TopicSubscription[] = [...MOCK_SUBSCRIPTIONS];
 
-    subscribe(userId: number, topicId: number): Observable<void> {
+    subscribeOnTopic(userId: number, topicId: number): Observable<TopicSubscription[]> {
         const exists = this.subscriptions.some(s => s.userId === userId && s.topicId === topicId);
         if (!exists) {
             this.subscriptions.push({ userId, topicId });
         }
-        return of();
+        return this.getUserTopicSubscriptions(userId);
     }
 
-    unsubscribe(userId: number, topicId: number): Observable<void> {
+    unsubscribeFromTopic(userId: number, topicId: number): Observable<TopicSubscription[]> {
         this.subscriptions = this.subscriptions.filter(s => !(s.userId === userId && s.topicId === topicId));
-        return of();
+        return this.getUserTopicSubscriptions(userId);
     }
 
-    getUserSubscriptions(userId: number): Observable<Subscription[]> {
+    getUserTopicSubscriptions(userId: number): Observable<TopicSubscription[]> {
         return of(this.subscriptions.filter(s => s.userId === userId));
     }
 
-    getTopicSubscribers(topicId: number): Observable<Subscription[]> {
+    getTopicSubscribers(topicId: number): Observable<TopicSubscription[]> {
         return of(this.subscriptions.filter(s => s.topicId === topicId));
     }
 }

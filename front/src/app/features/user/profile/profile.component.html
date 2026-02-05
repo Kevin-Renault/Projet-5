@@ -3,18 +3,20 @@
 </app-dynamic-form>
 
 <div class="topics-list">
-    @for (topic of topics; track $index) {
+    @if (myTopics$ | async; as topics) {
+    @for (topic of topics; track topic.id) {
     <div class="topic-card">
-        <div class="topic-title">{{ topic.title }}</div>
+        <div class="topic-title">{{ topic.name }}</div>
         <div class="topic-content">
-            {{ topic.content | slice:0:220 }}
-            @if (topic.content.length > 220) {
+            {{ topic.description | slice:0:220 }}
+            @if (topic.description && topic.description.length > 220) {
             <span>...</span>
             }
         </div>
-        <button mat-raised-button color="primary" (click)="toggleSubscription(topic)">
+        <button mat-raised-button color="primary" (click)="toggleTopicSubscription(topic.id)">
             <span>se désabonner</span>
         </button>
     </div>
+    }
     }
 </div>

@@ -17,9 +17,9 @@ import { provideHttpClient } from '@angular/common/http';
 import { COMMENT_DATASOURCE } from './app/core/services/article-comment-datasource.interface';
 import { ArticleCommentService } from './app/core/services/real/article-comment.service';
 import { ArticleCommentMockService } from './app/core/services/mock/article-comment-mock.service';
-import { SUBSCRIPTION_DATASOURCE } from './app/core/services/subscription-datasource.interface';
-import { SubscriptionService } from './app/core/services/real/subscription.service';
-import { SubscriptionMockService } from './app/core/services/mock/subscription-mock.service';
+import { SUBSCRIPTION_DATASOURCE } from './app/core/services/topic-subscription-datasource.interface';
+import { TopicSubscriptionService } from './app/core/services/real/subscription.service';
+import { TopicSubscriptionMockService } from './app/core/services/mock/topic-subscription-mock.service';
 if (environment.production) {
   enableProdMode();
 }
@@ -41,6 +41,6 @@ bootstrapApplication(AppComponent, {
     useClass: environment.useMock ? ArticleCommentMockService : ArticleCommentService
   }, {
     provide: SUBSCRIPTION_DATASOURCE,
-    useClass: environment.useMock ? SubscriptionMockService : SubscriptionService
+    useClass: environment.useMock ? TopicSubscriptionMockService : TopicSubscriptionService
   }]
 }).catch(err => console.error(err));

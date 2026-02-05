@@ -8,6 +8,6 @@ export const routes: Routes = [
   { path: 'articles', loadComponent: () => import('./features/article/article-list.component').then(m => m.ArticleListComponent) },
   { path: 'topics', loadComponent: () => import('./features/topic/topic.component').then(m => m.TopicComponent) },
   { path: 'articles/create', loadComponent: () => import('./features/article/article-create.component').then(m => m.ArticleCreateComponent) },
-  { path: 'articles/comment', loadComponent: () => import('./features/article/article-comment.component').then(m => m.ArticleCommentComponent) },
+  { path: 'articles/:id/comment', loadComponent: () => import('./features/article/article-comment.component').then(m => m.ArticleCommentComponent) },
   { path: 'user/profile', loadComponent: () => import('./features/user/profile/profile.component').then(m => m.ProfileComponent) }
 ];
