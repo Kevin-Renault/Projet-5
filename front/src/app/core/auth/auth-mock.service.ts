@@ -1,31 +1,31 @@
+
 import { Injectable } from '@angular/core';
 import { Observable, of, BehaviorSubject } from 'rxjs';
 import { AuthDataSource, AuthResponse } from './auth-datasource.interface';
 import { User } from '../models/user.model';
+import { MOCK_USERS } from '../../shared/mock/mock-users.data';
+
 
 @Injectable({ providedIn: 'root' })
 export class AuthMockService implements AuthDataSource {
     private readonly authState = new BehaviorSubject<boolean>(!!this.getToken());
     private readonly tokenKey = 'auth_token';
-    private readonly mockUser: User = {
-        id: 1,
-        username: 'Mock User',
-        email: 'mock@email.com',
-        password: 'Mock-password1',
-        role: 'user'
-    };
+
 
     private readonly currentUserSubject = new BehaviorSubject<User | null>(null);
     public currentUser$ = this.currentUserSubject.asObservable();
 
-    login(email: string, password: string): Observable<AuthResponse> {
-        // Vérification mockée des identifiants
-        if (email === this.mockUser.email && password === this.mockUser.password) {
+    login(emailOrUsername: string, password: string): Observable<AuthResponse> {
+        // Recherche d'un utilisateur correspondant à l'email OU au username et au mot de passe
+        const user = MOCK_USERS.find(u =>
+            (u.email === emailOrUsername || u.username === emailOrUsername) && u.password === password
+        );
+        if (user) {
             const token = 'mock-jwt-token';
             this.setToken(token);
             this.authState.next(true);
-            this.currentUserSubject.next(this.mockUser);
-            return of({ token, user: this.mockUser });
+            this.currentUserSubject.next(user);
+            return of({ token, user });
         } else {
             this.authState.next(false);
             throw new Error('Invalid credentials');
@@ -35,9 +35,19 @@ export class AuthMockService implements AuthDataSource {
     register(data: any): Observable<AuthResponse> {
         // Simule une inscription réussie
         const token = 'mock-jwt-token';
+        const newId = Math.max(...MOCK_USERS.map(u => u.id)) + 1;
+        const newUser: User = {
+            id: newId,
+            username: data.username,
+            email: data.email,
+            password: data.password || `Mock-password${newId}`,
+            role: 'user'
+        };
+        MOCK_USERS.push(newUser);
         this.setToken(token);
-        this.currentUserSubject.next({ ...this.mockUser, ...data });
-        return of({ token, user: { ...this.mockUser, ...data } });
+        this.authState.next(true);
+        this.currentUserSubject.next(newUser);
+        return of({ token, user: newUser });
     }
 
     logout(): void {
