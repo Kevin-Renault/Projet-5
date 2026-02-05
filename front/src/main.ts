@@ -13,20 +13,29 @@ import { USER_DATASOURCE } from './app/core/services/user-datasource.interface';
 import { TopicService } from './app/core/services/real/topic.service';
 import { TOPIC_DATASOURCE } from './app/core/services/topic-datasource.interface';
 import { TopicMockService } from './app/core/services/mock/topic-mock.service';
-import { provideHttpClient } from '@angular/common/http';
+import { HTTP_INTERCEPTORS, provideHttpClient } from '@angular/common/http';
 import { COMMENT_DATASOURCE } from './app/core/services/article-comment-datasource.interface';
 import { ArticleCommentService } from './app/core/services/real/article-comment.service';
 import { ArticleCommentMockService } from './app/core/services/mock/article-comment-mock.service';
 import { SUBSCRIPTION_DATASOURCE } from './app/core/services/topic-subscription-datasource.interface';
 import { TopicSubscriptionService } from './app/core/services/real/subscription.service';
 import { TopicSubscriptionMockService } from './app/core/services/mock/topic-subscription-mock.service';
+import { CredentialsInterceptor } from './app/core/Interceptor/CredentialsInterceptor';
+import { AUTH_DATASOURCE } from './app/core/auth/auth-datasource.interface';
+import { AuthMockService } from './app/core/auth/auth-mock.service';
+import { AuthService } from './app/core/auth/auth.service';
 if (environment.production) {
   enableProdMode();
 }
 
 bootstrapApplication(AppComponent, {
   providers: [provideRouter(routes),
+  { provide: HTTP_INTERCEPTORS, useClass: CredentialsInterceptor, multi: true },
   provideHttpClient(),
+  {
+    provide: AUTH_DATASOURCE,
+    useClass: environment.useMock ? AuthMockService : AuthService
+  },
   {
     provide: ARTICLE_DATASOURCE,
     useClass: environment.useMock ? ArticleMockService : ArticleService

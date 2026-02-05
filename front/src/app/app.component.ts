@@ -1,20 +1,26 @@
-import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component, Inject } from '@angular/core';
+import { Observable } from 'rxjs';
+import { Router, RouterOutlet } from '@angular/router';
 import { HeaderButton, HeaderComponent } from "./shared/header/header.component";
+import { AUTH_DATASOURCE, AuthDataSource } from './core/auth/auth-datasource.interface';
+import { AsyncPipe } from '@angular/common';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
   standalone: true,
-  imports: [RouterOutlet, HeaderComponent]
+  imports: [RouterOutlet, HeaderComponent, AsyncPipe]
 })
+
 export class AppComponent {
-  isAuthenticated = true;
+  isAuthenticated$: Observable<boolean>;
   title = 'front';
   buttons: HeaderButton[] = [];
 
-  public constructor() {
+  public constructor(@Inject(AUTH_DATASOURCE) private readonly authDataSource: AuthDataSource,
+    private readonly router: Router) {
+    this.isAuthenticated$ = this.authDataSource.isAuthenticated$();
     this.buildMenu();
   }
 
@@ -26,7 +32,7 @@ export class AppComponent {
         color: 'red',
         alt: 'Icône Déconnexion',
         cssClass: 'header__btn logout',
-        action: () => alert('Déconnexion !'),
+        action: () => this.logout(),
       },
       {
         label: 'Articles',
@@ -51,5 +57,10 @@ export class AppComponent {
         cssClass: 'header__btn profile',
       }
     ];
+  }
+
+  logout() {
+    this.authDataSource.logout();
+    this.router.navigate(['/user/login']);
   }
 }

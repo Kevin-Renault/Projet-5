@@ -39,8 +39,7 @@ export class ProfileComponent {
 
   constructor(
     @Inject(TOPIC_DATASOURCE) private readonly topicDataSource: TopicDataSource,
-    @Inject(SUBSCRIPTION_DATASOURCE) private readonly subscriptionDataSource: TopicSubscriptionDatasource,
-    private readonly router: Router
+    @Inject(SUBSCRIPTION_DATASOURCE) private readonly subscriptionDataSource: TopicSubscriptionDatasource
   ) {
 
     this.userId = 1; // TODO: Remplacer par l'ID de l'utilisateur connecté
