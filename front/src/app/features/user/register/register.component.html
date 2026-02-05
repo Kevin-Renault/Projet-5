@@ -1,3 +1,8 @@
 <app-dynamic-form [title]="'Inscription'" [formElements]="inscriptionFormElements" [submitLabel]="INSCRIPTION_LABEL"
     (formSubmit)="onFormSubmit($event)">
 </app-dynamic-form>
+
+@if (errorMessage) {
+<app-error [errorMessage]="errorMessage" [attemptedAction]="'connexion'">
+</app-error>
+}
