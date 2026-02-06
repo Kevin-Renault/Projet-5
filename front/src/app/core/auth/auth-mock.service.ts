@@ -1,13 +1,20 @@
-import { Injectable, OnDestroy } from '@angular/core';
-import { Observable, of, BehaviorSubject, throwError, Subject } from 'rxjs';
-import { filter, takeUntil } from 'rxjs/operators';
+import { computed, Injectable, signal } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { Observable, of, throwError } from 'rxjs';
+import { filter } from 'rxjs/operators';
 import { AuthDataSource, AuthResponse } from './auth-datasource.interface';
 import { User } from '../models/user.model';
 import { MOCK_USERS } from '../../shared/mock/mock-users.data';
 
+
+
 @Injectable({ providedIn: 'root' })
-export class AuthMockService implements AuthDataSource, OnDestroy {
-    private readonly authState = new BehaviorSubject<boolean>(false);
+export class AuthMockService implements AuthDataSource {
+    private readonly isAuthenticatedSignal = signal(false);
+    private readonly currentUserSignal = signal<User | null>(null);
+    private readonly currentUserIdSignal = computed(() => this.currentUserSignal()?.id ?? null);
+    private readonly isAuthenticatedObservable = toObservable(this.isAuthenticatedSignal);
+    private readonly currentUserObservable = toObservable(this.currentUserSignal);
     // Synchronise l'état d'authentification avec le token localStorage au démarrage
     constructor() {
         const token = this.getToken();
@@ -19,7 +26,7 @@ export class AuthMockService implements AuthDataSource, OnDestroy {
                 if (parsed?.userId) {
                     const user = MOCK_USERS.find(u => u.id === parsed.userId) || null;
                     if (user) {
-                        this.currentUserSubject.next(user);
+                        this.currentUserSignal.set(user);
                     }
                 }
             } catch {
@@ -27,17 +34,7 @@ export class AuthMockService implements AuthDataSource, OnDestroy {
             }
         }
     }
-    private readonly currentUserSubject = new BehaviorSubject<User | null>(null);
-    private readonly destroy$ = new Subject<void>();
     private readonly tokenKey = 'auth_token';
-    public currentUser$ = this.currentUserSubject.asObservable();
-
-    ngOnDestroy(): void {
-        this.destroy$.next();
-        this.destroy$.complete();
-        this.authState.complete();
-        this.currentUserSubject.complete();
-    }
 
     login(login: string, password: string): Observable<AuthResponse> {
         const user = MOCK_USERS.find(u =>
@@ -48,7 +45,7 @@ export class AuthMockService implements AuthDataSource, OnDestroy {
             const token = JSON.stringify({ token: 'mock-jwt-token', userId: user.id });
             this.setToken(token);
             this.setAuthState(true);
-            this.currentUserSubject.next(user);
+            this.currentUserSignal.set(user);
             return of({ token, user });
         } else {
             this.setAuthState(false);
@@ -68,14 +65,14 @@ export class AuthMockService implements AuthDataSource, OnDestroy {
         const token = JSON.stringify({ token: 'mock-jwt-token', userId: newUser.id });
         this.setToken(token);
         this.setAuthState(true);
-        this.currentUserSubject.next(newUser);
+        this.currentUserSignal.set(newUser);
         return of({ token, user: newUser });
     }
 
     logout(): void {
         localStorage.removeItem(this.tokenKey);
         this.setAuthState(false);
-        this.currentUserSubject.next(null);
+        this.currentUserSignal.set(null);
     }
 
     setToken(token: string): void {
@@ -83,7 +80,7 @@ export class AuthMockService implements AuthDataSource, OnDestroy {
         this.setAuthState(true);
     }
     private setAuthState(state: boolean): void {
-        this.authState.next(state);
+        this.isAuthenticatedSignal.set(state);
     }
 
     getToken(): string | null {
@@ -93,22 +90,17 @@ export class AuthMockService implements AuthDataSource, OnDestroy {
     isAuthenticated$(): Observable<boolean> {
         // À chaque souscription, on vérifie le token localStorage pour garantir la synchro
         const token = this.getToken();
-        if (!!token !== this.authState.value) {
-            this.setAuthState(!!token);
-        }
-        return this.authState.asObservable();
+        this.setAuthState(!!token);
+        return this.isAuthenticatedObservable;
     }
 
     getCurrentUser(): Observable<User> {
-        return this.currentUser$.pipe(
+        return this.currentUserObservable.pipe(
             filter((user): user is User => user !== null),
-            takeUntil(this.destroy$)
         );
     }
 
     getCurrentUserId(): number | null {
-        const user = this.currentUserSubject.value;
-        console.log('Current user in getCurrentUserId:', user);
-        return user ? user.id : null;
+        return this.currentUserIdSignal();
     }
 }

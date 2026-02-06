@@ -1,4 +1,4 @@
-import { AsyncPipe, DatePipe, SlicePipe } from '@angular/common';
+import { AsyncPipe, DatePipe } from '@angular/common';
 import { Component, Inject, OnDestroy } from '@angular/core';
 import { map, Observable, shareReplay, Subject, takeUntil } from 'rxjs';
 import { Article } from 'src/app/core/models/article.model';
@@ -14,14 +14,14 @@ import { AUTH_DATASOURCE, AuthDataSource } from 'src/app/core/auth/auth-datasour
 
 @Component({
   selector: 'app-comment',
-  imports: [DatePipe, SlicePipe, AsyncPipe, DynamicFormComponent],
+  imports: [DatePipe, AsyncPipe, DynamicFormComponent],
   templateUrl: './article-comment.component.html',
   styleUrls: ['./article-comment.component.scss']
 })
 export class ArticleCommentComponent implements OnDestroy {
 
   commentFormElements: FormElement[] = [
-    { type: 'textarea', name: 'content', placeholder: 'Contenu de l\'article', required: true }
+    { type: 'textarea', name: 'content', placeholder: 'Contenu du commentaire', required: true }
   ];
 
 

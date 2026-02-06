@@ -15,7 +15,8 @@
 
 <div class="articles-list">
     @for (article of articles$ | async; track $index) {
-    <div class="article-card">
+    <a class="article-card" (click)="openArticleComments(article.id)" (keydown.enter)="openArticleComments(article.id)"
+        (keydown.space)="openArticleComments(article.id)" tabindex="0" role="link">
         <div class="article-title">{{ article.title }}</div>
         <div class="article-meta">
             <span class="article-date">{{ article.createdAt | date:'dd/MM/yyyy' }}</span>
@@ -27,6 +28,6 @@
             <span>...</span>
             }
         </div>
-    </div>
+    </a>
     }
 </div>

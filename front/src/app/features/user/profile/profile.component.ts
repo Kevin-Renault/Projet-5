@@ -15,8 +15,9 @@ import { AUTH_DATASOURCE, AuthDataSource } from 'src/app/core/auth/auth-datasour
   styleUrls: ['./profile.component.scss']
 })
 export class ProfileComponent {
+
   profileFormElements: FormElement[] = [
-    { type: 'text', name: 'name', placeholder: 'Username', required: true },
+    { type: 'text', name: 'username', placeholder: 'Username', required: true },
     { type: 'email', name: 'email', placeholder: 'email@email.fr', required: true, pattern: String.raw`^[^@\s]+@[^@\s]+\.[^@\s]+$` },
     {
       type: 'password',
