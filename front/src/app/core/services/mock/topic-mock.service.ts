@@ -44,13 +44,4 @@ export class TopicMockService implements TopicDataSource {
     getById(id: number): Observable<Topic> {
         return of(MOCK_TOPICS.find(t => t.id === id)!);
     }
-    create(topic: Topic): Observable<Topic> {
-        return of({ ...topic, id: Date.now() });
-    }
-    update(id: number, topic: Partial<Topic>): Observable<Topic> {
-        return of({ ...MOCK_TOPICS.find(t => t.id === id), ...topic } as Topic);
-    }
-    delete(id: number): Observable<void> {
-        return of(void 0);
-    }
 }
