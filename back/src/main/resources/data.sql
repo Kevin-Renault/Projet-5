@@ -1,5 +1,6 @@
 -- Thèmes
-DELETE FROM topic;
+DELETE FROM topic
+where id < 10;
 INSERT INTO topic (id, name, description)
 VALUES (
         1,
@@ -22,35 +23,50 @@ VALUES (
         'Intégration continue, déploiement et outils DevOps'
     );
 -- Utilisateurs
-DELETE FROM mdd_user;
+DELETE FROM mdd_user
+where id < 10;
 INSERT INTO mdd_user (id, username, email, password)
 VALUES (
         1,
         'kevin',
         'kevin.renault@example.com',
-        '$2a$10$IXh5EVr1YfmtMkOf1jSqNOwScIk56NfvYB4dif7owE2tHPY86GEKy'
+        '$2a$10$iZOH0ffmjqjSWZxwUf8MkeJ6E9PvsaFJ0ssQRtoM5IboemlW1hTl2' -- Password-123_1
     ),
     (
         2,
         'alice',
         'alice.doe@example.com',
-        '$2a$10$IXh5EVr1YfmtMkOf1jSqNOwScIk56NfvYB4dif7owE2tHPY86GEKy'
+        '$2a$10$d2.CdQPcQ6JaqV6Ae2mEx.ByUgJ6Dr4aY4Qvtb8qIiIChepweVYIq'
     ),
     (
         3,
         'bob',
         'bob.smith@example.com',
-        '$2a$10$IXh5EVr1YfmtMkOf1jSqNOwScIk56NfvYB4dif7owE2tHPY86GEKy'
+        '$2a$10$rdihBFp.DLQuXHgIkLYpB.gw4H/jrbof.S2iq0x5I.5ty8Kz.vDry' -- Password-123_3
+    ),
+    (
+        4,
+        'charlie',
+        'charlie.brown@example.com',
+        '$2a$10$CR4mb.Lj8jQXK81EV8TNvub/4McFhd03uL74z1Xueu70rzs1lbfL.' -- Password-123_4
+    ),
+    (
+        5,
+        'david',
+        'david.wilson@example.com',
+        '$2a$10$4GXoy/7oI7JynF1viEwqJu.q2RVmjSBO2ImT2R.1O22PpbxsyJnFu' -- Password-123_5
     );
 -- Abonnements
-DELETE FROM user_topic_subscription;
+DELETE FROM user_topic_subscription
+where true;
 INSERT INTO user_topic_subscription (user_id, topic_id)
 VALUES (1, 1),
     (1, 2),
     (2, 3),
     (3, 4);
 -- Articles
-DELETE FROM article;
+DELETE FROM article
+where id < 10;
 INSERT INTO article (id, title, content, author_id, topic_id)
 VALUES (
         1,
@@ -74,7 +90,8 @@ VALUES (
         1
     );
 -- Commentaires
-DELETE FROM article_comment;
+DELETE FROM article_comment
+where id < 10;
 INSERT INTO article_comment (id, content, author_id, article_id)
 VALUES (1, 'Merci pour cet article très complet !', 2, 1),
     (2, 'Je vais tester ça dès ce week-end.', 3, 1),
