@@ -18,7 +18,7 @@ VALUES (
         'Intégration continue, déploiement et outils DevOps'
     );
 -- Utilisateurs
-INSERT INTO user (username, email, password)
+INSERT INTO mdd_user (username, email, password)
 VALUES (
         'kevin',
         'kevin.renault@example.com',
@@ -66,7 +66,7 @@ VALUES (
         1
     );
 -- Commentaires
-INSERT INTO comment (content, author_id, article_id)
+INSERT INTO article_comment (content, author_id, article_id)
 VALUES ('Merci pour cet article très complet !', 2, 1),
     ('Je vais tester ça dès ce week-end.', 3, 1),
     (
