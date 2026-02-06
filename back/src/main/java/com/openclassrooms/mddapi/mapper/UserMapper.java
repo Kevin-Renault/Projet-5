@@ -11,7 +11,13 @@ public class UserMapper {
         if (entity == null) {
             return null;
         }
-        return new UserDto(entity.getId(), entity.getUsername(), entity.getEmail(), entity.getCreatedAt());
+        return new UserDto(
+                entity.getId(),
+                entity.getUsername(),
+                entity.getEmail(),
+                "",
+                "user",
+                entity.getCreatedAt());
     }
 
     /**
