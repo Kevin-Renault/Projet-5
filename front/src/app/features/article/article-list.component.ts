@@ -55,4 +55,8 @@ export class ArticleListComponent {
       );
     }
   }
+
+  public openArticleComments(articleId: number) {
+    this.router.navigate(['/articles', articleId, 'comment']);
+  }
 }
