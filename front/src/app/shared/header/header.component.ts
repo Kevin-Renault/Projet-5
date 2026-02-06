@@ -1,4 +1,4 @@
-import { Component, HostListener, Input, OnInit } from '@angular/core';
+import { Component, HostListener, Input } from '@angular/core';
 import { HeaderButtonsComponent } from "./header-buttons.component";
 
 @Component({
@@ -37,10 +37,6 @@ export class HeaderComponent {
     toggleMenu() {
         this.menuOpen = !this.menuOpen;
     }
-
-
-
-
 }
 
 export interface HeaderButton {

@@ -24,32 +24,39 @@ import { CredentialsInterceptor } from './app/core/Interceptor/CredentialsInterc
 import { AUTH_DATASOURCE } from './app/core/auth/auth-datasource.interface';
 import { AuthMockService } from './app/core/auth/auth-mock.service';
 import { AuthService } from './app/core/auth/auth.service';
+
 if (environment.production) {
   enableProdMode();
 }
 
 bootstrapApplication(AppComponent, {
-  providers: [provideRouter(routes),
-  { provide: HTTP_INTERCEPTORS, useClass: CredentialsInterceptor, multi: true },
-  provideHttpClient(),
-  {
-    provide: AUTH_DATASOURCE,
-    useClass: environment.useMock ? AuthMockService : AuthService
-  },
-  {
-    provide: ARTICLE_DATASOURCE,
-    useClass: environment.useMock ? ArticleMockService : ArticleService
-  }, {
-    provide: USER_DATASOURCE,
-    useClass: environment.useMock ? UserMockService : UserService
-  }, {
-    provide: TOPIC_DATASOURCE,
-    useClass: environment.useMock ? TopicMockService : TopicService
-  }, {
-    provide: COMMENT_DATASOURCE,
-    useClass: environment.useMock ? ArticleCommentMockService : ArticleCommentService
-  }, {
-    provide: SUBSCRIPTION_DATASOURCE,
-    useClass: environment.useMock ? TopicSubscriptionMockService : TopicSubscriptionService
-  }]
-}).catch(err => console.error(err));
+  providers: [
+    provideRouter(routes),
+    { provide: HTTP_INTERCEPTORS, useClass: CredentialsInterceptor, multi: true },
+    provideHttpClient(),
+    {
+      provide: AUTH_DATASOURCE,
+      useClass: environment.useMock ? AuthMockService : AuthService
+    },
+    {
+      provide: ARTICLE_DATASOURCE,
+      useClass: environment.useMock ? ArticleMockService : ArticleService
+    },
+    {
+      provide: USER_DATASOURCE,
+      useClass: environment.useMock ? UserMockService : UserService
+    },
+    {
+      provide: TOPIC_DATASOURCE,
+      useClass: environment.useMock ? TopicMockService : TopicService
+    },
+    {
+      provide: COMMENT_DATASOURCE,
+      useClass: environment.useMock ? ArticleCommentMockService : ArticleCommentService
+    },
+    {
+      provide: SUBSCRIPTION_DATASOURCE,
+      useClass: environment.useMock ? TopicSubscriptionMockService : TopicSubscriptionService
+    }
+  ]
+});
