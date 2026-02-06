@@ -7,8 +7,7 @@
         <span class="article-topic">{{ topicById(article.topicId) | async }}</span>
     </div>
     <div class="article-content">
-        {{ article.content | slice:0:220 }}
-        @if (article.content.length > 220) { <span>...</span> }
+        {{ article.content }}
     </div>
     }
 </div>
@@ -27,6 +26,6 @@
     }
 </div>
 
-<app-dynamic-form [title]="'Profil Utilisateur'" [formElements]="commentFormElements" [submitLabel]="'Sauvegarder'"
+<app-dynamic-form [title]="'Commentaires'" [formElements]="commentFormElements" [submitLabel]="'Sauvegarder'"
     (formSubmit)="onFormSubmit($event)">
 </app-dynamic-form>
