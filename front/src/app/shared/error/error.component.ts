@@ -1,5 +1,4 @@
-import { Component, Inject, Input } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Component, Inject, Input, Signal } from '@angular/core';
 import { AUTH_DATASOURCE, AuthDataSource } from 'src/app/core/auth/auth-datasource.interface';
 
 @Component({
@@ -13,7 +12,7 @@ export class ErrorComponent {
   @Input() attemptedAction?: string;
   @Input() errorMessage?: string;
 
-  isAuthenticated$: Observable<boolean>;
+  isAuthenticated$: Signal<boolean>;
 
   public constructor(@Inject(AUTH_DATASOURCE) private readonly authDataSource: AuthDataSource) {
     this.isAuthenticated$ = this.authDataSource.isAuthenticated$();

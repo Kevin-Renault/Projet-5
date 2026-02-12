@@ -3,9 +3,8 @@ import { provideRouter } from '@angular/router';
 import { AppComponent } from './app/app.component';
 import { routes } from './app/app-routing.module';
 import { environment } from './environments/environment';
-import { enableProdMode } from '@angular/core';
+import { enableProdMode, ErrorHandler } from '@angular/core';
 import { ARTICLE_DATASOURCE } from './app/core/services/article-datasource.interface';
-import { ArticleMockService } from './app/core/services/mock/article-mock.service';
 import { ArticleService } from './app/core/services/real/article.service';
 import { UserService } from './app/core/services/real/user.service';
 import { UserMockService } from './app/core/services/mock/user-mock.service';
@@ -23,19 +22,31 @@ import { TopicSubscriptionMockService } from './app/core/services/mock/topic-sub
 import { CredentialsInterceptor } from './app/core/Interceptor/CredentialsInterceptor';
 import { AUTH_DATASOURCE } from './app/core/auth/auth-datasource.interface';
 import { AuthService } from './app/core/auth/auth.service';
+import { AuthMockService } from './app/core/auth/auth-mock.service';
+import { ArticleMockService } from './app/core/services/mock/article-mock.service';
+import { GlobalErrorHandler } from './app/shared/error/global-error-handler';
 
 if (environment.production) {
   enableProdMode();
 }
 
+export function initAuth(auth: AuthService) {
+  return () => auth.initSession();
+}
+
 bootstrapApplication(AppComponent, {
   providers: [
+    { provide: ErrorHandler, useClass: GlobalErrorHandler },
     provideRouter(routes),
-    { provide: HTTP_INTERCEPTORS, useClass: CredentialsInterceptor, multi: true },
-    provideHttpClient(withInterceptorsFromDi()),
+    provideHttpClient(withInterceptorsFromDi()), // Configuration HTTP centralisée
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: CredentialsInterceptor,
+      multi: true,
+    },
     {
       provide: AUTH_DATASOURCE,
-      useClass: AuthService
+      useExisting: environment.useMock ? AuthMockService : AuthService
     },
     {
       provide: ARTICLE_DATASOURCE,

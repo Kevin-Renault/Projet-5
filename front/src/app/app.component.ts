@@ -1,20 +1,18 @@
-import { Component, Inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Component, Inject, Signal } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { HeaderButton, HeaderComponent } from "./shared/header/header.component";
 import { AUTH_DATASOURCE, AuthDataSource } from './core/auth/auth-datasource.interface';
-import { AsyncPipe } from '@angular/common';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
   standalone: true,
-  imports: [RouterOutlet, HeaderComponent, AsyncPipe]
+  imports: [RouterOutlet, HeaderComponent]
 })
 
 export class AppComponent {
-  isAuthenticated$: Observable<boolean>;
+  isAuthenticated$: Signal<boolean>;
   title = 'front';
   buttons: HeaderButton[] = [];
 
