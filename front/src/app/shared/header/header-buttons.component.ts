@@ -2,11 +2,11 @@ import { Component, Input } from '@angular/core';
 import { HeaderButton } from '../header/header.component';
 
 @Component({
-    selector: 'app-header-buttons',
-    standalone: true,
-    imports: [],
-    styleUrls: ['./header.component.scss'],
-    template: `
+  selector: 'app-header-buttons',
+  standalone: true,
+  imports: [],
+  styleUrls: ['./header.component.scss'],
+  template: `
     @for (button of buttons; track $index) {
       <button [class]="button.cssClass" (click)="onButtonClick(button)"
        type="button" [style.color]="button.color">
@@ -23,6 +23,6 @@ import { HeaderButton } from '../header/header.component';
   `
 })
 export class HeaderButtonsComponent {
-    @Input() buttons: HeaderButton[] = [];
-    @Input() onButtonClick: (button: HeaderButton) => void = () => { };
+  @Input() buttons: HeaderButton[] = [];
+  @Input() onButtonClick: (button: HeaderButton) => void = () => { };
 }

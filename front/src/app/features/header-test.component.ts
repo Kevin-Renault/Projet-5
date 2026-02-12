@@ -7,7 +7,7 @@ import { DynamicFormComponent, FormElement } from '../shared/form/dynamic-form.c
     standalone: true,
     imports: [HeaderComponent, DynamicFormComponent],
     template: `
-            <app-header [buttons]="buttons"></app-header>
+            <app-header ></app-header>
             <app-dynamic-form
                 [title]="'Se connecter'"
                 [formElements]="connnectionFormElements"

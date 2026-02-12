@@ -7,11 +7,12 @@ import { Observable } from 'rxjs/internal/Observable';
 import { ARTICLE_DATASOURCE, ArticleDataSource } from 'src/app/core/services/article-datasource.interface';
 import { map, shareReplay } from 'rxjs';
 import { USER_DATASOURCE, UserDataSource } from 'src/app/core/services/user-datasource.interface';
+import { HeaderComponent } from "src/app/shared/header/header.component";
 
 
 @Component({
   selector: 'app-article-list',
-  imports: [FormsModule, DatePipe, SlicePipe, AsyncPipe],
+  imports: [FormsModule, DatePipe, SlicePipe, AsyncPipe, HeaderComponent],
   templateUrl: './article-list.component.html',
   styleUrls: ['./article-list.component.scss']
 })

@@ -8,10 +8,11 @@ import { Topic } from 'src/app/core/models/topic.model';
 import { TopicSubscription } from 'src/app/core/models/topic-subscription.model';
 import { SUBSCRIPTION_DATASOURCE, TopicSubscriptionDatasource } from 'src/app/core/services/topic-subscription-datasource.interface';
 import { AUTH_DATASOURCE, AuthDataSource } from 'src/app/core/auth/auth-datasource.interface';
+import { HeaderComponent } from "src/app/shared/header/header.component";
 
 @Component({
   selector: 'app-topic',
-  imports: [FormsModule, SlicePipe, AsyncPipe],
+  imports: [FormsModule, SlicePipe, AsyncPipe, HeaderComponent],
   templateUrl: './topic.component.html',
   styleUrls: ['./topic.component.scss']
 })

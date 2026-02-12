@@ -1,5 +1,7 @@
-import { Component, HostListener, Input } from '@angular/core';
+import { Component, HostListener, inject } from '@angular/core';
 import { HeaderButtonsComponent } from "./header-buttons.component";
+import { Router } from '@angular/router';
+import { AUTH_DATASOURCE } from 'src/app/core/auth/auth-datasource.interface';
 
 @Component({
     selector: 'app-header',
@@ -9,8 +11,14 @@ import { HeaderButtonsComponent } from "./header-buttons.component";
     imports: [HeaderButtonsComponent]
 })
 export class HeaderComponent {
-    @Input() buttons!: HeaderButton[];
+
+    authDataSource = inject(AUTH_DATASOURCE);
+
     menuOpen = false;
+    constructor(
+        private readonly router: Router
+    ) {
+    }
 
     @HostListener('window:resize')
     onResize() {
@@ -27,16 +35,51 @@ export class HeaderComponent {
     }
 
     callNavigation(link: string) {
-        if (link.startsWith('/')) {
-            globalThis.location.href = link;
-        } else {
-            window.open(link, '_blank');
-        }
+
+        this.router.navigate([link]);
     }
 
     toggleMenu() {
         this.menuOpen = !this.menuOpen;
     }
+
+    logout() {
+        this.authDataSource.logout();
+        this.router.navigate(['/']);
+    }
+
+    buttons: HeaderButton[] = [
+        {
+            label: 'Se déconnecter',
+            icon: '',
+            color: 'red',
+            alt: 'Icône Déconnexion',
+            cssClass: 'header__btn logout',
+            action: () => this.logout(),
+        },
+        {
+            label: 'Articles',
+            link: '/articles',
+            color: 'violet',
+            icon: '',
+            alt: 'Icône Articles',
+            cssClass: 'header__btn articles',
+        },
+        {
+            label: 'Thèmes',
+            link: '/topics',
+            icon: '',
+            alt: 'Icône Thèmes',
+            cssClass: 'header__btn themes',
+        },
+        {
+            label: '',
+            link: '/user/profile',
+            icon: '/assets/profil.svg',
+            alt: 'Icône Profil',
+            cssClass: 'header__btn profile',
+        }
+    ];
 }
 
 export interface HeaderButton {
@@ -48,6 +91,13 @@ export interface HeaderButton {
     cssClass?: string;
     action?: () => void;
 }
+
+
+
+
+
+
+
 
 
 
