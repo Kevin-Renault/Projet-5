@@ -11,10 +11,11 @@ import { ArticleComment } from 'src/app/core/models/article-comment.model';
 import { DynamicFormComponent, FormElement } from "src/app/shared/form/dynamic-form.component";
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AUTH_DATASOURCE, AuthDataSource } from 'src/app/core/auth/auth-datasource.interface';
+import { HeaderComponent } from "src/app/shared/header/header.component";
 
 @Component({
   selector: 'app-comment',
-  imports: [DatePipe, AsyncPipe, DynamicFormComponent],
+  imports: [DatePipe, AsyncPipe, DynamicFormComponent, HeaderComponent],
   templateUrl: './article-comment.component.html',
   styleUrls: ['./article-comment.component.scss']
 })

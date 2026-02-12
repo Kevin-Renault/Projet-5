@@ -7,10 +7,11 @@ import { Topic } from 'src/app/core/models/topic.model';
 import { ARTICLE_DATASOURCE, ArticleDataSource } from 'src/app/core/services/article-datasource.interface';
 import { TOPIC_DATASOURCE, TopicDataSource } from 'src/app/core/services/topic-datasource.interface';
 import { FormElement, DynamicFormComponent } from 'src/app/shared/form/dynamic-form.component';
+import { HeaderComponent } from "src/app/shared/header/header.component";
 
 @Component({
   selector: 'app-article-create',
-  imports: [DynamicFormComponent],
+  imports: [DynamicFormComponent, HeaderComponent],
   templateUrl: './article-create.component.html',
   styleUrls: ['./article-create.component.scss']
 })

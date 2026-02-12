@@ -7,3 +7,8 @@
         <button mat-raised-button color="primary" (click)="goToRegister()">S'inscrire</button>
     </div>
 </div>
+
+@if (errorMessage) {
+<app-error [errorMessage]="errorMessage" [attemptedAction]="'Restauration de la session'">
+</app-error>
+}

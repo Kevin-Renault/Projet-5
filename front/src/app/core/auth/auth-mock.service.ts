@@ -1,5 +1,5 @@
-import { computed, Injectable, signal } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
+import { computed, Injectable, Signal, signal } from '@angular/core';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { Observable, of, throwError } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { AuthDataSource, AuthResponse } from './auth-datasource.interface';
@@ -36,7 +36,7 @@ export class AuthMockService implements AuthDataSource {
     }
     private readonly tokenKey = 'auth_token';
 
-    login(login: string, password: string): Observable<AuthResponse> {
+    login(login: string, password: string): Observable<boolean> {
         const user = MOCK_USERS.find(u =>
             (u.email === login || u.username === login) && u.password === password
         );
@@ -46,7 +46,7 @@ export class AuthMockService implements AuthDataSource {
             this.setToken(token);
             this.setAuthState(true);
             this.currentUserSignal.set(user);
-            return of({ token, user });
+            return of(true);
         } else {
             this.setAuthState(false);
             return throwError(() => new Error('Identifiants invalides'));
@@ -79,6 +79,7 @@ export class AuthMockService implements AuthDataSource {
         localStorage.setItem(this.tokenKey, token);
         this.setAuthState(true);
     }
+
     private setAuthState(state: boolean): void {
         this.isAuthenticatedSignal.set(state);
     }
@@ -87,11 +88,11 @@ export class AuthMockService implements AuthDataSource {
         return localStorage.getItem(this.tokenKey);
     }
 
-    isAuthenticated$(): Observable<boolean> {
+    isAuthenticated$(): Signal<boolean> {
         // À chaque souscription, on vérifie le token localStorage pour garantir la synchro
         const token = this.getToken();
         this.setAuthState(!!token);
-        return this.isAuthenticatedObservable;
+        return signal(this.isAuthenticatedSignal());
     }
 
     getCurrentUser(): Observable<User> {

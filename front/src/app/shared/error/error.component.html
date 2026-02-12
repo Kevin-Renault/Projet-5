@@ -4,12 +4,4 @@
         <p><strong>Action tentée&nbsp;:</strong> {{ attemptedAction || 'Navigation vers une page inconnue' }}</p>
         <p><strong>Résultat&nbsp;:</strong> {{ errorMessage || 'La ressource demandée est introuvable (404)' }}</p>
     </div>
-    <div class="error-actions">
-        @if(this.isAuthenticated$) {
-        <button (click)="goArticles()" class="back-articles">Retour aux articles</button>
-        }
-        @else {
-        <button (click)="goHome()" class="back-home">Retour à l’accueil</button>
-        }
-    </div>
 </div>

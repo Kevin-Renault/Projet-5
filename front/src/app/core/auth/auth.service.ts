@@ -1,73 +1,111 @@
-
-import { computed, Injectable, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
-import { toObservable } from '@angular/core/rxjs-interop';
+import { computed, Injectable, inject, signal, Signal, ErrorHandler } from '@angular/core';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { catchError, firstValueFrom, map, Observable, of, take, tap } from 'rxjs';
 import { AuthDataSource, AuthResponse } from './auth-datasource.interface';
 import { User } from '../models/user.model';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService implements AuthDataSource {
-    private readonly isAuthenticatedSignal = signal(false);
-    private readonly currentUserSignal = signal<User | null>(null);
-    private readonly currentUserIdSignal = computed(() => this.currentUserSignal()?.id ?? null);
-    private readonly isAuthenticatedObservable = toObservable(this.isAuthenticatedSignal);
+
+    private readonly http = inject(HttpClient);
+    private readonly errorHandler = inject(ErrorHandler);
     private readonly apiUrl = '/api/auth';
 
-    constructor(private readonly http: HttpClient) { }
+    // Signaux privés pour gérer l'état
+    private readonly _currentUser = signal<User | null>(null);
 
-    getCurrentUserId(): number | null {
-        return this.currentUserIdSignal();
+    readonly currentUser = this._currentUser.asReadonly();
+    readonly currentUserId = computed(() => this._currentUser()?.id ?? null);
+
+
+    readonly #isLoggedIn = signal(false);
+    readonly isloggedIn = this.#isLoggedIn.asReadonly();
+
+    async initSession(): Promise<void> {
+        try {
+            await firstValueFrom(this.getCurrentUser());
+        } catch {
+            try {
+                await firstValueFrom(this.refresh());
+                await firstValueFrom(this.getCurrentUser());
+            } catch {
+                this.clearSession();
+                throw new Error('Session expirée');
+            }
+        }
     }
 
-    login(email: string, password: string): Observable<AuthResponse> {
+    refresh(): Observable<void> {
+        return this.http.post<void>(`${this.apiUrl}/refresh`, { observe: 'response' }).pipe(
+            tap((response) => {
+                console.log('Réponse complète du backend pour refresh:', response);
+            }),
+            map(() => { }) // Convertit la réponse en void
+        );
+    }
+    getCurrentUserId(): number | null {
+        return this.currentUserId();
+    }
+
+    // Méthode pour satisfaire l'interface AuthDataSource
+    isAuthenticated$(): Signal<boolean> {
+        return this.isloggedIn;
+    }
+
+    private updateSession(user: User, isLoggedIn: boolean = true): void {
+        this._currentUser.set(user);
+        this.#isLoggedIn.set(isLoggedIn);
+    }
+
+    public clearSession(): void {
+        this._currentUser.set(null);
+        this.#isLoggedIn.set(false);
+    }
+
+    login(email: string, password: string): Observable<boolean> {
+        console.info("Auth service login : " + email + " / " + password);
+
         return this.http.post<AuthResponse>(`${this.apiUrl}/login`, { email, password }).pipe(
             tap((response) => {
-                this.currentUserSignal.set(response.user);
-                this.isAuthenticatedSignal.set(true);
+                this.updateSession(response.user, true);
+                console.log('Réponse du backend pour login:', response);
+                console.info("isloggedIn: " + this.isloggedIn());
+            }),
+            map(() => this.isloggedIn()),
+            catchError((error: HttpErrorResponse) => {
+                this.errorHandler.handleError(error);
+                this.clearSession();
+                // Retourne false en cas d'erreur
+                return of(false);
             })
         );
     }
 
-    register(data: any): Observable<AuthResponse> {
+    register(data: unknown): Observable<AuthResponse> {
         return this.http.post<AuthResponse>(`${this.apiUrl}/register`, data).pipe(
-            tap((response) => {
-                this.currentUserSignal.set(response.user);
-                this.isAuthenticatedSignal.set(true);
-            })
+            tap((response) => this.updateSession(response.user))
         );
     }
+
 
     logout(): void {
-        this.http.post(`${this.apiUrl}/logout`, {}).subscribe({
-            next: () => {
-                this.currentUserSignal.set(null);
-                this.isAuthenticatedSignal.set(false);
-            },
-            error: () => {
-                this.currentUserSignal.set(null);
-                this.isAuthenticatedSignal.set(false);
-            }
-        });
+        this.http.post<void>(`${this.apiUrl}/logout`, {}).pipe(
+            tap((response) => {
+                console.log('Réponse du backend pour logout:', response);
+            }),
+            tap(() => this.clearSession()),
+            take(1) // <-- Gère automatiquement le désabonnement
+        ).subscribe();
     }
 
-    isAuthenticated$(): Observable<boolean> {
-        return this.isAuthenticatedObservable;
-    }
-
-    // Récupère l'utilisateur courant via l'API (cookie httpOnly envoyé automatiquement)
     getCurrentUser(): Observable<User> {
         return this.http.get<User>(`${this.apiUrl}/me`).pipe(
             tap({
-                next: (user) => {
-                    this.currentUserSignal.set(user);
-                    this.isAuthenticatedSignal.set(true);
-                },
-                error: () => {
-                    this.currentUserSignal.set(null);
-                    this.isAuthenticatedSignal.set(false);
-                }
+                next: (user) => this.updateSession(user),
+                error: () => this.clearSession()
             })
         );
     }
+
+
 }
