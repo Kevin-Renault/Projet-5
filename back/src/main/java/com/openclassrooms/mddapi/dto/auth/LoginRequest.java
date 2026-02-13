@@ -1,6 +1,9 @@
 package com.openclassrooms.mddapi.dto.auth;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
 public record LoginRequest(
-        String email,
-        String password) {
+                @NotBlank @Size(max = 254) String email,
+                @NotBlank @Size(max = 72) String password) {
 }

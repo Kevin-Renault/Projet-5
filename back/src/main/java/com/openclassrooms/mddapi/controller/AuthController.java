@@ -7,6 +7,7 @@ import com.openclassrooms.mddapi.dto.auth.RegisterRequest;
 import com.openclassrooms.mddapi.entity.MddUserEntity;
 import com.openclassrooms.mddapi.security.JwtCookieService;
 import com.openclassrooms.mddapi.service.AuthService;
+import jakarta.validation.Valid;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
@@ -31,7 +32,7 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponseDto> register(@RequestBody RegisterRequest request) {
+    public ResponseEntity<AuthResponseDto> register(@Valid @RequestBody RegisterRequest request) {
         AuthResponseDto response = authService.register(request);
         ResponseCookie cookie = cookieService.createAccessTokenCookie(response.token());
         return ResponseEntity.ok()
@@ -40,7 +41,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponseDto> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<AuthResponseDto> login(@Valid @RequestBody LoginRequest request) {
         AuthResponseDto response = authService.login(request);
         ResponseCookie cookie = cookieService.createAccessTokenCookie(response.token());
         return ResponseEntity.ok()

@@ -4,6 +4,7 @@ import com.openclassrooms.mddapi.dto.UserTopicSubscriptionDto;
 import com.openclassrooms.mddapi.entity.MddUserEntity;
 import com.openclassrooms.mddapi.service.UserTopicSubscriptionService;
 import java.util.List;
+import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -46,7 +47,7 @@ public class UserTopicSubscriptionController {
     @PostMapping
     public List<UserTopicSubscriptionDto> subscribe(
             @AuthenticationPrincipal MddUserEntity principal,
-            @RequestBody UserTopicSubscriptionDto request) {
+            @Valid @RequestBody UserTopicSubscriptionDto request) {
 
         if (request == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid payload");

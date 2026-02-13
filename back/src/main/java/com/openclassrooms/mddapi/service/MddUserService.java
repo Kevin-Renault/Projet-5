@@ -16,7 +16,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class MddUserService {
 
     private static final Pattern PASSWORD_PATTERN = Pattern.compile(
-            "^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[#?!@$%^&*-]).{8,}$");
+            "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[#?!@$%^&*-]).{8,}$");
 
     private final MddUserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
