@@ -7,10 +7,11 @@ import { SUBSCRIPTION_DATASOURCE, TopicSubscriptionDatasource } from 'src/app/co
 import { TOPIC_DATASOURCE, TopicDataSource } from 'src/app/core/services/topic-datasource.interface';
 import { FormElement, DynamicFormComponent } from 'src/app/shared/form/dynamic-form.component';
 import { AUTH_DATASOURCE, AuthDataSource } from 'src/app/core/auth/auth-datasource.interface';
+import { HeaderComponent } from "src/app/shared/header/header.component";
 
 @Component({
   selector: 'app-profile',
-  imports: [DynamicFormComponent, FormsModule, SlicePipe, AsyncPipe],
+  imports: [DynamicFormComponent, FormsModule, SlicePipe, AsyncPipe, HeaderComponent],
   templateUrl: './profile.component.html',
   styleUrls: ['./profile.component.scss']
 })
