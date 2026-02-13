@@ -12,6 +12,34 @@
         {
             "key": "jwt",
             "value": ""
+        },
+        {
+            "key": "userId",
+            "value": ""
+        },
+        {
+            "key": "topicId",
+            "value": ""
+        },
+        {
+            "key": "articleId",
+            "value": ""
+        },
+        {
+            "key": "commentId",
+            "value": ""
+        },
+        {
+            "key": "username",
+            "value": "kevin"
+        },
+        {
+            "key": "email",
+            "value": "kevin.renault@example.com"
+        },
+        {
+            "key": "password",
+            "value": "Password1!"
         }
     ],
     "auth": {
@@ -29,7 +57,7 @@
             "name": "Auth",
             "item": [
                 {
-                    "name": "Register (public) - sets {{jwt}}",
+                    "name": "Register (public) - sets {{jwt}} + {{userId}}",
                     "event": [
                         {
                             "listen": "test",
@@ -39,9 +67,8 @@
                                     "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
                                     "var json = pm.response.json();",
                                     "pm.test('Has token', function () { pm.expect(json).to.have.property('token'); });",
-                                    "if (json && json.token) {",
-                                    "  pm.collectionVariables.set('jwt', json.token);",
-                                    "}"
+                                    "if (json && json.token) { pm.collectionVariables.set('jwt', json.token); }",
+                                    "if (json && json.user && json.user.id) { pm.collectionVariables.set('userId', json.user.id); }"
                                 ]
                             }
                         }
@@ -59,7 +86,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"username\": \"kevin\",\n  \"email\": \"kevin.renault@example.com\",\n  \"password\": \"password123\"\n}"
+                            "raw": "{\n  \"username\": \"{{username}}\",\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
                         },
                         "url": {
                             "raw": "{{baseUrl}}/api/auth/register",
@@ -75,7 +102,7 @@
                     }
                 },
                 {
-                    "name": "Login (public) - sets {{jwt}}",
+                    "name": "Login (public) - sets {{jwt}} + {{userId}}",
                     "event": [
                         {
                             "listen": "test",
@@ -85,9 +112,8 @@
                                     "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
                                     "var json = pm.response.json();",
                                     "pm.test('Has token', function () { pm.expect(json).to.have.property('token'); });",
-                                    "if (json && json.token) {",
-                                    "  pm.collectionVariables.set('jwt', json.token);",
-                                    "}"
+                                    "if (json && json.token) { pm.collectionVariables.set('jwt', json.token); }",
+                                    "if (json && json.user && json.user.id) { pm.collectionVariables.set('userId', json.user.id); }"
                                 ]
                             }
                         }
@@ -105,7 +131,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"email\": \"kevin.renault@example.com\",\n  \"password\": \"password123\"\n}"
+                            "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
                         },
                         "url": {
                             "raw": "{{baseUrl}}/api/auth/login",
@@ -153,16 +179,6 @@
                     ],
                     "request": {
                         "method": "POST",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{}"
-                        },
                         "url": {
                             "raw": "{{baseUrl}}/api/auth/logout",
                             "host": [
@@ -172,6 +188,425 @@
                                 "api",
                                 "auth",
                                 "logout"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Topics",
+            "item": [
+                {
+                    "name": "Get all topics (protected) - sets {{topicId}}",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                                    "var json = pm.response.json();",
+                                    "if (Array.isArray(json) && json.length > 0 && json[0].id) { pm.collectionVariables.set('topicId', json[0].id); }"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/api/topics",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "topics"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get topic by id (protected)",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/api/topics/{{topicId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "topics",
+                                "{{topicId}}"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Articles",
+            "item": [
+                {
+                    "name": "Get all articles (protected)",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/api/articles",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "articles"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get article by id (protected)",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/api/articles/{{articleId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "articles",
+                                "{{articleId}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create article (protected) - sets {{articleId}}",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status 201', function () { pm.response.to.have.status(201); });",
+                                    "var json = pm.response.json();",
+                                    "if (json && json.id) { pm.collectionVariables.set('articleId', json.id); }"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"title\": \"Mon premier article\",\n  \"content\": \"Contenu de l'article\",\n  \"topicId\": {{topicId}}\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/articles",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "articles"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Comments",
+            "item": [
+                {
+                    "name": "Get all comments (protected)",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/api/comments",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "comments"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get comments by articleId (protected)",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/api/comments?articleId={{articleId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "comments"
+                            ],
+                            "query": [
+                                {
+                                    "key": "articleId",
+                                    "value": "{{articleId}}"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get comment by id (protected)",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/api/comments/{{commentId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "comments",
+                                "{{commentId}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create comment (protected) - sets {{commentId}}",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status 201', function () { pm.response.to.have.status(201); });",
+                                    "var json = pm.response.json();",
+                                    "if (json && json.id) { pm.collectionVariables.set('commentId', json.id); }"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"content\": \"Super article !\",\n  \"articleId\": {{articleId}}\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/comments",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "comments"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Subscriptions",
+            "item": [
+                {
+                    "name": "Get subscriptions by userId (protected)",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/api/subscriptions?userId={{userId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "subscriptions"
+                            ],
+                            "query": [
+                                {
+                                    "key": "userId",
+                                    "value": "{{userId}}"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get subscriptions by topicId (protected)",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/api/subscriptions?topicId={{topicId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "subscriptions"
+                            ],
+                            "query": [
+                                {
+                                    "key": "topicId",
+                                    "value": "{{topicId}}"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Subscribe to topic (protected)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"userId\": {{userId}},\n  \"topicId\": {{topicId}}\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/subscriptions",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "subscriptions"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Unsubscribe from topic (protected)",
+                    "request": {
+                        "method": "DELETE",
+                        "url": {
+                            "raw": "{{baseUrl}}/api/subscriptions?userId={{userId}}&topicId={{topicId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "subscriptions"
+                            ],
+                            "query": [
+                                {
+                                    "key": "userId",
+                                    "value": "{{userId}}"
+                                },
+                                {
+                                    "key": "topicId",
+                                    "value": "{{topicId}}"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Users",
+            "item": [
+                {
+                    "name": "Get all users (protected)",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/api/users",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "users"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get user by id (protected)",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/api/users/{{userId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "users",
+                                "{{userId}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create user (protected)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"username\": \"{{username}}\",\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/users",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "users"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update user (protected) - partial payload allowed",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"username\": \"{{username}}\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/users/{{userId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "users",
+                                "{{userId}}"
                             ]
                         }
                     }
