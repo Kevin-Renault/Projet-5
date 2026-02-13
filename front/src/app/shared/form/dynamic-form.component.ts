@@ -25,7 +25,7 @@ export interface FormElement {
         <h2>{{ title }}</h2>
       }
       @for (formElement of formElements; track formElement.name) {
-        <div class="form-group">
+        <fieldset class="form-group">
           <label [for]="formElement.name">
             {{ formElement.label }}
             @if (formElement.required && formElement.label) {
@@ -79,15 +79,28 @@ export interface FormElement {
           }
 
           @if (showError(formElement.name)) {
-            <div [id]="formElement.name + '-error'" class="form-error" role="alert">
+            <p [id]="formElement.name + '-error'" class="form-error" role="alert">
               {{ getErrorMessage(formElement.name) }}
-            </div>
+            </p>
           }
-        </div>
+        </fieldset>
       }
       <button type="submit" [disabled]="form.invalid">
         {{ submitLabel || 'Submit' }}
+
       </button>
+      <output for="form-submit">
+        @if (isLoading) {
+        <p >Action en cours...</p>
+        }
+         @if (message) {          
+        <p  class="success">{{ message }}</p>
+        }
+         @if (error) {          
+        <p class="error">{{ error }}</p>
+        }
+      </output> 
+
     </form>
   `,
   styleUrls: ['./dynamic-form.component.scss'],
@@ -98,6 +111,12 @@ export class DynamicFormComponent implements OnChanges {
   @Input() formElements: FormElement[] = [];
   @Input() title?: string;
   @Input() submitLabel?: string = 'Submit';
+
+  @Input() isLoading?: boolean = false;
+  @Input() message?: string;
+  @Input() error?: string;
+
+
   @Output() formSubmit = new EventEmitter<any>();
 
   // Groupe de contrôles du formulaire réactif
