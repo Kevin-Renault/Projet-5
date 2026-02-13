@@ -19,6 +19,8 @@ GRANT SELECT,
     INSERT,
     UPDATE,
     DELETE,
+    ALTER,
     CREATE,
+    DROP,
     REFERENCES ON mdd_db.* TO 'kevin' @'localhost';
 FLUSH PRIVILEGES;
