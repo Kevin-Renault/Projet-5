@@ -1,4 +1,4 @@
-import { inject, signal } from "@angular/core";
+import { computed, inject, signal } from "@angular/core";
 import { AUTH_DATASOURCE } from "../core/auth/auth-datasource.interface";
 
 
@@ -9,12 +9,17 @@ export class CommonComponent {
 
     action = '';
     isLoading = signal(false);
+
+    protected readonly _isPageLoading = signal(false);
+
+    protected computeIsPageLoading(): boolean {
+        return true;
+    }
+
+    readonly isPageLoading = computed(() => this.computeIsPageLoading());
+
     error = signal(false);
     message = signal<string | null>(null);
-
-    constructor() {
-        this.message.set('Initialisation en cours...');
-    }
 
     startSubmit() {
         this.isLoading.set(true);

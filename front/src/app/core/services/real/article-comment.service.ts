@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, tap } from 'rxjs';
 import { ArticleComment } from '../../models/article-comment.model';
 import { ArticleCommentDataSource } from '../article-comment-datasource.interface';
 
@@ -11,7 +11,11 @@ export class ArticleCommentService implements ArticleCommentDataSource {
     constructor(private readonly http: HttpClient) { }
 
     getAllByArticleId(articleId: number): Observable<ArticleComment[]> {
-        return this.http.get<ArticleComment[]>(`${this.apiUrl}?articleId=${articleId}`);
+        console.log('[ArticleCommentService] GET', `${this.apiUrl}?articleId=${articleId}`);
+        return this.http.get<ArticleComment[]>(`${this.apiUrl}?articleId=${articleId}`)
+            .pipe(
+                tap(result => console.log('[ArticleCommentService] Response:', result))
+            );
     }
 
     getAll(): Observable<ArticleComment[]> {
@@ -22,12 +26,12 @@ export class ArticleCommentService implements ArticleCommentDataSource {
         return this.http.get<ArticleComment>(`${this.apiUrl}/${id}`);
     }
 
-    create(comment: ArticleComment): Observable<ArticleComment> {
-        return this.http.post<ArticleComment>(this.apiUrl, comment);
-    }
-
-    update(id: number, comment: Partial<ArticleComment>): Observable<ArticleComment> {
-        return this.http.put<ArticleComment>(`${this.apiUrl}/${id}`, comment);
+    create(comment: Partial<ArticleComment>): Observable<ArticleComment> {
+        console.log('[ArticleCommentService] POST', this.apiUrl, comment);
+        return this.http.post<ArticleComment>(this.apiUrl, comment)
+            .pipe(
+                tap(result => console.log('[ArticleCommentService] Response:', result))
+            );
     }
 
     delete(id: number): Observable<void> {

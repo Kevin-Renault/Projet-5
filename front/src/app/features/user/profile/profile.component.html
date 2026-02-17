@@ -1,11 +1,11 @@
 <app-header></app-header>
 
 <app-dynamic-form [title]="'Profil Utilisateur'" [formElements]="profileFormElements" [submitLabel]="'Sauvegarder'"
-    (formSubmit)="onFormSubmit($event)">
+    [error]="error()" [isLoading]="isLoading()" [message]="message()" (formSubmit)="onFormSubmit($event)">
 </app-dynamic-form>
 
 <div class="topics-list">
-    @if (myTopics$ | async; as topics) {
+    @if (myTopics() ; as topics) {
     @for (topic of topics; track topic.id) {
     <div class="topic-card">
         <div class="topic-title">{{ topic.name }}</div>

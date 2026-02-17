@@ -1,11 +1,12 @@
-import { Component, Inject, OnDestroy } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
-import { Subject, takeUntil } from 'rxjs';
-import { AUTH_DATASOURCE, AuthDataSource } from 'src/app/core/auth/auth-datasource.interface';
+import { catchError, finalize, throwError } from 'rxjs';
+import { AUTH_DATASOURCE } from 'src/app/core/auth/auth-datasource.interface';
 import { Article } from 'src/app/core/models/article.model';
-import { Topic } from 'src/app/core/models/topic.model';
-import { ARTICLE_DATASOURCE, ArticleDataSource } from 'src/app/core/services/article-datasource.interface';
-import { TOPIC_DATASOURCE, TopicDataSource } from 'src/app/core/services/topic-datasource.interface';
+import { ARTICLE_DATASOURCE } from 'src/app/core/services/article-datasource.interface';
+import { TOPIC_DATASOURCE } from 'src/app/core/services/topic-datasource.interface';
+import { CommonComponent } from 'src/app/shared/common-component';
 import { FormElement, DynamicFormComponent } from 'src/app/shared/form/dynamic-form.component';
 import { HeaderComponent } from "src/app/shared/header/header.component";
 
@@ -15,50 +16,77 @@ import { HeaderComponent } from "src/app/shared/header/header.component";
   templateUrl: './article-create.component.html',
   styleUrls: ['./article-create.component.scss']
 })
-export class ArticleCreateComponent implements OnDestroy {
-  articleFormElements: FormElement[] = [
-    {
-      type: 'select', name: 'topicId', placeholder: 'Sélectionner un thème', required: true, options: []
-    },
-    { type: 'text', name: 'title', placeholder: 'Titre de l\'article', required: true },
-    { type: 'textarea', name: 'content', placeholder: 'Contenu de l\'article', required: true }
-  ];
+export class ArticleCreateComponent extends CommonComponent {
 
+  private readonly topicDataSource = inject(TOPIC_DATASOURCE);
+  private readonly articleDataSource = inject(ARTICLE_DATASOURCE);
+  private readonly router = inject(Router);
 
-  constructor(@Inject(TOPIC_DATASOURCE) private readonly topicDataSource: TopicDataSource,
-    @Inject(ARTICLE_DATASOURCE) private readonly articleDataSource: ArticleDataSource,
-    @Inject(AUTH_DATASOURCE) private readonly authDataSource: AuthDataSource,
-    private readonly router: Router) {
-    this.topicDataSource.getAll().subscribe((topics: Topic[]) => {
-      this.articleFormElements[0].options = topics.map(t => ({
-        value: t.id + "",
-        label: t.name
-      }));
+  protected override computeIsPageLoading(): boolean {
+    return this.topics().length == 0;
+  }
+
+  constructor() {
+    super();
+    // Met à jour les options du formulaire quand topicOptions change
+    effect(() => {
+      this.articleFormElements.update(elements => {
+        const updatedElements = [...elements];
+        updatedElements[0] = {
+          ...updatedElements[0],
+          options: this.topicOptions() // ✅ Met à jour les options
+        };
+        return updatedElements;
+      });
     });
   }
 
-  private readonly destroy$ = new Subject<void>();
-  ngOnDestroy() {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
+  readonly articleFormElements = signal<FormElement[]>([
+    {
+      type: 'select',
+      name: 'topicId',
+      placeholder: 'Sélectionner un thème',
+      required: true,
+      options: [], // Initialement vide
+    },
+    { type: 'text', name: 'title', placeholder: 'Titre de l\'article', required: true },
+    { type: 'textarea', name: 'content', placeholder: 'Contenu de l\'article', required: true }
+  ]);
+
+  readonly topics = toSignal(
+    this.topicDataSource.getAll().pipe(
+      takeUntilDestroyed()
+    ),
+    { initialValue: [] }
+  );
+
+  readonly topicOptions = computed(() =>
+    this.topics().map(t => ({
+      value: t.id.toString(),
+      label: t.name
+    }))
+  );
 
   onFormSubmit(values: Partial<Article>): void {
+    this.message.set('Mise à jour en cours...');
+    this.startSubmit();
 
     values.createdAt = new Date().toISOString();
     values.updatedAt = new Date().toISOString();
 
-    const authorId = this.authDataSource.getCurrentUserId();
-    if (typeof authorId === 'number') {
-      values.authorId = authorId;
-      this.articleDataSource.create(values as Article).pipe(
-        takeUntil(this.destroy$)
-      ).subscribe({
-        next: () => { this.router.navigate(['/articles']); },
-        error: () => alert('Erreur lors de la création de l\'article'),
-      });
-    } else {
-      alert('No authenticated user. Cannot create article.');
-    }
+    this.articleDataSource.create(values as Article).pipe(
+      //takeUntilDestroyed(),
+      catchError((error) => {
+        this.message.set('Erreur lors de la création de l\'article :  <br>' + error.message);
+        this.error.set(true);
+        return throwError(() => error);
+      }),
+      finalize(() => this.isLoading.set(false))
+    ).subscribe({
+      next: () => {
+        this.message.set('Création de l\'article réussie');
+        this.router.navigate(['/articles']);
+      }
+    });
   }
 }

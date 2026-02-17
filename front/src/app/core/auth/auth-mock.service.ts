@@ -1,5 +1,5 @@
 import { computed, Injectable, Signal, signal } from '@angular/core';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { Observable, of, throwError } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { AuthDataSource, AuthResponse } from './auth-datasource.interface';
@@ -95,13 +95,17 @@ export class AuthMockService implements AuthDataSource {
         return signal(this.isAuthenticatedSignal());
     }
 
-    getCurrentUser(): Observable<User> {
+    getCurrentUser(): User {
+        return this.currentUserSignal() || { id: -1, username: '', email: '', password: '' };
+    }
+
+    refreshCurrentUser(): Observable<User> {
         return this.currentUserObservable.pipe(
             filter((user): user is User => user !== null),
         );
     }
 
-    getCurrentUserId(): number | null {
-        return this.currentUserIdSignal();
+    getCurrentUserId(): Observable<number | null> {
+        return toObservable(this.currentUserIdSignal);
     }
 }

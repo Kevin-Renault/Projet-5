@@ -1,6 +1,13 @@
 <app-header></app-header>
+@if (isPageLoading()) {
+<output class="spinner-container" aria-live="polite" aria-busy="true">
+    <span class="page-spinner" aria-hidden="true"></span>
+</output>
+}
+@else
+{
 <div class="topics-list">
-    @if (topics$ | async; as topics) {
+    @if (topics(); as topics) {
     @for (topic of topics; track topic.id) {
     <div class="topic-card">
         <div class="topic-title">{{ topic.name }}</div>
@@ -22,3 +29,4 @@
     }
     }
 </div>
+}

@@ -7,7 +7,5 @@ export interface ArticleCommentDataSource {
     getAll(): Observable<ArticleComment[]>;
     getAllByArticleId(articleId: number): Observable<ArticleComment[]>;
     getById(id: number): Observable<ArticleComment>;
-    create(comment: ArticleComment): Observable<ArticleComment>;
-    update(id: number, comment: Partial<ArticleComment>): Observable<ArticleComment>;
-    delete(id: number): Observable<void>;
+    create(comment: Partial<ArticleComment>): Observable<ArticleComment>;
 }

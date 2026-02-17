@@ -29,21 +29,21 @@ let MOCK_SUBSCRIPTIONS: TopicSubscription[] = [
 export class TopicSubscriptionMockService implements TopicSubscriptionDatasource {
     private subscriptions: TopicSubscription[] = [...MOCK_SUBSCRIPTIONS];
 
-    subscribeOnTopic(userId: number, topicId: number): Observable<TopicSubscription[]> {
-        const exists = this.subscriptions.some(s => s.userId === userId && s.topicId === topicId);
+    subscribeOnTopic(topicId: number): Observable<TopicSubscription[]> {
+        const exists = this.subscriptions.some(s => s.topicId === topicId);
         if (!exists) {
-            this.subscriptions.push({ userId, topicId });
+            //this.subscriptions.push({ topicId });
         }
-        return this.getUserTopicSubscriptions(userId);
+        return this.getUserTopicSubscriptions();
     }
 
-    unsubscribeFromTopic(userId: number, topicId: number): Observable<TopicSubscription[]> {
-        this.subscriptions = this.subscriptions.filter(s => !(s.userId === userId && s.topicId === topicId));
-        return this.getUserTopicSubscriptions(userId);
+    unsubscribeFromTopic(topicId: number): Observable<TopicSubscription[]> {
+        this.subscriptions = this.subscriptions.filter(s => !(s.topicId === topicId));
+        return this.getUserTopicSubscriptions();
     }
 
-    getUserTopicSubscriptions(userId: number): Observable<TopicSubscription[]> {
-        return of(this.subscriptions.filter(s => s.userId === userId));
+    getUserTopicSubscriptions(): Observable<TopicSubscription[]> {
+        return of() // return of(this.subscriptions.filter(s => s.userId === userId));
     }
 
     getTopicSubscribers(topicId: number): Observable<TopicSubscription[]> {
