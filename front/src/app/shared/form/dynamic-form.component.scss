@@ -74,6 +74,46 @@ button[type="submit"]:hover {
     text-align: left;
 }
 
+.error,
+.success,
+.info {
+    font-weight: 700;
+    font-size: 0.95rem;
+    margin-top: 0.25rem;
+    margin-bottom: 0.5rem;
+    text-align: left;
+}
+
+.error {
+    color: #ff5252;
+}
+
+.success {
+    color: #7763C5;
+}
+
+.info {
+    color: #5d4ea3;
+}
+
+
+.spinner {
+    width: 24px;
+    height: 24px;
+    display: block;
+    margin: 0.5rem auto;
+    border-radius: 50%;
+    border: 3px solid rgba(119, 99, 197, 0.25);
+    border-top-color: #7763C5;
+    animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 @media (max-width: 600px) {
     form {
         max-width: 95vw;
