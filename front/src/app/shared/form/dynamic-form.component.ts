@@ -90,14 +90,14 @@ export interface FormElement {
 
       </button>
       <output for="form-submit">
+        <br><br>
+
         @if (isLoading) {
-        <p >Action en cours...</p>
+          <span class="spinner" role="status" aria-label="Chargement"></span>
         }
-         @if (message) {          
-        <p  class="success">{{ message }}</p>
-        }
-         @if (error) {          
-        <p class="error">{{ error }}</p>
+
+        @if (message) {
+          <p [class]="getStatusClass()">{{ message }}</p>
         }
       </output> 
 
@@ -112,9 +112,9 @@ export class DynamicFormComponent implements OnChanges {
   @Input() title?: string;
   @Input() submitLabel?: string = 'Submit';
 
-  @Input() isLoading?: boolean = false;
-  @Input() message?: string;
-  @Input() error?: string;
+  @Input() isLoading: boolean = false;
+  @Input() message: string | null = null;
+  @Input() error: boolean = false;
 
 
   @Output() formSubmit = new EventEmitter<any>();
@@ -170,6 +170,12 @@ export class DynamicFormComponent implements OnChanges {
     if (control.invalid && (control.dirty || control.touched)) return 'input-error';
     if (control.valid && (control.dirty || control.touched)) return 'input-valid';
     return '';
+  }
+
+  getStatusClass(): 'error' | 'info' | 'success' {
+    if (this.error) return 'error';
+    if (this.isLoading) return 'info';
+    return 'success';
   }
 
   // Génère le message d'erreur approprié selon la validation échouée
