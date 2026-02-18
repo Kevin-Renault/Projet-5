@@ -52,6 +52,11 @@ button[type="submit"] {
     transition: background 0.2s;
 }
 
+button[type="submit"]:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
 button[type="submit"]:hover {
     background: #5d4ea3;
 }
