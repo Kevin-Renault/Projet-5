@@ -15,6 +15,9 @@ export interface FormElement {
   options?: { value: string; label: string }[];
 }
 
+type DynamicFormValue = string | boolean;
+export type DynamicFormValues = Record<string, DynamicFormValue>;
+
 @Component({
   selector: 'app-dynamic-form',
   standalone: true,
@@ -116,8 +119,7 @@ export class DynamicFormComponent implements OnChanges {
   @Input() message: string | null = null;
   @Input() error: boolean = false;
 
-
-  @Output() formSubmit = new EventEmitter<any>();
+  @Output() formSubmit = new EventEmitter<DynamicFormValues>();
 
   // Groupe de contrôles du formulaire réactif
   form: FormGroup;

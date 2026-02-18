@@ -2,7 +2,7 @@ import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AUTH_DATASOURCE } from 'src/app/core/auth/auth-datasource.interface';
 import { User } from 'src/app/core/models/user.model';
-import { FormElement, DynamicFormComponent } from 'src/app/shared/form/dynamic-form.component';
+import { FormElement, DynamicFormComponent, DynamicFormValues } from 'src/app/shared/form/dynamic-form.component';
 import { ErrorComponent } from "src/app/shared/error/error.component";
 
 @Component({
@@ -31,7 +31,24 @@ export class RegisterComponent {
 
   errorMessage: string | null = null;
 
-  onFormSubmit(user: User) {
+  onFormSubmit(values: DynamicFormValues) {
+    const username = values['username'];
+    const email = values['email'];
+    const password = values['password'];
+
+    if (typeof username !== 'string' || typeof email !== 'string' || typeof password !== 'string') {
+      this.errorMessage = 'Please fill in all required fields.';
+      return;
+    }
+
+    const user: User = {
+      id: 0,
+      username,
+      email,
+      password,
+      role: 'user',
+    };
+
     this.authDataSource.register(user).subscribe({
       next: () => {
         this.router.navigate(['/articles']);

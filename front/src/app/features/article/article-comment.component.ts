@@ -7,7 +7,7 @@ import { ARTICLE_DATASOURCE } from 'src/app/core/services/article-datasource.int
 import { COMMENT_DATASOURCE } from 'src/app/core/services/article-comment-datasource.interface';
 import { ActivatedRoute } from '@angular/router';
 import { ArticleComment } from 'src/app/core/models/article-comment.model';
-import { DynamicFormComponent, FormElement } from "src/app/shared/form/dynamic-form.component";
+import { DynamicFormComponent, DynamicFormValues, FormElement } from "src/app/shared/form/dynamic-form.component";
 import { HeaderComponent } from "src/app/shared/header/header.component";
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { CommonComponent } from 'src/app/shared/common-component';
@@ -105,14 +105,20 @@ export class ArticleCommentComponent extends CommonComponent implements OnDestro
   }
 
 
-  onFormSubmit(values: Partial<ArticleComment>): void {
+  onFormSubmit(values: DynamicFormValues): void {
     this.message.set('Création en cours...');
     this.startSubmit();
 
-    values.createdAt = new Date().toISOString();
-    values.articleId = this.articleID() as number;
+    const content = values['content'];
+    const articleId = this.articleID();
 
-    this.commentDataSource.create(values as ArticleComment).pipe(
+    const articleComment: ArticleComment = {
+      content,
+      articleId,
+      createdAt: new Date().toISOString(),
+    } as ArticleComment;
+
+    this.commentDataSource.create(articleComment).pipe(
       takeUntilDestroyed(this.destroyRef),
       catchError((error) => {
         this.message.set('Erreur lors de la création du commentaire :  <br>' + error.message);

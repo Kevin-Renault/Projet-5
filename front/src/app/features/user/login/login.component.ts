@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AUTH_DATASOURCE } from 'src/app/core/auth/auth-datasource.interface';
-import { FormElement, DynamicFormComponent } from 'src/app/shared/form/dynamic-form.component';
+import { FormElement, DynamicFormComponent, DynamicFormValues } from 'src/app/shared/form/dynamic-form.component';
 import { ErrorComponent } from "src/app/shared/error/error.component";
 
 @Component({
@@ -27,8 +27,16 @@ export class LoginComponent {
   ];
   errorMessage: string | null = null;
 
-  onFormSubmit(values: { login: string, password: string }) {
-    this.authDataSource.login(values.login, values.password).subscribe({
+  onFormSubmit(values: DynamicFormValues) {
+    const login = values['login'];
+    const password = values['password'];
+
+    if (typeof login !== 'string' || typeof password !== 'string') {
+      this.errorMessage = 'Please fill in login and password.';
+      return;
+    }
+
+    this.authDataSource.login(login, password).subscribe({
       next: () => {
         this.router.navigateByUrl('/articles');
       },

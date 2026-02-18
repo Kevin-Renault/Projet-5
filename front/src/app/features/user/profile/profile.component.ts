@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { catchError, finalize, startWith, Subject, switchMap, throwError } from 'rxjs';
 import { SUBSCRIPTION_DATASOURCE } from 'src/app/core/services/topic-subscription-datasource.interface';
 import { TOPIC_DATASOURCE } from 'src/app/core/services/topic-datasource.interface';
-import { FormElement, DynamicFormComponent } from 'src/app/shared/form/dynamic-form.component';
+import { FormElement, DynamicFormComponent, DynamicFormValues } from 'src/app/shared/form/dynamic-form.component';
 import { HeaderComponent } from "src/app/shared/header/header.component";
 import { User } from 'src/app/core/models/user.model';
 import { USER_DATASOURCE } from 'src/app/core/services/user-datasource.interface';
@@ -59,12 +59,23 @@ export class ProfileComponent extends CommonComponent {
     }
   ];
 
+  onFormSubmit(values: DynamicFormValues) {
+    const username = values['username'];
+    const email = values['email'];
+    const password = values['password'];
 
-  onFormSubmit(user: User) {
+    if (typeof username !== 'string' || typeof email !== 'string' || typeof password !== 'string') {
+      this.message.set('Veuillez renseigner tous les champs.');
+      this.error.set(true);
+      return;
+    }
+
+    const payload: Partial<User> = { username, email, password };
+
     this.message.set('Mise à jour en cours...');
     this.startSubmit();
 
-    this.userDataSource.update(user.id, user).pipe(
+    this.userDataSource.update(payload).pipe(
       catchError((error) => {
         this.message.set('Échec de la mise à jour');
         this.error.set(true);

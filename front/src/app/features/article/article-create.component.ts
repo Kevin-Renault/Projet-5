@@ -6,7 +6,7 @@ import { Article } from 'src/app/core/models/article.model';
 import { ARTICLE_DATASOURCE } from 'src/app/core/services/article-datasource.interface';
 import { TOPIC_DATASOURCE } from 'src/app/core/services/topic-datasource.interface';
 import { CommonComponent } from 'src/app/shared/common-component';
-import { FormElement, DynamicFormComponent } from 'src/app/shared/form/dynamic-form.component';
+import { FormElement, DynamicFormComponent, DynamicFormValues } from 'src/app/shared/form/dynamic-form.component';
 import { HeaderComponent } from "src/app/shared/header/header.component";
 
 @Component({
@@ -66,14 +66,23 @@ export class ArticleCreateComponent extends CommonComponent {
     }))
   );
 
-  onFormSubmit(values: Partial<Article>): void {
+  onFormSubmit(values: DynamicFormValues): void {
     this.message.set('Mise à jour en cours...');
     this.startSubmit();
 
-    values.createdAt = new Date().toISOString();
-    values.updatedAt = new Date().toISOString();
+    const topicIdRaw = values['topicId'];
+    const title = values['title'];
+    const content = values['content'];
+    const topicId = Number(topicIdRaw);
+    const payload: Article = {
+      topicId,
+      title,
+      content,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    } as Article;
 
-    this.articleDataSource.create(values as Article).pipe(
+    this.articleDataSource.create(payload).pipe(
       //takeUntilDestroyed(),
       catchError((error) => {
         this.message.set('Erreur lors de la création de l\'article :  <br>' + error.message);
