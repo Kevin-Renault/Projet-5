@@ -66,3 +66,4 @@ jobs:
           -Dsonar.projectKey=Kevin-Renault_Projet-5
           -Dsonar.organization=${SONAR_ORGANIZATION}
           -Dsonar.token=${SONAR_TOKEN}
+          
