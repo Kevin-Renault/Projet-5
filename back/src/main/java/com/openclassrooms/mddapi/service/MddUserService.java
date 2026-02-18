@@ -74,26 +74,11 @@ public class MddUserService {
 
     @Transactional
     public UserDto update(MddUserEntity principal, UserDto request) {
-        Long principalId = requireAuthenticatedUserId(principal);
-        return updateInternal(principalId, request);
-    }
-
-    @Transactional
-    public UserDto update(Long id, MddUserEntity principal, UserDto request) {
-        Long principalId = requireAuthenticatedUserId(principal);
-        if (!principalId.equals(id)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Forbidden");
-        }
-
-        return updateInternal(id, request);
-    }
-
-    private UserDto updateInternal(Long id, UserDto request) {
         if (request == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid payload");
         }
-
-        MddUserEntity user = userRepository.findById(id)
+        Long principalId = requireAuthenticatedUserId(principal);
+        MddUserEntity user = userRepository.findById(principalId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
         String newUsername = trimToNull(request.username());

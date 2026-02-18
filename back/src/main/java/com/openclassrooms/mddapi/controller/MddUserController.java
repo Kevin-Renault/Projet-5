@@ -48,12 +48,4 @@ public class MddUserController {
             @Valid @RequestBody UserDto request) {
         return userService.update(principal, request);
     }
-
-    @PutMapping("/{id}")
-    public UserDto update(
-            @PathVariable Long id,
-            @AuthenticationPrincipal MddUserEntity principal,
-            @Valid @RequestBody UserDto request) {
-        return userService.update(id, principal, request);
-    }
 }
