@@ -33,6 +33,10 @@ jobs:
           java-version: '21'
           cache: maven
 
+      - name: Make Maven wrapper executable
+        working-directory: back
+        run: chmod +x mvnw
+
       - name: Build, test, and analyze (backend)
         working-directory: back
         env:
