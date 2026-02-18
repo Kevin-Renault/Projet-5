@@ -51,31 +51,84 @@ jobs:
         working-directory: back
         run: chmod +x mvnw
 
-      - name: Validate SonarCloud configuration
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_ORGANIZATION: kevin-renault
-        run: |
-          if [ -z "${SONAR_TOKEN}" ]; then
-            echo "Missing SONAR_TOKEN secret. Add it in: Settings > Secrets and variables > Actions.";
-            exit 1;
-          fi
-          echo "Using SONAR_ORGANIZATION=${SONAR_ORGANIZATION}";
-          echo "Using sonar.projectKey=Kevin-Renault_Projet-5";
-
-      - name: Build, test, and analyze (backend)
+      - name: Build and test (backend)
         working-directory: back
         env:
           DB_MDD_NAME: mdd
           DB_USER: root
           DB_PASSWORD: root
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_ORGANIZATION: kevin-renault
         run: >-
           ./mvnw -B verify
+
+      - name: Coverage summary (JaCoCo)
+        working-directory: back
+        run: |
+          python3 - <<'PY'
+          import os
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          report_path = Path('target/site/jacoco/jacoco.xml')
+          if not report_path.exists():
+            raise SystemExit(f'JaCoCo report not found: {report_path} (did ./mvnw verify run?)')
+          tree = ET.parse(report_path)
+          root = tree.getroot()
+          counters = {c.attrib['type']: (int(c.attrib['covered']), int(c.attrib['missed'])) for c in root.findall('counter')}
+
+          def pct(covered, missed):
+            total = covered + missed
+            return 0.0 if total == 0 else (covered / total) * 100.0
+
+          line_cov, line_miss = counters.get('LINE', (0, 0))
+          instr_cov, instr_miss = counters.get('INSTRUCTION', (0, 0))
+          line_pct = pct(line_cov, line_miss)
+          instr_pct = pct(instr_cov, instr_miss)
+
+          summary_path = os.environ.get('GITHUB_STEP_SUMMARY')
+          if not summary_path:
+            raise SystemExit('GITHUB_STEP_SUMMARY is not set')
+
+          Path(summary_path).write_text(
+            '\n'.join([
+              '## Backend coverage (JaCoCo)',
+              '',
+              f'- Line coverage: {line_pct:.2f}% ({line_cov} covered / {line_cov + line_miss} total)',
+              f'- Instruction coverage: {instr_pct:.2f}% ({instr_cov} covered / {instr_cov + instr_miss} total)',
+              '',
+              'Artifact: `jacoco-report` (HTML report)',
+            ]) + '\n',
+            encoding='utf-8'
+          )
+          PY
+
+      - name: Upload JaCoCo HTML report
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: back/target/site/jacoco
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Validate SonarCloud configuration (main only)
+        if: github.ref == 'refs/heads/main'
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          if [ -z "${SONAR_TOKEN}" ]; then
+            echo "Missing SONAR_TOKEN secret. Add it in: Settings > Secrets and variables > Actions.";
+            exit 1;
+          fi
+
+      - name: SonarCloud analysis (main only)
+        if: github.ref == 'refs/heads/main'
+        working-directory: back
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: >-
+          ./mvnw -B
           org.sonarsource.scanner.maven:sonar-maven-plugin:5.5.0.6356:sonar
           -Dsonar.host.url=https://sonarcloud.io
           -Dsonar.projectKey=Kevin-Renault_Projet-5
-          -Dsonar.organization=${SONAR_ORGANIZATION}
+          -Dsonar.organization=kevin-renault
           -Dsonar.token=${SONAR_TOKEN}
           
