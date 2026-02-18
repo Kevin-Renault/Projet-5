@@ -41,6 +41,8 @@ public class MddUserController {
     @GetMapping
     @Operation(summary = "List users", description = "Returns all users.", responses = {
             @ApiResponse(responseCode = "200", description = "Users returned", content = @Content(array = @ArraySchema(schema = @Schema(implementation = UserDto.class)))),
+            @ApiResponse(responseCode = "401", description = "Not authenticated", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Forbidden", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
             @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     })
     public List<UserDto> getAll() {
@@ -51,6 +53,8 @@ public class MddUserController {
     @Operation(summary = "Get user by id", description = "Returns a single user.", responses = {
             @ApiResponse(responseCode = "200", description = "User returned", content = @Content(schema = @Schema(implementation = UserDto.class))),
             @ApiResponse(responseCode = "400", description = "Invalid id", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Not authenticated", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Forbidden", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
             @ApiResponse(responseCode = "404", description = "User not found", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
             @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     })
@@ -63,6 +67,8 @@ public class MddUserController {
     @Operation(summary = "Create user", description = "Creates a new user.", responses = {
             @ApiResponse(responseCode = "201", description = "User created", content = @Content(schema = @Schema(implementation = UserDto.class))),
             @ApiResponse(responseCode = "400", description = "Validation error", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Not authenticated", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Forbidden", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
             @ApiResponse(responseCode = "409", description = "Conflict", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
             @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     })

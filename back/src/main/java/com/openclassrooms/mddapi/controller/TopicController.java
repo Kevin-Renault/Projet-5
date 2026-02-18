@@ -33,6 +33,8 @@ public class TopicController {
     @GetMapping
     @Operation(summary = "List topics", description = "Returns all topics.", responses = {
             @ApiResponse(responseCode = "200", description = "Topics returned", content = @Content(array = @ArraySchema(schema = @Schema(implementation = TopicDto.class)))),
+            @ApiResponse(responseCode = "401", description = "Not authenticated", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Forbidden", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
             @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     })
     public List<TopicDto> getAll() {
@@ -43,6 +45,8 @@ public class TopicController {
     @Operation(summary = "Get topic by id", description = "Returns a single topic.", responses = {
             @ApiResponse(responseCode = "200", description = "Topic returned", content = @Content(schema = @Schema(implementation = TopicDto.class))),
             @ApiResponse(responseCode = "400", description = "Invalid id", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Not authenticated", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Forbidden", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
             @ApiResponse(responseCode = "404", description = "Topic not found", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
             @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     })

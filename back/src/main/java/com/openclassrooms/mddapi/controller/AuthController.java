@@ -73,8 +73,12 @@ public class AuthController {
     @PostMapping("/logout")
     @Operation(summary = "Logout", description = "Clears the access token cookie.", responses = {
             @ApiResponse(responseCode = "204", description = "Logged out (cookie cleared)", content = @Content),
+            @ApiResponse(responseCode = "401", description = "Not authenticated", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Forbidden", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
             @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     })
+    @SecurityRequirement(name = com.openclassrooms.mddapi.config.OpenApiConfig.BEARER_AUTH_SCHEME)
+    @SecurityRequirement(name = com.openclassrooms.mddapi.config.OpenApiConfig.COOKIE_AUTH_SCHEME)
     public ResponseEntity<Void> logout() {
         ResponseCookie cookie = cookieService.clearAccessTokenCookie();
         return ResponseEntity.noContent()
