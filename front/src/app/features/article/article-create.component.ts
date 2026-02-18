@@ -2,7 +2,6 @@ import { Component, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { catchError, finalize, throwError } from 'rxjs';
-import { AUTH_DATASOURCE } from 'src/app/core/auth/auth-datasource.interface';
 import { Article } from 'src/app/core/models/article.model';
 import { ARTICLE_DATASOURCE } from 'src/app/core/services/article-datasource.interface';
 import { TOPIC_DATASOURCE } from 'src/app/core/services/topic-datasource.interface';

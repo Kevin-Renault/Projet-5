@@ -1,7 +1,6 @@
 import { AsyncPipe, DatePipe } from '@angular/common';
-import { Component, inject, OnDestroy, signal } from '@angular/core';
-import { catchError, filter, finalize, map, Observable, shareReplay, startWith, Subject, switchMap, throwError } from 'rxjs';
-import { Article } from 'src/app/core/models/article.model';
+import { Component, DestroyRef, inject, OnDestroy, signal } from '@angular/core';
+import { catchError, filter, finalize, map, Observable, shareReplay, startWith, Subject, switchMap, tap, throwError } from 'rxjs';
 import { TOPIC_DATASOURCE } from 'src/app/core/services/topic-datasource.interface';
 import { USER_DATASOURCE } from 'src/app/core/services/user-datasource.interface';
 import { ARTICLE_DATASOURCE } from 'src/app/core/services/article-datasource.interface';
@@ -26,6 +25,7 @@ export class ArticleCommentComponent extends CommonComponent implements OnDestro
   private readonly articleDataSource = inject(ARTICLE_DATASOURCE);
   private readonly commentDataSource = inject(COMMENT_DATASOURCE);
   private readonly route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
 
 
   commentFormElements: FormElement[] = [
@@ -36,28 +36,34 @@ export class ArticleCommentComponent extends CommonComponent implements OnDestro
   private readonly refresh$ = new Subject<void>();
   private readonly authorCache = new Map<number, Observable<string>>();
   private readonly topicCache = new Map<number, Observable<string>>();
-  public articleLoading = true;
+  readonly articleLoading = signal(true);
   protected override computeIsPageLoading(): boolean {
-    return this.articleLoading;
+    return this.articleLoading();
   }
-
-  article$: Observable<Article> | null = null;
 
   private readonly articleID$ = this.route.paramMap.pipe(
     map(params => Number(params.get('id'))),
     filter(id => !Number.isNaN(id)), // Filtre les IDs invalides
+    tap((id) => this.articleID.set(id)),
     takeUntilDestroyed()
+  );
+
+  readonly article = toSignal(
+    this.articleID$.pipe(
+      tap(() => this.articleLoading.set(true)),
+      switchMap((id) => this.articleDataSource.getById(id).pipe(
+        finalize(() => this.articleLoading.set(false))
+      ))
+    ),
+    { initialValue: null }
   );
 
   readonly articleComments = toSignal(
     this.articleID$.pipe(
-      switchMap(id => {
-        this.articleID.set(id);
-        return this.refresh$.pipe(
-          startWith(void 0),
-          switchMap(() => this.commentDataSource.getAllByArticleId(id))
-        );
-      })
+      switchMap((id) => this.refresh$.pipe(
+        startWith(void 0),
+        switchMap(() => this.commentDataSource.getAllByArticleId(id))
+      ))
     ),
     { initialValue: [] }
   );
@@ -69,16 +75,6 @@ export class ArticleCommentComponent extends CommonComponent implements OnDestro
 
   constructor() {
     super();
-    const id = Number(this.route.snapshot.paramMap.get('id'));
-    this.articleID.set(Number.isNaN(id) ? null : id);
-    console.log('Article ID from route:', this.articleID());
-
-    this.article$ = this.articleDataSource.getById(this.articleID()!).pipe(
-      takeUntilDestroyed(),
-      finalize(() => {
-        this.articleLoading = false;
-      })
-    );
   }
 
   public authorById(id: number): Observable<string> {
@@ -117,7 +113,7 @@ export class ArticleCommentComponent extends CommonComponent implements OnDestro
     values.articleId = this.articleID() as number;
 
     this.commentDataSource.create(values as ArticleComment).pipe(
-      //takeUntilDestroyed(),
+      takeUntilDestroyed(this.destroyRef),
       catchError((error) => {
         this.message.set('Erreur lors de la création du commentaire :  <br>' + error.message);
         this.error.set(true);

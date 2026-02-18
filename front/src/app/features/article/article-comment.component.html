@@ -6,7 +6,7 @@
 }
 @else {
 <div class="article-card">
-    @if (article$ | async; as article) {
+    @if (article(); as article) {
     <div class="article-title">{{ article.title }}</div>
     <div class="article-meta">
         <span class="article-date">{{ article.createdAt | date:'dd/MM/yyyy' }}</span>
@@ -21,13 +21,11 @@
 <hr>
 <div>Commentaires :</div><br><br>
 <div class="comments-list">
-    @if (article$ | async; as article) {
     @for (comment of articleComments(); track comment.id) {
     <div class="comment-title">{{ authorById(comment.authorId) | async }}</div>
     <div class="comment-card">
         <div class="comment-content">{{ comment.content }}</div>
     </div>
-    }
     }
 </div>
 
