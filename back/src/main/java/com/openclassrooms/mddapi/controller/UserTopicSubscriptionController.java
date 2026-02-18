@@ -13,8 +13,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
-import org.springframework.http.HttpStatus;
 
 @RestController
 @RequestMapping("/api/subscriptions")
@@ -36,10 +34,6 @@ public class UserTopicSubscriptionController {
     public List<UserTopicSubscriptionDto> subscribe(
             @AuthenticationPrincipal MddUserEntity principal,
             @Valid @RequestBody UserTopicSubscriptionDto request) {
-
-        if (request == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid payload");
-        }
         return subscriptionService.subscribe(principal, request.topicId());
     }
 
@@ -47,9 +41,6 @@ public class UserTopicSubscriptionController {
     public List<UserTopicSubscriptionDto> unsubscribe(
             @AuthenticationPrincipal MddUserEntity principal,
             @RequestParam Long topicId) {
-        if (topicId == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid payload");
-        }
         return subscriptionService.unsubscribe(principal, topicId);
     }
 }

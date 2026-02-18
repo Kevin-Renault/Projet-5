@@ -43,6 +43,9 @@ public class UserTopicSubscriptionService {
     @Transactional
     public List<UserTopicSubscriptionDto> subscribe(MddUserEntity principal, Long topicId) {
         Long principalId = requireAuthenticatedUserId(principal);
+        if (topicId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "topicId is required");
+        }
         TopicEntity topic = topicRepository.findById(topicId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Topic not found"));
 
