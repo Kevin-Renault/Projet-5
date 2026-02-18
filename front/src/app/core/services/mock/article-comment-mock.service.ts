@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 import { ArticleComment } from '../../models/article-comment.model';
 import { ArticleCommentDataSource } from '../article-comment-datasource.interface';
 
@@ -37,14 +37,17 @@ export class ArticleCommentMockService implements ArticleCommentDataSource {
         this.comments.push(newComment);
         return of(newComment);
     }
+
     update(id: number, comment: Partial<ArticleComment>): Observable<ArticleComment> {
         const idx = this.comments.findIndex(c => c.id === id);
-        if (idx !== -1) {
-            this.comments[idx] = { ...this.comments[idx], ...comment };
-            return of(this.comments[idx]);
+        if (idx === -1) {
+            return throwError(() => new Error(`Comment with id ${id} not found`));
         }
-        return of(null as any);
+
+        this.comments[idx] = { ...this.comments[idx], ...comment };
+        return of(this.comments[idx]);
     }
+
     delete(id: number): Observable<void> {
         this.comments = this.comments.filter(c => c.id !== id);
         return of(void 0);
