@@ -3,9 +3,15 @@ name: SonarCloud
 on:
   push:
     branches:
-      - main
-      - master
+      - '**'
+    paths:
+      - 'back/**'
+      - '.github/workflows/sonarcloud.yml'
   pull_request:
+    paths:
+      - 'back/**'
+      - '.github/workflows/sonarcloud.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read
