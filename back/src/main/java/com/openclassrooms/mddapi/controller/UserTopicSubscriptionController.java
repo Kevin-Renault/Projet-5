@@ -28,20 +28,8 @@ public class UserTopicSubscriptionController {
 
     @GetMapping
     public List<UserTopicSubscriptionDto> getAll(
-            @AuthenticationPrincipal MddUserEntity principal,
-            @RequestParam(required = false) Long userId,
-            @RequestParam(required = false) Long topicId) {
-
-        if (userId != null && topicId != null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Provide either userId or topicId, not both");
-        }
-        if (userId != null) {
-            return subscriptionService.getByUser(principal, userId);
-        }
-        if (topicId != null) {
-            return subscriptionService.getByTopic(topicId);
-        }
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "userId or topicId is required");
+            @AuthenticationPrincipal MddUserEntity principal) {
+        return subscriptionService.getByUser(principal);
     }
 
     @PostMapping
@@ -52,15 +40,16 @@ public class UserTopicSubscriptionController {
         if (request == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid payload");
         }
-        return subscriptionService.subscribe(principal, request.userId(), request.topicId());
+        return subscriptionService.subscribe(principal, request.topicId());
     }
 
     @DeleteMapping
     public List<UserTopicSubscriptionDto> unsubscribe(
             @AuthenticationPrincipal MddUserEntity principal,
-            @RequestParam Long userId,
             @RequestParam Long topicId) {
-
-        return subscriptionService.unsubscribe(principal, userId, topicId);
+        if (topicId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid payload");
+        }
+        return subscriptionService.unsubscribe(principal, topicId);
     }
 }

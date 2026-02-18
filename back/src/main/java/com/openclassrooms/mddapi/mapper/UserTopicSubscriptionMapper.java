@@ -14,45 +14,33 @@ public class UserTopicSubscriptionMapper {
         if (entity == null) {
             return null;
         }
-        Long userId = entity.getUser() != null ? entity.getUser().getId() : null;
         Long topicId = entity.getTopic() != null ? entity.getTopic().getId() : null;
-        if (entity.getId() != null) {
-            if (userId == null) {
-                userId = entity.getId().getUserId();
-            }
-            if (topicId == null) {
-                topicId = entity.getId().getTopicId();
-            }
+        if (topicId == null) {
+            return null;
         }
-        return new UserTopicSubscriptionDto(userId, topicId, entity.getSubscribedAt());
+        return new UserTopicSubscriptionDto(topicId);
     }
 
-    public UserTopicSubscriptionEntity toEntity(UserTopicSubscriptionDto dto) {
-        if (dto == null) {
+    public UserTopicSubscriptionEntity toEntity(UserTopicSubscriptionDto dto, Long userId) {
+        if (dto == null || userId == null) {
             return null;
         }
         UserTopicSubscriptionEntity entity = new UserTopicSubscriptionEntity();
+        UserTopicSubscriptionId id = new UserTopicSubscriptionId();
+        id.setUserId(userId);
+        id.setTopicId(dto.topicId());
+        entity.setId(id);
 
-        if (dto.userId() != null && dto.topicId() != null) {
-            UserTopicSubscriptionId id = new UserTopicSubscriptionId();
-            id.setUserId(dto.userId());
-            id.setTopicId(dto.topicId());
-            entity.setId(id);
-        }
+        MddUserEntity user = new MddUserEntity();
+        user.setId(userId);
+        entity.setUser(user);
 
-        if (dto.userId() != null) {
-            MddUserEntity user = new MddUserEntity();
-            user.setId(dto.userId());
-            entity.setUser(user);
-        }
+        TopicEntity topic = new TopicEntity();
+        topic.setId(dto.topicId());
+        entity.setTopic(topic);
 
-        if (dto.topicId() != null) {
-            TopicEntity topic = new TopicEntity();
-            topic.setId(dto.topicId());
-            entity.setTopic(topic);
-        }
+        entity.setSubscribedAt(java.time.Instant.now());
 
-        entity.setSubscribedAt(dto.subscribedAt());
         return entity;
     }
 }

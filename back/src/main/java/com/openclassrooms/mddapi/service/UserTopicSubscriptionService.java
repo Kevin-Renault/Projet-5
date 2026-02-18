@@ -35,69 +35,39 @@ public class UserTopicSubscriptionService {
     }
 
     @Transactional(readOnly = true)
-    public List<UserTopicSubscriptionDto> getByUser(MddUserEntity principal, Long userId) {
+    public List<UserTopicSubscriptionDto> getByUser(MddUserEntity principal) {
         Long principalId = requireAuthenticatedUserId(principal);
-        if (userId == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "userId is required");
-        }
-        if (!principalId.equals(userId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Forbidden");
-        }
-        return subscriptionRepository.findAllByUser_Id(userId).stream().map(mapper::toDto).toList();
-    }
-
-    @Transactional(readOnly = true)
-    public List<UserTopicSubscriptionDto> getByTopic(Long topicId) {
-        if (topicId == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "topicId is required");
-        }
-        return subscriptionRepository.findAllByTopic_Id(topicId).stream().map(mapper::toDto).toList();
+        return subscriptionRepository.findAllByUser_Id(principalId).stream().map(mapper::toDto).toList();
     }
 
     @Transactional
-    public List<UserTopicSubscriptionDto> subscribe(MddUserEntity principal, Long userId, Long topicId) {
+    public List<UserTopicSubscriptionDto> subscribe(MddUserEntity principal, Long topicId) {
         Long principalId = requireAuthenticatedUserId(principal);
-        if (userId == null || topicId == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "userId and topicId are required");
-        }
-        if (!principalId.equals(userId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Forbidden");
-        }
-
-        if (!userRepository.existsById(userId)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
-        }
         TopicEntity topic = topicRepository.findById(topicId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Topic not found"));
 
-        if (!subscriptionRepository.existsByUser_IdAndTopic_Id(userId, topicId)) {
+        if (!subscriptionRepository.existsByUser_IdAndTopic_Id(principalId, topicId)) {
             UserTopicSubscriptionId id = new UserTopicSubscriptionId();
-            id.setUserId(userId);
+            id.setUserId(principalId);
             id.setTopicId(topicId);
 
             UserTopicSubscriptionEntity entity = new UserTopicSubscriptionEntity();
             entity.setId(id);
-            entity.setUser(userRepository.getReferenceById(userId));
+            entity.setUser(userRepository.getReferenceById(principalId));
             entity.setTopic(topic);
-
             subscriptionRepository.save(entity);
         }
-
-        return subscriptionRepository.findAllByUser_Id(userId).stream().map(mapper::toDto).toList();
+        return subscriptionRepository.findAllByUser_Id(principalId).stream().map(mapper::toDto).toList();
     }
 
     @Transactional
-    public List<UserTopicSubscriptionDto> unsubscribe(MddUserEntity principal, Long userId, Long topicId) {
+    public List<UserTopicSubscriptionDto> unsubscribe(MddUserEntity principal, Long topicId) {
         Long principalId = requireAuthenticatedUserId(principal);
-        if (userId == null || topicId == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "userId and topicId are required");
+        if (topicId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "topicId is required");
         }
-        if (!principalId.equals(userId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Forbidden");
-        }
-
-        subscriptionRepository.deleteByUser_IdAndTopic_Id(userId, topicId);
-        return subscriptionRepository.findAllByUser_Id(userId).stream().map(mapper::toDto).toList();
+        subscriptionRepository.deleteByUser_IdAndTopic_Id(principalId, topicId);
+        return subscriptionRepository.findAllByUser_Id(principalId).stream().map(mapper::toDto).toList();
     }
 
     private static Long requireAuthenticatedUserId(MddUserEntity principal) {
