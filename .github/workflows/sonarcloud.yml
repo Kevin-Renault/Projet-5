@@ -51,6 +51,18 @@ jobs:
         working-directory: back
         run: chmod +x mvnw
 
+      - name: Validate SonarCloud configuration
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_ORGANIZATION: kevin-renault
+        run: |
+          if [ -z "${SONAR_TOKEN}" ]; then
+            echo "Missing SONAR_TOKEN secret. Add it in: Settings > Secrets and variables > Actions.";
+            exit 1;
+          fi
+          echo "Using SONAR_ORGANIZATION=${SONAR_ORGANIZATION}";
+          echo "Using sonar.projectKey=Kevin-Renault_Projet-5";
+
       - name: Build, test, and analyze (backend)
         working-directory: back
         env:
@@ -58,10 +70,10 @@ jobs:
           DB_USER: root
           DB_PASSWORD: root
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_ORGANIZATION: ${{ secrets.SONAR_ORGANIZATION }}
+          SONAR_ORGANIZATION: kevin-renault
         run: >-
           ./mvnw -B verify
-          org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
+          org.sonarsource.scanner.maven:sonar-maven-plugin:5.5.0.6356:sonar
           -Dsonar.host.url=https://sonarcloud.io
           -Dsonar.projectKey=Kevin-Renault_Projet-5
           -Dsonar.organization=${SONAR_ORGANIZATION}
