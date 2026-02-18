@@ -8,9 +8,11 @@ import com.openclassrooms.mddapi.entity.MddUserEntity;
 import com.openclassrooms.mddapi.repository.MddUserRepository;
 import com.openclassrooms.mddapi.security.JwtService;
 import java.util.Map;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class AuthService {
@@ -28,13 +30,13 @@ public class AuthService {
     @Transactional
     public AuthResponseDto register(RegisterRequest request) {
         if (request == null || request.email() == null || request.password() == null || request.username() == null) {
-            throw new IllegalArgumentException("Invalid register payload");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid register payload");
         }
         if (userRepository.existsByEmail(request.email())) {
-            throw new IllegalArgumentException("Email already used");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already used");
         }
         if (userRepository.existsByUsername(request.username())) {
-            throw new IllegalArgumentException("Username already used");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already used");
         }
 
         MddUserEntity user = new MddUserEntity();
@@ -54,16 +56,16 @@ public class AuthService {
     @Transactional(readOnly = true)
     public AuthResponseDto login(LoginRequest request) {
         if (request == null || request.email() == null || request.password() == null) {
-            throw new IllegalArgumentException("Invalid login payload");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid login payload");
         }
 
         // Le front mock autorise email OU username : on supporte les deux.
         MddUserEntity user = userRepository.findByEmail(request.email())
                 .or(() -> userRepository.findByUsername(request.email()))
-                .orElseThrow(() -> new IllegalArgumentException("Invalid credentials"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials"));
 
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-            throw new IllegalArgumentException("Invalid credentials");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
         }
 
         String token = jwtService.generateToken(
