@@ -18,6 +18,9 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 public class ArticleCommentService {
 
+    private static final String COMMENT_NOT_FOUND = "Comment not found";
+    private static final String ARTICLE_NOT_FOUND = "Article not found";
+
     private final ArticleCommentRepository commentRepository;
     private final ArticleRepository articleRepository;
     private final MddUserRepository userRepository;
@@ -45,7 +48,7 @@ public class ArticleCommentService {
     @Transactional(readOnly = true)
     public CommentDto getById(Long id) {
         ArticleCommentEntity comment = commentRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Comment not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, COMMENT_NOT_FOUND));
         return commentMapper.toDto(comment);
     }
 
@@ -64,7 +67,7 @@ public class ArticleCommentService {
     public CommentDto create(MddUserEntity principal, CommentDto request) {
         Long principalId = requireAuthenticatedUserId(principal);
 
-        if (request == null || request.articleId() == null) {
+        if (request == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid payload");
         }
 
@@ -74,7 +77,7 @@ public class ArticleCommentService {
         }
 
         ArticleEntity article = articleRepository.findById(request.articleId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Article not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, ARTICLE_NOT_FOUND));
 
         ArticleCommentEntity entity = new ArticleCommentEntity();
         entity.setContent(content);
@@ -90,7 +93,7 @@ public class ArticleCommentService {
         Long principalId = requireAuthenticatedUserId(principal);
 
         ArticleCommentEntity comment = commentRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Comment not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, COMMENT_NOT_FOUND));
 
         Long authorId = comment.getAuthor() != null ? comment.getAuthor().getId() : null;
         if (authorId == null || !authorId.equals(principalId)) {
@@ -115,7 +118,7 @@ public class ArticleCommentService {
         Long principalId = requireAuthenticatedUserId(principal);
 
         ArticleCommentEntity comment = commentRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Comment not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, COMMENT_NOT_FOUND));
 
         Long authorId = comment.getAuthor() != null ? comment.getAuthor().getId() : null;
         if (authorId == null || !authorId.equals(principalId)) {

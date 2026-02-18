@@ -2,7 +2,7 @@ import { Component, inject, OnInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { AuthService } from 'src/app/core/auth/auth.service';
+import { AUTH_DATASOURCE } from 'src/app/core/auth/auth-datasource.interface';
 import { ErrorComponent } from "src/app/shared/error/error.component";
 
 @Component({
@@ -14,7 +14,7 @@ import { ErrorComponent } from "src/app/shared/error/error.component";
 })
 export class HomeComponent implements OnInit {
 
-    private readonly authService = inject(AuthService);
+    private readonly authService = inject(AUTH_DATASOURCE);
     private readonly router = inject(Router);
 
     errorMessage: string | null = null;

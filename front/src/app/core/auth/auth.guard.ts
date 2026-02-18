@@ -10,6 +10,6 @@ export class AuthGuard implements CanActivate {
         private readonly router: Router) { }
 
     canActivate(): boolean | UrlTree {
-        return this.authDataSource.isAuthenticated$() ? true : this.router.parseUrl('/');
+        return this.authDataSource.isAuthenticated$()() ? true : this.router.parseUrl('/');
     }
 }
