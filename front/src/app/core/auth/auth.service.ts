@@ -38,8 +38,8 @@ export class AuthService implements AuthDataSource {
     }
 
     refresh(): Observable<void> {
-        return this.http.post<void>(`${this.apiUrl}/refresh`, { observe: 'response' }).pipe(
-            map(() => { }) // Convertit la réponse en void
+        return this.http.post<void>(`${this.apiUrl}/refresh`, {}, { observe: 'response' }).pipe(
+            map(() => { })
         );
     }
 
