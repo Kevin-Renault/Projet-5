@@ -1,6 +1,6 @@
 import { Injectable, inject, signal, Signal, ErrorHandler } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { catchError, firstValueFrom, map, Observable, of, take, tap } from 'rxjs';
+import { catchError, firstValueFrom, map, Observable, take, tap } from 'rxjs';
 import { AuthDataSource, AuthResponse } from './auth-datasource.interface';
 import { User } from '../models/user.model';
 import { toObservable } from '@angular/core/rxjs-interop';
@@ -69,22 +69,21 @@ export class AuthService implements AuthDataSource {
         this.#isLoggedIn.set(false);
     }
 
-    login(email: string, password: string): Observable<boolean> {
+    login(email: string, password: string): Observable<void> {
         return this.http.post<AuthResponse>(`${this.apiUrl}/login`, { email, password }).pipe(
             tap((response) => {
                 this.updateSession(response.user, true);
             }),
-            map(() => this.isloggedIn()),
+            map(() => void 0),
             catchError((error: HttpErrorResponse) => {
                 this.errorHandler.handleError(error);
                 this.clearSession();
-                // Retourne false en cas d'erreur
-                return of(false);
+                throw error;
             })
         );
     }
 
-    register(data: unknown): Observable<AuthResponse> {
+    register(data: User): Observable<AuthResponse> {
         return this.http.post<AuthResponse>(`${this.apiUrl}/register`, data).pipe(
             tap((response) => this.updateSession(response.user))
         );

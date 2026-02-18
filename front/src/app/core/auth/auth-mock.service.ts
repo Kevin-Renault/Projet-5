@@ -36,7 +36,30 @@ export class AuthMockService implements AuthDataSource {
     }
     private readonly tokenKey = 'auth_token';
 
-    login(login: string, password: string): Observable<boolean> {
+    async initSession(): Promise<void> {
+        const token = this.getToken();
+        if (!token) {
+            this.logout();
+            throw new Error('No session');
+        }
+
+        this.setAuthState(true);
+        try {
+            const parsed = JSON.parse(token);
+            const userId = parsed?.userId;
+            const user = MOCK_USERS.find(u => u.id === userId) || null;
+            if (!user) {
+                this.logout();
+                throw new Error('Invalid session');
+            }
+            this.currentUserSignal.set(user);
+        } catch {
+            this.logout();
+            throw new Error('Invalid session');
+        }
+    }
+
+    login(login: string, password: string): Observable<void> {
         const user = MOCK_USERS.find(u =>
             (u.email === login || u.username === login) && u.password === password
         );
@@ -46,14 +69,15 @@ export class AuthMockService implements AuthDataSource {
             this.setToken(token);
             this.setAuthState(true);
             this.currentUserSignal.set(user);
-            return of(true);
+            return of(void 0);
         } else {
             this.setAuthState(false);
+            this.currentUserSignal.set(null);
             return throwError(() => new Error('Identifiants invalides'));
         }
     }
 
-    register(data: Omit<User, 'id' | 'role'> & { password?: string }): Observable<AuthResponse> {
+    register(data: User): Observable<AuthResponse> {
         const newId = Math.max(...MOCK_USERS.map(u => u.id), 0) + 1;
         const newUser: User = {
             id: newId,
@@ -92,7 +116,7 @@ export class AuthMockService implements AuthDataSource {
         // À chaque souscription, on vérifie le token localStorage pour garantir la synchro
         const token = this.getToken();
         this.setAuthState(!!token);
-        return signal(this.isAuthenticatedSignal());
+        return this.isAuthenticatedSignal.asReadonly();
     }
 
     getCurrentUser(): User {
