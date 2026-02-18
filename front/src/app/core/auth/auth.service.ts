@@ -90,14 +90,12 @@ export class AuthService implements AuthDataSource {
         );
     }
 
-
     logout(): void {
         this.http.post<void>(`${this.apiUrl}/logout`, {}).pipe(
             tap(() => this.clearSession()),
             take(1) // <-- Gère automatiquement le désabonnement
         ).subscribe();
     }
-
 
     refreshCurrentUser(): Observable<User> {
         return this.http.get<User>(`${this.apiUrl}/me`).pipe(
@@ -107,6 +105,4 @@ export class AuthService implements AuthDataSource {
             })
         );
     }
-
-
 }

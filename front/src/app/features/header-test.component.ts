@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { HeaderButton, HeaderComponent } from '../shared/header/header.component';
 import { DynamicFormComponent, FormElement } from '../shared/form/dynamic-form.component';
+import { CommonComponent } from '../shared/common-component';
 
 @Component({
     selector: 'app-header-test',
@@ -12,7 +13,9 @@ import { DynamicFormComponent, FormElement } from '../shared/form/dynamic-form.c
                 [title]="'Se connecter'"
                 [formElements]="connnectionFormElements"
                 [submitLabel]="'Se connecter'"
-                (formSubmit)="onFormSubmit($event)">
+                [message]="connectionMessage()"
+                
+                (formSubmit)="onFormSubmit('connection', $event)">
             </app-dynamic-form>
             <hr>
 
@@ -20,7 +23,8 @@ import { DynamicFormComponent, FormElement } from '../shared/form/dynamic-form.c
                 [title]="'Inscription'"
                 [formElements]="inscriptionFormElements"
                 [submitLabel]="INSCRIPTION_LABEL"
-                (formSubmit)="onFormSubmit($event)">
+                [message]="inscriptionMessage()"
+                (formSubmit)="onFormSubmit('inscription', $event)">
             </app-dynamic-form>
             <hr>
 
@@ -29,7 +33,8 @@ import { DynamicFormComponent, FormElement } from '../shared/form/dynamic-form.c
                 [title]="'Créer un nouvel article'"
                 [formElements]="articleFormElements"
                 [submitLabel]="'Créer'"
-                (formSubmit)="onFormSubmit($event)">
+                [message]="articleMessage()"
+                (formSubmit)="onFormSubmit('article', $event)">
             </app-dynamic-form>
             <hr>
 
@@ -37,7 +42,8 @@ import { DynamicFormComponent, FormElement } from '../shared/form/dynamic-form.c
                 [title]="'Profil Utilisateur'"
                 [formElements]="profileFormElements"
                 [submitLabel]="'Sauvegarder'"
-                (formSubmit)="onFormSubmit($event)">
+                [message]="profileMessage()"
+                (formSubmit)="onFormSubmit('profile', $event)">
             </app-dynamic-form>
 
             <hr>
@@ -46,11 +52,18 @@ import { DynamicFormComponent, FormElement } from '../shared/form/dynamic-form.c
                 [title]="'Full Featured Form'"
                 [formElements]="fullFormElements"
                 [submitLabel]="'Tester la soumission'"
-                (formSubmit)="onFormSubmit($event)">
+                [message]="fullMessage()"
+                (formSubmit)="onFormSubmit('full', $event)">
             </app-dynamic-form>
     `
 })
-export class HeaderTestComponent {
+export class HeaderTestComponent extends CommonComponent {
+
+    readonly connectionMessage = signal<string | null>(null);
+    readonly inscriptionMessage = signal<string | null>(null);
+    readonly articleMessage = signal<string | null>(null);
+    readonly profileMessage = signal<string | null>(null);
+    readonly fullMessage = signal<string | null>(null);
 
     INSCRIPTION_LABEL = 'S\'inscrire';
 
@@ -61,7 +74,7 @@ export class HeaderTestComponent {
             color: 'red',
             alt: 'Icône Déconnexion',
             cssClass: 'header__btn logout',
-            action: () => alert('Déconnexion !'),
+            action: () => this.setMessage('Déconnexion !'),
         },
         {
             label: 'Articles',
@@ -152,10 +165,40 @@ export class HeaderTestComponent {
         }
     ];
 
+    onFormSubmit(form: 'connection' | 'inscription' | 'article' | 'profile' | 'full', values: any) {
+        this.clearAllFormMessages();
+        const message = `Form submitted successfully! : ${JSON.stringify(values)}`;
+        console.log(message);
+        switch (form) {
+            case 'connection':
+                this.connectionMessage.set(message);
+                break;
+            case 'inscription':
+                this.inscriptionMessage.set(message);
+                break;
+            case 'article':
+                this.articleMessage.set(message);
+                break;
+            case 'profile':
+                this.profileMessage.set(message);
+                break;
+            case 'full':
+                this.fullMessage.set(message);
+                break;
+        }
+    }
+
+    private clearAllFormMessages() {
+        this.connectionMessage.set(null);
+        this.inscriptionMessage.set(null);
+        this.articleMessage.set(null);
+        this.profileMessage.set(null);
+        this.fullMessage.set(null);
+    }
 
 
-    onFormSubmit(values: any) {
-        console.log('Form submitted:', values);
+    private setMessage(msg: string) {
+        this.message.set(msg);
     }
 }
 
