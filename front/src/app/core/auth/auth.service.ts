@@ -39,9 +39,6 @@ export class AuthService implements AuthDataSource {
 
     refresh(): Observable<void> {
         return this.http.post<void>(`${this.apiUrl}/refresh`, { observe: 'response' }).pipe(
-            tap((response) => {
-                console.log('Réponse complète du backend pour refresh:', response);
-            }),
             map(() => { }) // Convertit la réponse en void
         );
     }
@@ -73,13 +70,9 @@ export class AuthService implements AuthDataSource {
     }
 
     login(email: string, password: string): Observable<boolean> {
-        console.info("Auth service login : " + email + " / " + password);
-
         return this.http.post<AuthResponse>(`${this.apiUrl}/login`, { email, password }).pipe(
             tap((response) => {
                 this.updateSession(response.user, true);
-                console.log('Réponse du backend pour login:', response);
-                console.info("isloggedIn: " + this.isloggedIn());
             }),
             map(() => this.isloggedIn()),
             catchError((error: HttpErrorResponse) => {
@@ -100,9 +93,6 @@ export class AuthService implements AuthDataSource {
 
     logout(): void {
         this.http.post<void>(`${this.apiUrl}/logout`, {}).pipe(
-            tap((response) => {
-                console.log('Réponse du backend pour logout:', response);
-            }),
             tap(() => this.clearSession()),
             take(1) // <-- Gère automatiquement le désabonnement
         ).subscribe();

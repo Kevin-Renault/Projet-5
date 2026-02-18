@@ -11,11 +11,7 @@ export class ArticleCommentService implements ArticleCommentDataSource {
     constructor(private readonly http: HttpClient) { }
 
     getAllByArticleId(articleId: number): Observable<ArticleComment[]> {
-        console.log('[ArticleCommentService] GET', `${this.apiUrl}?articleId=${articleId}`);
-        return this.http.get<ArticleComment[]>(`${this.apiUrl}?articleId=${articleId}`)
-            .pipe(
-                tap(result => console.log('[ArticleCommentService] Response:', result))
-            );
+        return this.http.get<ArticleComment[]>(`${this.apiUrl}?articleId=${articleId}`);
     }
 
     getAll(): Observable<ArticleComment[]> {
@@ -27,11 +23,7 @@ export class ArticleCommentService implements ArticleCommentDataSource {
     }
 
     create(comment: Partial<ArticleComment>): Observable<ArticleComment> {
-        console.log('[ArticleCommentService] POST', this.apiUrl, comment);
-        return this.http.post<ArticleComment>(this.apiUrl, comment)
-            .pipe(
-                tap(result => console.log('[ArticleCommentService] Response:', result))
-            );
+        return this.http.post<ArticleComment>(this.apiUrl, comment);
     }
 
     delete(id: number): Observable<void> {
