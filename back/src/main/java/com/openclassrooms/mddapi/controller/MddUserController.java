@@ -42,6 +42,13 @@ public class MddUserController {
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
+    @PutMapping
+    public UserDto updateCurrent(
+            @AuthenticationPrincipal MddUserEntity principal,
+            @Valid @RequestBody UserDto request) {
+        return userService.update(principal, request);
+    }
+
     @PutMapping("/{id}")
     public UserDto update(
             @PathVariable Long id,
