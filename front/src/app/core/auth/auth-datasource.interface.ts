@@ -12,6 +12,7 @@ export interface AuthDataSource {
     register(data: User): Observable<AuthResponse>;
     logout(): void;
     isAuthenticated$(): Signal<boolean>;
-    getCurrentUser(): Observable<User>;
-    getCurrentUserId(): number | null;
+    getCurrentUser(): User;
+    refreshCurrentUser(): Observable<User>;
+    getCurrentUserId(): Observable<number | null>
 }

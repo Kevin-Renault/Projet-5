@@ -1,20 +1,51 @@
-import { SlicePipe, AsyncPipe } from '@angular/common';
-import { Component, Inject } from '@angular/core';
+import { SlicePipe } from '@angular/common';
+import { Component, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { combineLatest, map, Observable } from 'rxjs';
-import { Topic } from 'src/app/core/models/topic.model';
-import { SUBSCRIPTION_DATASOURCE, TopicSubscriptionDatasource } from 'src/app/core/services/topic-subscription-datasource.interface';
-import { TOPIC_DATASOURCE, TopicDataSource } from 'src/app/core/services/topic-datasource.interface';
-import { FormElement, DynamicFormComponent } from 'src/app/shared/form/dynamic-form.component';
-import { AUTH_DATASOURCE, AuthDataSource } from 'src/app/core/auth/auth-datasource.interface';
+import { catchError, finalize, startWith, Subject, switchMap, throwError } from 'rxjs';
+import { SUBSCRIPTION_DATASOURCE } from 'src/app/core/services/topic-subscription-datasource.interface';
+import { TOPIC_DATASOURCE } from 'src/app/core/services/topic-datasource.interface';
+import { FormElement, DynamicFormComponent, DynamicFormValues } from 'src/app/shared/form/dynamic-form.component';
+import { HeaderComponent } from "src/app/shared/header/header.component";
+import { User } from 'src/app/core/models/user.model';
+import { USER_DATASOURCE } from 'src/app/core/services/user-datasource.interface';
+import { CommonComponent } from 'src/app/shared/common-component';
+import { toSignal, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-profile',
-  imports: [DynamicFormComponent, FormsModule, SlicePipe, AsyncPipe],
+  imports: [DynamicFormComponent, FormsModule, SlicePipe, HeaderComponent],
   templateUrl: './profile.component.html',
   styleUrls: ['./profile.component.scss']
 })
-export class ProfileComponent {
+export class ProfileComponent extends CommonComponent {
+  private readonly topicDataSource = inject(TOPIC_DATASOURCE);
+  private readonly userDataSource = inject(USER_DATASOURCE);
+  private readonly subscriptionDataSource = inject(SUBSCRIPTION_DATASOURCE);
+  private readonly refresh$ = new Subject<void>();
+
+
+
+
+  readonly topics = toSignal(
+    this.topicDataSource.getAll().pipe(takeUntilDestroyed()),
+    { initialValue: [] }
+  );
+
+  readonly topicSubscriptions = toSignal(
+    this.refresh$.pipe(
+      startWith(void 0),
+      switchMap(() => this.subscriptionDataSource.getUserTopicSubscriptions()),
+      takeUntilDestroyed()
+    ),
+    { initialValue: [] }
+  );
+
+  // Liste des topics abonnés (version réactive)
+  readonly myTopics = computed(() => {
+    const abonneIds = new Set(this.topicSubscriptions().map(s => s.topicId));
+    return this.topics().filter(topic => abonneIds.has(topic.id));
+  });
+
 
   profileFormElements: FormElement[] = [
     { type: 'text', name: 'username', placeholder: 'Username', required: true },
@@ -28,60 +59,39 @@ export class ProfileComponent {
     }
   ];
 
+  onFormSubmit(values: DynamicFormValues) {
+    const username = values['username'];
+    const email = values['email'];
+    const password = values['password'];
 
-
-  onFormSubmit(values: any) {
-    alert('Form submitted: ' + JSON.stringify(values, null, 2));
-  }
-
-  userId: number;
-  myTopics$: Observable<Topic[]> | null = null;
-
-  constructor(
-    @Inject(TOPIC_DATASOURCE) private readonly topicDataSource: TopicDataSource,
-    @Inject(AUTH_DATASOURCE) private readonly authDataSource: AuthDataSource,
-    @Inject(SUBSCRIPTION_DATASOURCE) private readonly subscriptionDataSource: TopicSubscriptionDatasource
-  ) {
-
-
-    const userId = this.authDataSource.getCurrentUserId();
-    if (typeof userId === 'number') {
-      this.userId = userId;
-    } else {
-      alert('No authenticated user. Cannot load profile.');
-      // Optionally redirect to login or handle error
-      this.userId = -1;
+    if (typeof username !== 'string' || typeof email !== 'string' || typeof password !== 'string') {
+      this.message.set('Veuillez renseigner tous les champs.');
+      this.error.set(true);
+      return;
     }
-    this.myTopics$ = combineLatest([
-      this.topicDataSource.getAll(),
-      this.subscriptionDataSource.getUserTopicSubscriptions(this.userId)
-    ]).pipe(
-      map(([topics, subs]) => {
-        const abonneIds = new Set(subs.map(s => s.topicId));
-        return topics.filter(topic => abonneIds.has(topic.id));
-      })
-    );
-  }
 
+    const payload: Partial<User> = { username, email, password };
 
+    this.message.set('Mise à jour en cours...');
+    this.startSubmit();
 
-  public toggleTopicSubscription(topicId: number) {
-    this.subscriptionDataSource.unsubscribeFromTopic(this.userId, topicId).subscribe(() => {
-      this.refreshTopicSubscriptions();
+    this.userDataSource.update(payload).pipe(
+      catchError((error) => {
+        this.message.set('Échec de la mise à jour');
+        this.error.set(true);
+        return throwError(() => error);
+      }),
+      finalize(() => this.isLoading.set(false))
+    ).subscribe({
+      next: () => {
+        this.message.set('Mise à jour réussie');
+      }
     });
   }
 
-  private refreshTopicSubscriptions() {
-
-    // Met à jour la liste des topics auxquels l'utilisateur est abonné
-    this.myTopics$ = combineLatest([
-      this.topicDataSource.getAll(),
-      this.subscriptionDataSource.getUserTopicSubscriptions(this.userId)
-    ]).pipe(
-      map(([topics, subs]) => {
-        const abonneIds = new Set(subs.map(s => s.topicId));
-        return topics.filter(topic => abonneIds.has(topic.id));
-      })
-    );
+  public toggleTopicSubscription(topicId: number) {
+    this.subscriptionDataSource.unsubscribeFromTopic(topicId).subscribe(() => {
+      this.refresh$.next();
+    });
   }
 }

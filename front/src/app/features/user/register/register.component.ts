@@ -1,17 +1,21 @@
-import { Component, Inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { AUTH_DATASOURCE, AuthDataSource } from 'src/app/core/auth/auth-datasource.interface';
+import { AUTH_DATASOURCE } from 'src/app/core/auth/auth-datasource.interface';
 import { User } from 'src/app/core/models/user.model';
-import { FormElement, DynamicFormComponent } from 'src/app/shared/form/dynamic-form.component';
+import { FormElement, DynamicFormComponent, DynamicFormValues } from 'src/app/shared/form/dynamic-form.component';
 import { ErrorComponent } from "src/app/shared/error/error.component";
 
 @Component({
   selector: 'app-register',
   imports: [DynamicFormComponent, ErrorComponent],
   templateUrl: './register.component.html',
-  styleUrl: './register.component.scss'
+  styleUrls: ['./register.component.scss']
 })
 export class RegisterComponent {
+
+  private readonly authDataSource = inject(AUTH_DATASOURCE);
+  private readonly router = inject(Router);
+
   INSCRIPTION_LABEL = 'S\'inscrire';
   inscriptionFormElements: FormElement[] = [
     { type: 'text', name: 'username', label: 'Nom d\'utilisateur', required: true },
@@ -25,15 +29,26 @@ export class RegisterComponent {
     }
   ];
 
-
   errorMessage: string | null = null;
 
-  constructor(
-    @Inject(AUTH_DATASOURCE) private readonly authDataSource: AuthDataSource,
-    private readonly router: Router
-  ) { }
+  onFormSubmit(values: DynamicFormValues) {
+    const username = values['username'];
+    const email = values['email'];
+    const password = values['password'];
 
-  onFormSubmit(user: User) {
+    if (typeof username !== 'string' || typeof email !== 'string' || typeof password !== 'string') {
+      this.errorMessage = 'Please fill in all required fields.';
+      return;
+    }
+
+    const user: User = {
+      id: 0,
+      username,
+      email,
+      password,
+      role: 'user',
+    };
+
     this.authDataSource.register(user).subscribe({
       next: () => {
         this.router.navigate(['/articles']);

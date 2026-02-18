@@ -1,5 +1,11 @@
 <app-header></app-header>
-<app-dynamic-form [title]="'Créer un nouvel article'" [formElements]="articleFormElements" [submitLabel]="'Créer'"
-    (formSubmit)="onFormSubmit($event)">
+@if (isPageLoading()) {
+<output class="spinner-container" aria-live="polite" aria-busy="true">
+    <span class="page-spinner" aria-hidden="true"></span>
+</output>
+}
+@else {
+<app-dynamic-form [title]="'Créer un nouvel article'" [formElements]="articleFormElements()" [submitLabel]="'Créer'"
+    [error]="error()" [isLoading]="isLoading()" [message]="message()" (formSubmit)="onFormSubmit($event)">
 </app-dynamic-form>
-<hr>
+}

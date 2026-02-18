@@ -22,12 +22,8 @@ export class ArticleCommentService implements ArticleCommentDataSource {
         return this.http.get<ArticleComment>(`${this.apiUrl}/${id}`);
     }
 
-    create(comment: ArticleComment): Observable<ArticleComment> {
+    create(comment: Partial<ArticleComment>): Observable<ArticleComment> {
         return this.http.post<ArticleComment>(this.apiUrl, comment);
-    }
-
-    update(id: number, comment: Partial<ArticleComment>): Observable<ArticleComment> {
-        return this.http.put<ArticleComment>(`${this.apiUrl}/${id}`, comment);
     }
 
     delete(id: number): Observable<void> {

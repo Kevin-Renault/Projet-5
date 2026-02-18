@@ -1,8 +1,9 @@
-import { computed, Injectable, inject, signal, Signal, ErrorHandler } from '@angular/core';
+import { Injectable, inject, signal, Signal, ErrorHandler } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { catchError, firstValueFrom, map, Observable, of, take, tap } from 'rxjs';
 import { AuthDataSource, AuthResponse } from './auth-datasource.interface';
 import { User } from '../models/user.model';
+import { toObservable } from '@angular/core/rxjs-interop';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService implements AuthDataSource {
@@ -13,9 +14,10 @@ export class AuthService implements AuthDataSource {
 
     // Signaux privés pour gérer l'état
     private readonly _currentUser = signal<User | null>(null);
+    private readonly _currentUserId = signal<number | null>(null);
 
     readonly currentUser = this._currentUser.asReadonly();
-    readonly currentUserId = computed(() => this._currentUser()?.id ?? null);
+    readonly currentUserId = this._currentUserId.asReadonly();
 
 
     readonly #isLoggedIn = signal(false);
@@ -23,11 +25,11 @@ export class AuthService implements AuthDataSource {
 
     async initSession(): Promise<void> {
         try {
-            await firstValueFrom(this.getCurrentUser());
+            await firstValueFrom(this.refreshCurrentUser());
         } catch {
             try {
                 await firstValueFrom(this.refresh());
-                await firstValueFrom(this.getCurrentUser());
+                await firstValueFrom(this.refreshCurrentUser());
             } catch {
                 this.clearSession();
                 throw new Error('Session expirée');
@@ -36,16 +38,19 @@ export class AuthService implements AuthDataSource {
     }
 
     refresh(): Observable<void> {
-        return this.http.post<void>(`${this.apiUrl}/refresh`, { observe: 'response' }).pipe(
-            tap((response) => {
-                console.log('Réponse complète du backend pour refresh:', response);
-            }),
-            map(() => { }) // Convertit la réponse en void
+        return this.http.post<void>(`${this.apiUrl}/refresh`, {}, { observe: 'response' }).pipe(
+            map(() => { })
         );
     }
-    getCurrentUserId(): number | null {
-        return this.currentUserId();
+
+    getCurrentUserId(): Observable<number | null> {
+        return toObservable(this.currentUserId);
     }
+
+    getCurrentUser(): User {
+        return this.currentUser() || { id: -1, username: '', email: '', password: '' };
+    }
+
 
     // Méthode pour satisfaire l'interface AuthDataSource
     isAuthenticated$(): Signal<boolean> {
@@ -54,22 +59,20 @@ export class AuthService implements AuthDataSource {
 
     private updateSession(user: User, isLoggedIn: boolean = true): void {
         this._currentUser.set(user);
+        this._currentUserId.set(user.id);
         this.#isLoggedIn.set(isLoggedIn);
     }
 
     public clearSession(): void {
         this._currentUser.set(null);
+        this._currentUserId.set(null);
         this.#isLoggedIn.set(false);
     }
 
     login(email: string, password: string): Observable<boolean> {
-        console.info("Auth service login : " + email + " / " + password);
-
         return this.http.post<AuthResponse>(`${this.apiUrl}/login`, { email, password }).pipe(
             tap((response) => {
                 this.updateSession(response.user, true);
-                console.log('Réponse du backend pour login:', response);
-                console.info("isloggedIn: " + this.isloggedIn());
             }),
             map(() => this.isloggedIn()),
             catchError((error: HttpErrorResponse) => {
@@ -87,18 +90,14 @@ export class AuthService implements AuthDataSource {
         );
     }
 
-
     logout(): void {
         this.http.post<void>(`${this.apiUrl}/logout`, {}).pipe(
-            tap((response) => {
-                console.log('Réponse du backend pour logout:', response);
-            }),
             tap(() => this.clearSession()),
             take(1) // <-- Gère automatiquement le désabonnement
         ).subscribe();
     }
 
-    getCurrentUser(): Observable<User> {
+    refreshCurrentUser(): Observable<User> {
         return this.http.get<User>(`${this.apiUrl}/me`).pipe(
             tap({
                 next: (user) => this.updateSession(user),
@@ -106,6 +105,4 @@ export class AuthService implements AuthDataSource {
             })
         );
     }
-
-
 }

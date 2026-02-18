@@ -20,12 +20,9 @@ export class HomeComponent implements OnInit {
     errorMessage: string | null = null;
     ngOnInit(): void {
         this.authService.initSession().then(() => {
-            // Tout s'est bien passé, tu peux éventuellement faire quelque chose ici
-            console.log('Session initialisée avec succès');
             this.router.navigate(['/articles']);
         })
             .catch((error) => {
-                console.error('Initialisation automatique de la session échouée', error);
                 this.errorMessage = 'Initialisation automatique de la session échouée';
             });
     }

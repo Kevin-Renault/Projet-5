@@ -1,6 +1,12 @@
 <app-header></app-header>
+@if (isPageLoading()) {
+<output class="spinner-container" aria-live="polite" aria-busy="true">
+    <span class="page-spinner" aria-hidden="true"></span>
+</output>
+}
+@else {
 <div class="article-card">
-    @if (article$ | async; as article) {
+    @if (article(); as article) {
     <div class="article-title">{{ article.title }}</div>
     <div class="article-meta">
         <span class="article-date">{{ article.createdAt | date:'dd/MM/yyyy' }}</span>
@@ -12,21 +18,18 @@
     </div>
     }
 </div>
-
 <hr>
-
 <div>Commentaires :</div><br><br>
 <div class="comments-list">
-    @if (article$ | async; as article) {
-    @for (comment of articleComments$ | async; track comment.id) {
+    @for (comment of articleComments(); track comment.id) {
     <div class="comment-title">{{ authorById(comment.authorId) | async }}</div>
     <div class="comment-card">
         <div class="comment-content">{{ comment.content }}</div>
     </div>
     }
-    }
 </div>
 
 <app-dynamic-form [title]="'Commentaires'" [formElements]="commentFormElements" [submitLabel]="'Sauvegarder'"
-    (formSubmit)="onFormSubmit($event)">
+    [error]="error()" [isLoading]="isLoading()" [message]="message()" (formSubmit)="onFormSubmit($event)">
 </app-dynamic-form>
+}

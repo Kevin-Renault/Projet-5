@@ -1,7 +1,8 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { TopicSubscription } from '../../models/topic-subscription.model';
 import { TopicSubscriptionDatasource } from '../topic-subscription-datasource.interface';
+import { AUTH_DATASOURCE } from '../../auth/auth-datasource.interface';
 
 let MOCK_SUBSCRIPTIONS: TopicSubscription[] = [
     // alice (1) : Java (1), Base de données (6)
@@ -28,22 +29,39 @@ let MOCK_SUBSCRIPTIONS: TopicSubscription[] = [
 @Injectable({ providedIn: 'root' })
 export class TopicSubscriptionMockService implements TopicSubscriptionDatasource {
     private subscriptions: TopicSubscription[] = [...MOCK_SUBSCRIPTIONS];
+    private readonly authDataSource = inject(AUTH_DATASOURCE);
 
-    subscribeOnTopic(userId: number, topicId: number): Observable<TopicSubscription[]> {
+    private getAuthenticatedUserId(): number | null {
+        const id = this.authDataSource.getCurrentUser().id;
+        return id > 0 ? id : null;
+    }
+
+    subscribeOnTopic(topicId: number): Observable<TopicSubscription[]> {
+        const userId = this.getAuthenticatedUserId();
+        if (userId === null) {
+            return of([]);
+        }
+
         const exists = this.subscriptions.some(s => s.userId === userId && s.topicId === topicId);
         if (!exists) {
             this.subscriptions.push({ userId, topicId });
         }
-        return this.getUserTopicSubscriptions(userId);
+        return this.getUserTopicSubscriptions();
     }
 
-    unsubscribeFromTopic(userId: number, topicId: number): Observable<TopicSubscription[]> {
-        this.subscriptions = this.subscriptions.filter(s => !(s.userId === userId && s.topicId === topicId));
-        return this.getUserTopicSubscriptions(userId);
+    unsubscribeFromTopic(topicId: number): Observable<TopicSubscription[]> {
+        const userId = this.getAuthenticatedUserId();
+        if (userId === null) {
+            return of([]);
+        }
+
+        this.subscriptions = this.subscriptions.filter(s => s.userId !== userId || s.topicId !== topicId);
+        return this.getUserTopicSubscriptions();
     }
 
-    getUserTopicSubscriptions(userId: number): Observable<TopicSubscription[]> {
-        return of(this.subscriptions.filter(s => s.userId === userId));
+    getUserTopicSubscriptions(): Observable<TopicSubscription[]> {
+        const userId = this.getAuthenticatedUserId();
+        return of(userId === null ? [] : this.subscriptions.filter(s => s.userId === userId));
     }
 
     getTopicSubscribers(topicId: number): Observable<TopicSubscription[]> {

@@ -15,6 +15,9 @@ export interface FormElement {
   options?: { value: string; label: string }[];
 }
 
+type DynamicFormValue = string | boolean;
+export type DynamicFormValues = Record<string, DynamicFormValue>;
+
 @Component({
   selector: 'app-dynamic-form',
   standalone: true,
@@ -25,7 +28,7 @@ export interface FormElement {
         <h2>{{ title }}</h2>
       }
       @for (formElement of formElements; track formElement.name) {
-        <div class="form-group">
+        <fieldset class="form-group">
           <label [for]="formElement.name">
             {{ formElement.label }}
             @if (formElement.required && formElement.label) {
@@ -79,15 +82,28 @@ export interface FormElement {
           }
 
           @if (showError(formElement.name)) {
-            <div [id]="formElement.name + '-error'" class="form-error" role="alert">
+            <p [id]="formElement.name + '-error'" class="form-error" role="alert">
               {{ getErrorMessage(formElement.name) }}
-            </div>
+            </p>
           }
-        </div>
+        </fieldset>
       }
       <button type="submit" [disabled]="form.invalid">
         {{ submitLabel || 'Submit' }}
+
       </button>
+      <output for="form-submit">
+        <br><br>
+
+        @if (isLoading) {
+          <span class="spinner" role="status" aria-label="Chargement"></span>
+        }
+
+        @if (message) {
+          <p [class]="getStatusClass()">{{ message }}</p>
+        }
+      </output> 
+
     </form>
   `,
   styleUrls: ['./dynamic-form.component.scss'],
@@ -98,7 +114,12 @@ export class DynamicFormComponent implements OnChanges {
   @Input() formElements: FormElement[] = [];
   @Input() title?: string;
   @Input() submitLabel?: string = 'Submit';
-  @Output() formSubmit = new EventEmitter<any>();
+
+  @Input() isLoading: boolean = false;
+  @Input() message: string | null = null;
+  @Input() error: boolean = false;
+
+  @Output() formSubmit = new EventEmitter<DynamicFormValues>();
 
   // Groupe de contrôles du formulaire réactif
   form: FormGroup;
@@ -151,6 +172,12 @@ export class DynamicFormComponent implements OnChanges {
     if (control.invalid && (control.dirty || control.touched)) return 'input-error';
     if (control.valid && (control.dirty || control.touched)) return 'input-valid';
     return '';
+  }
+
+  getStatusClass(): 'error' | 'info' | 'success' {
+    if (this.error) return 'error';
+    if (this.isLoading) return 'info';
+    return 'success';
   }
 
   // Génère le message d'erreur approprié selon la validation échouée

@@ -3,6 +3,7 @@ package com.openclassrooms.mddapi.controller;
 import com.openclassrooms.mddapi.dto.CommentDto;
 import com.openclassrooms.mddapi.entity.MddUserEntity;
 import com.openclassrooms.mddapi.service.ArticleCommentService;
+import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -41,7 +42,7 @@ public class ArticleCommentController {
     @PostMapping
     public ResponseEntity<CommentDto> create(
             @AuthenticationPrincipal MddUserEntity principal,
-            @RequestBody CommentDto request) {
+            @Valid @RequestBody CommentDto request) {
         CommentDto created = commentService.create(principal, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }

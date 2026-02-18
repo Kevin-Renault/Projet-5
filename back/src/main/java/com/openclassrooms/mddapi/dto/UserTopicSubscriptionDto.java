@@ -1,9 +1,8 @@
 package com.openclassrooms.mddapi.dto;
 
-import java.time.Instant;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 
 public record UserTopicSubscriptionDto(
-                Long userId,
-                Long topicId,
-                Instant subscribedAt) {
+        @NotNull @Positive Long topicId) {
 }
