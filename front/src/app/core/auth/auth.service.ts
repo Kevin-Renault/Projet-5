@@ -4,12 +4,14 @@ import { catchError, firstValueFrom, map, Observable, take, tap } from 'rxjs';
 import { AuthDataSource, AuthResponse } from './auth-datasource.interface';
 import { User } from '../models/user.model';
 import { toObservable } from '@angular/core/rxjs-interop';
+import { Router } from '@angular/router';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService implements AuthDataSource {
 
     private readonly http = inject(HttpClient);
     private readonly errorHandler = inject(ErrorHandler);
+    private readonly router = inject(Router);
     private readonly apiUrl = '/api/auth';
 
     // Signaux privés pour gérer l'état
@@ -91,7 +93,18 @@ export class AuthService implements AuthDataSource {
 
     logout(): void {
         this.http.post<void>(`${this.apiUrl}/logout`, {}).pipe(
-            tap(() => this.clearSession()),
+            tap(() => {
+                this.clearSession();
+                // Navigate only after the backend cleared HttpOnly cookies.
+                this.router.navigate(['/']);
+            }),
+            catchError((error: HttpErrorResponse) => {
+                // Even if the call fails, make the UI consistent.
+                this.clearSession();
+                this.router.navigate(['/']);
+                this.errorHandler.handleError(error);
+                throw error;
+            }),
             take(1) // <-- Gère automatiquement le désabonnement
         ).subscribe();
     }

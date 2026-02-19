@@ -80,9 +80,29 @@ class AuthControllerTest {
         MddUserEntity principal = new MddUserEntity();
         principal.setId(99L);
 
-        ResponseEntity<Void> out = controller.logout(principal);
+        MockHttpServletRequest req = new MockHttpServletRequest();
+        ResponseEntity<Void> out = controller.logout(req, principal);
         Assertions.assertThat(out.getHeaders().get(HttpHeaders.SET_COOKIE)).hasSize(2);
         Mockito.verify(refreshTokenService).revokeForUser(99L);
+    }
+
+    @Test
+    void logout_without_principal_revokes_by_refresh_cookie_and_clears_cookies() {
+        AuthService authService = Mockito.mock(AuthService.class);
+        JwtCookieService cookieService = Mockito.mock(JwtCookieService.class);
+        RefreshTokenService refreshTokenService = Mockito.mock(RefreshTokenService.class);
+        AuthController controller = new AuthController(authService, cookieService, refreshTokenService);
+
+        Mockito.when(cookieService.getRefreshCookieName()).thenReturn("refresh_token");
+        Mockito.when(cookieService.clearAccessTokenCookie()).thenReturn(ResponseCookie.from("a", "").build());
+        Mockito.when(cookieService.clearRefreshTokenCookie()).thenReturn(ResponseCookie.from("r", "").build());
+
+        MockHttpServletRequest req = new MockHttpServletRequest();
+        req.setCookies(new jakarta.servlet.http.Cookie("refresh_token", "rt"));
+
+        ResponseEntity<Void> out = controller.logout(req, null);
+        Assertions.assertThat(out.getHeaders().get(HttpHeaders.SET_COOKIE)).hasSize(2);
+        Mockito.verify(refreshTokenService).revokePresentedToken("rt");
     }
 
     @Test

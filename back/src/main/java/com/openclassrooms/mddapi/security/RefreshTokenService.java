@@ -60,6 +60,14 @@ public class RefreshTokenService {
     }
 
     @Transactional
+    public void revokePresentedToken(String presentedRefreshToken) {
+        if (presentedRefreshToken == null || presentedRefreshToken.isBlank()) {
+            return;
+        }
+        repository.deleteByTokenHash(hash(presentedRefreshToken));
+    }
+
+    @Transactional
     public RefreshRotationResult rotate(String presentedRefreshToken) {
         if (presentedRefreshToken == null || presentedRefreshToken.isBlank()) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing refresh token");

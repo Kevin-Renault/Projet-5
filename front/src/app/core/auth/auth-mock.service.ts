@@ -1,15 +1,17 @@
-import { computed, Injectable, Signal, signal } from '@angular/core';
+import { computed, Injectable, Signal, signal, inject } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { Observable, of, throwError } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { AuthDataSource, AuthResponse } from './auth-datasource.interface';
 import { User } from '../models/user.model';
 import { MOCK_USERS } from '../../shared/mock/mock-users.data';
+import { Router } from '@angular/router';
 
 
 
 @Injectable({ providedIn: 'root' })
 export class AuthMockService implements AuthDataSource {
+    private readonly router = inject(Router);
     private readonly isAuthenticatedSignal = signal(false);
     private readonly currentUserSignal = signal<User | null>(null);
     private readonly currentUserIdSignal = computed(() => this.currentUserSignal()?.id ?? null);
@@ -106,6 +108,7 @@ export class AuthMockService implements AuthDataSource {
         localStorage.removeItem(this.tokenKey);
         this.setAuthState(false);
         this.currentUserSignal.set(null);
+        this.router.navigate(['/']);
     }
 
     clearSession(): void {

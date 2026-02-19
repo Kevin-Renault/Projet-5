@@ -112,9 +112,17 @@ public class AuthController {
     })
     @SecurityRequirement(name = com.openclassrooms.mddapi.config.OpenApiConfig.BEARER_AUTH_SCHEME)
     @SecurityRequirement(name = com.openclassrooms.mddapi.config.OpenApiConfig.COOKIE_AUTH_SCHEME)
-    public ResponseEntity<Void> logout(@Parameter(hidden = true) @AuthenticationPrincipal Object principal) {
+    public ResponseEntity<Void> logout(
+            HttpServletRequest request,
+            @Parameter(hidden = true) @AuthenticationPrincipal Object principal) {
+
         if (principal instanceof MddUserEntity user) {
             refreshTokenService.revokeForUser(user.getId());
+        } else {
+            // Access token may be expired; still revoke based on refresh cookie when
+            // present.
+            String presented = extractCookieValue(request, cookieService.getRefreshCookieName());
+            refreshTokenService.revokePresentedToken(presented);
         }
 
         ResponseCookie accessCookie = cookieService.clearAccessTokenCookie();
