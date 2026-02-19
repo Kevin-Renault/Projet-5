@@ -3,9 +3,10 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { catchError, firstValueFrom, map, Observable, switchMap, take, tap } from 'rxjs';
 import { AuthDataSource, AuthResponse } from './auth-datasource.interface';
 import { User } from '../models/user.model';
-import { toObservable } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
+import { toObservable } from '@angular/core/rxjs-interop';
 
+import { CsrfTokenService } from './csrf-token.service';
 @Injectable({ providedIn: 'root' })
 export class AuthService implements AuthDataSource {
 
@@ -13,6 +14,7 @@ export class AuthService implements AuthDataSource {
     private readonly errorHandler = inject(ErrorHandler);
     private readonly router = inject(Router);
     private readonly apiUrl = '/api/auth';
+    private readonly csrfTokenService = inject(CsrfTokenService);
 
     // Signaux privés pour gérer l'état
     private readonly _currentUser = signal<User | null>(null);
@@ -56,6 +58,10 @@ export class AuthService implements AuthDataSource {
 
     private initCsrf(): Observable<void> {
         return this.http.get<void>(`${this.apiUrl}/csrf`, { observe: 'response' }).pipe(
+            tap((resp) => {
+                const token = resp.headers.get('X-XSRF-TOKEN');
+                this.csrfTokenService.set(token);
+            }),
             map(() => { })
         );
     }
@@ -84,6 +90,7 @@ export class AuthService implements AuthDataSource {
         this._currentUser.set(null);
         this._currentUserId.set(null);
         this.#isLoggedIn.set(false);
+        this.csrfTokenService.clear();
     }
 
     login(email: string, password: string): Observable<void> {
