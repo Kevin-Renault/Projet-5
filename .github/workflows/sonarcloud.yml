@@ -14,7 +14,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   sonarcloud:
@@ -79,23 +79,73 @@ jobs:
             total = covered + missed
             return 0.0 if total == 0 else (covered / total) * 100.0
 
-          line_cov, line_miss = counters.get('LINE', (0, 0))
-          instr_cov, instr_miss = counters.get('INSTRUCTION', (0, 0))
-          line_pct = pct(line_cov, line_miss)
-          instr_pct = pct(instr_cov, instr_miss)
+          def row(counter_type: str):
+            covered, missed = counters.get(counter_type, (0, 0))
+            total = covered + missed
+            return {
+              'type': counter_type,
+              'pct': pct(covered, missed),
+              'covered': covered,
+              'missed': missed,
+              'total': total,
+            }
+
+          rows = [
+            row('LINE'),
+            row('BRANCH'),
+            row('INSTRUCTION'),
+          ]
 
           summary_path = os.environ.get('GITHUB_STEP_SUMMARY')
           if not summary_path:
             raise SystemExit('GITHUB_STEP_SUMMARY is not set')
 
+          sonar_overview = 'https://sonarcloud.io/project/overview?id=Kevin-Renault_Projet-5'
+          sonar_main_new_code = 'https://sonarcloud.io/summary/new_code?id=Kevin-Renault_Projet-5&branch=main'
+
+          repo = os.environ.get('GITHUB_REPOSITORY', '').strip()  # owner/repo
+          if repo and '/' in repo:
+            owner, name = repo.split('/', 1)
+            pages_base = f'https://{owner}.github.io/{name}'
+          else:
+            pages_base = None
+
+          ref_name = os.environ.get('GITHUB_REF_NAME', '').strip()
+          safe_ref_name = ref_name.replace('/', '-') if ref_name else None
+          pages_report = f'{pages_base}/jacoco/{safe_ref_name}/index.html' if pages_base and safe_ref_name else None
+
+          def fmt_int(n: int) -> str:
+            return f'{n:,}'.replace(',', ' ')
+
+          table_lines = [
+            '| Metric | Coverage | Covered | Missed | Total |',
+            '|---|---:|---:|---:|---:|',
+          ]
+          for r in rows:
+            table_lines.append(
+              f"| {r['type'].title()} | {r['pct']:.2f}% | {fmt_int(r['covered'])} | {fmt_int(r['missed'])} | {fmt_int(r['total'])} |"
+            )
+
           Path(summary_path).write_text(
             '\n'.join([
               '## Backend coverage (JaCoCo)',
               '',
-              f'- Line coverage: {line_pct:.2f}% ({line_cov} covered / {line_cov + line_miss} total)',
-              f'- Instruction coverage: {instr_pct:.2f}% ({instr_cov} covered / {instr_cov + instr_miss} total)',
+              *table_lines,
               '',
-              'Artifact: `jacoco-report` (HTML report)',
+              '### Links',
+              f'- SonarCloud overview (main): {sonar_overview}',
+              f'- SonarCloud new code (main): {sonar_main_new_code}',
+              *( [f'- JaCoCo report (GitHub Pages): {pages_report}'] if pages_report else [] ),
+              '',
+              '### Report',
+              '- Download the artifact `jacoco-report` to open the HTML report locally.',
+              '',
+              '<details><summary>Raw counters</summary>',
+              '',
+              '```text',
+              *[f"{k}: covered={c} missed={m}" for k, (c, m) in sorted(counters.items())],
+              '```',
+              '</details>',
             ]) + '\n',
             encoding='utf-8'
           )
@@ -108,6 +158,45 @@ jobs:
           path: back/target/site/jacoco
           if-no-files-found: error
           retention-days: 14
+
+      - name: Prepare GitHub Pages (JaCoCo)
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/test/junit-jest-cypress'
+        shell: bash
+        run: |
+          set -euo pipefail
+          SAFE_BRANCH="${GITHUB_REF_NAME//\//-}"
+
+          rm -rf site
+          mkdir -p "site/jacoco/${SAFE_BRANCH}"
+          cp -R back/target/site/jacoco/* "site/jacoco/${SAFE_BRANCH}/"
+
+          cat > site/index.html <<'HTML'
+          <!doctype html>
+          <html lang="en">
+            <head>
+              <meta charset="utf-8" />
+              <meta name="viewport" content="width=device-width, initial-scale=1" />
+              <title>JaCoCo Reports</title>
+            </head>
+            <body>
+              <h1>JaCoCo Reports</h1>
+              <p>Latest reports published from CI.</p>
+              <ul>
+                <li><a href="./jacoco/main/index.html">main</a></li>
+                <li><a href="./jacoco/test-junit-jest-cypress/index.html">test-junit-jest-cypress</a></li>
+              </ul>
+            </body>
+          </html>
+          HTML
+
+      - name: Deploy JaCoCo report to GitHub Pages (gh-pages)
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/test/junit-jest-cypress'
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: site
+          clean: false
+          single-commit: true
 
       - name: Validate SonarCloud configuration (main only)
         if: github.ref == 'refs/heads/main'
