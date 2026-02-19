@@ -119,18 +119,22 @@ class MddUserServiceTest {
         MddUserEntity other = new MddUserEntity();
         other.setId(2L);
         Mockito.when(userRepository.findByUsername("new")).thenReturn(Optional.of(other));
+
+        UserDto userDto = new UserDto(null, "new", "old@example.com", null, null, null);
+
         Assertions
                 .assertThatThrownBy(
-                        () -> service.update(principal, new UserDto(null, "new", "old@example.com", null, null, null)))
+                        () -> service.update(principal, userDto))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("409");
 
         // email conflict
         Mockito.when(userRepository.findByUsername("new")).thenReturn(Optional.empty());
         Mockito.when(userRepository.findByEmail("new@example.com")).thenReturn(Optional.of(other));
+        UserDto emailConflictDto = new UserDto(null, "old", "new@example.com", null, null, null);
         Assertions
                 .assertThatThrownBy(
-                        () -> service.update(principal, new UserDto(null, "old", "new@example.com", null, null, null)))
+                        () -> service.update(principal, emailConflictDto))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("409");
 

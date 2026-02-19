@@ -57,8 +57,8 @@ class SubscriptionIdempotenceIntegrationTest extends AbstractIntegrationTest {
         Assertions.assertThat(topicId).isNotNull();
 
         List<UserTopicSubscriptionDto> afterFirst = subscribe(cookie, topicId);
-        Assertions.assertThat(afterFirst).anyMatch(s -> s.topicId().equals(topicId));
-        Assertions.assertThat(afterFirst).hasSize(1);
+        Assertions.assertThat(afterFirst)
+                .anyMatch(s -> s.topicId().equals(topicId)).hasSize(1);
 
         List<UserTopicSubscriptionDto> afterSecond = subscribe(cookie, topicId);
         Assertions.assertThat(afterSecond).anyMatch(s -> s.topicId().equals(topicId));

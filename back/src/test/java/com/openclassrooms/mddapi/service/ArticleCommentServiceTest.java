@@ -46,7 +46,8 @@ class ArticleCommentServiceTest {
 
     @Test
     void create_requires_auth_and_valid_payload() {
-        Assertions.assertThatThrownBy(() -> service.create(null, new CommentDto(null, "c", null, null, 1L)))
+        CommentDto unauthRequest = new CommentDto(null, "c", null, null, 1L);
+        Assertions.assertThatThrownBy(() -> service.create(null, unauthRequest))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("401");
 
@@ -63,11 +64,13 @@ class ArticleCommentServiceTest {
         MddUserEntity principal = new MddUserEntity();
         principal.setId(1L);
 
-        Assertions.assertThatThrownBy(() -> service.create(principal, new CommentDto(null, "c", null, null, null)))
+        CommentDto missingArticleId = new CommentDto(null, "c", null, null, null);
+        Assertions.assertThatThrownBy(() -> service.create(principal, missingArticleId))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("400");
 
-        Assertions.assertThatThrownBy(() -> service.create(principal, new CommentDto(null, "   ", null, null, 1L)))
+        CommentDto blankContent = new CommentDto(null, "   ", null, null, 1L);
+        Assertions.assertThatThrownBy(() -> service.create(principal, blankContent))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("400");
     }
@@ -79,7 +82,8 @@ class ArticleCommentServiceTest {
 
         Mockito.when(articleRepository.findById(99L)).thenReturn(Optional.empty());
 
-        Assertions.assertThatThrownBy(() -> service.create(principal, new CommentDto(null, "c", null, null, 99L)))
+        CommentDto request = new CommentDto(null, "c", null, null, 99L);
+        Assertions.assertThatThrownBy(() -> service.create(principal, request))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("404");
     }
@@ -139,8 +143,9 @@ class ArticleCommentServiceTest {
         // not owner -> 403
         MddUserEntity otherPrincipal = new MddUserEntity();
         otherPrincipal.setId(2L);
+        CommentDto updateRequest = new CommentDto(null, "x", null, null, 1L);
         Assertions
-                .assertThatThrownBy(() -> service.update(5L, otherPrincipal, new CommentDto(null, "x", null, null, 1L)))
+                .assertThatThrownBy(() -> service.update(5L, otherPrincipal, updateRequest))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("403");
     }

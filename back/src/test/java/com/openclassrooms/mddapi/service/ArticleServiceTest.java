@@ -69,7 +69,8 @@ class ArticleServiceTest {
 
     @Test
     void create_requires_auth_and_valid_payload() {
-        Assertions.assertThatThrownBy(() -> service.create(null, new CreateArticleRequest("t", "c", 1L)))
+        CreateArticleRequest unauthRequest = new CreateArticleRequest("t", "c", 1L);
+        Assertions.assertThatThrownBy(() -> service.create(null, unauthRequest))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("401");
 
@@ -119,8 +120,8 @@ class ArticleServiceTest {
         principal.setId(1L);
 
         Mockito.when(topicRepository.findById(99L)).thenReturn(Optional.empty());
-
-        Assertions.assertThatThrownBy(() -> service.create(principal, new CreateArticleRequest("t", "c", 99L)))
+        CreateArticleRequest request = new CreateArticleRequest("t", "c", 99L);
+        Assertions.assertThatThrownBy(() -> service.create(principal, request))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("404");
     }
