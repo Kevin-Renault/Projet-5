@@ -83,6 +83,40 @@ class ArticleServiceTest {
     }
 
     @Test
+    void create_rejects_blank_title_or_content() {
+        MddUserEntity principal = new MddUserEntity();
+        principal.setId(1L);
+
+        CreateArticleRequest invalidTitleRequest1 = new CreateArticleRequest("", "c", 1L);
+        Assertions.assertThatThrownBy(() -> service.create(principal, invalidTitleRequest1))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("400");
+
+        CreateArticleRequest invalidTitleRequest2 = new CreateArticleRequest(null, "c", 1L);
+        Assertions.assertThatThrownBy(() -> service.create(principal, invalidTitleRequest2))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("400");
+        CreateArticleRequest invalidTitleRequest3 = new CreateArticleRequest("    ", "c", 1L);
+        Assertions.assertThatThrownBy(() -> service.create(principal, invalidTitleRequest3))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("400");
+
+        CreateArticleRequest invalidContentRequest1 = new CreateArticleRequest("t", "", 1L);
+        Assertions.assertThatThrownBy(() -> service.create(principal, invalidContentRequest1))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("400");
+
+        CreateArticleRequest invalidContentRequest2 = new CreateArticleRequest("t", null, 1L);
+        Assertions.assertThatThrownBy(() -> service.create(principal, invalidContentRequest2))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("400");
+        CreateArticleRequest invalidContentRequest3 = new CreateArticleRequest("t", "    ", 1L);
+        Assertions.assertThatThrownBy(() -> service.create(principal, invalidContentRequest3))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("400");
+    }
+
+    @Test
     void create_happy_path_trims_and_maps() {
         MddUserEntity principal = new MddUserEntity();
         principal.setId(1L);
