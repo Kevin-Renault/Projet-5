@@ -120,7 +120,7 @@ class FullFlowIntegrationTest {
         ResponseEntity<String> topicsResponse = rest.exchange(
                 "/api/topics",
                 HttpMethod.GET,
-                new HttpEntity<>(headersWithCookie(cookie)),
+                new HttpEntity<>(null, headersWithCookie(cookie)),
                 String.class);
         Assertions.assertThat(topicsResponse.getStatusCode().value()).isEqualTo(200);
         List<TopicDto> topics = objectMapper.readValue(topicsResponse.getBody(), new TypeReference<>() {
@@ -178,7 +178,7 @@ class FullFlowIntegrationTest {
         ResponseEntity<String> articlesAgainResponse = rest.exchange(
                 "/api/articles",
                 HttpMethod.GET,
-                new HttpEntity<>(headersWithCookie(cookie)),
+                new HttpEntity<>(null, headersWithCookie(cookie)),
                 String.class);
         Assertions.assertThat(articlesAgainResponse.getStatusCode().value()).isEqualTo(200);
 
@@ -318,7 +318,7 @@ class FullFlowIntegrationTest {
             ResponseEntity<ArticleDto> articleById = rest.exchange(
                     "/api/articles/" + target.id(),
                     HttpMethod.GET,
-                    new HttpEntity<>(headersWithCookie(cookie)),
+                    new HttpEntity<>(null, headersWithCookie(cookie)),
                     ArticleDto.class);
             Assertions.assertThat(articleById.getStatusCode().value()).isEqualTo(200);
             Assertions.assertThat(articleById.getBody()).isNotNull();
@@ -383,7 +383,7 @@ class FullFlowIntegrationTest {
         ResponseEntity<Void> logoutResponse = rest.exchange(
                 "/api/auth/logout",
                 HttpMethod.POST,
-                new HttpEntity<>(headersWithCookie(cookie)),
+                new HttpEntity<>(null, headersWithCookie(cookie)),
                 Void.class);
         Assertions.assertThat(logoutResponse.getStatusCode().value()).isEqualTo(204);
 
@@ -399,7 +399,7 @@ class FullFlowIntegrationTest {
         ResponseEntity<UserDto> meResponse = rest.exchange(
                 "/api/auth/me",
                 HttpMethod.GET,
-                new HttpEntity<>(headersWithCookie(cookie)),
+                new HttpEntity<>(null, headersWithCookie(cookie)),
                 UserDto.class);
         Assertions.assertThat(meResponse.getStatusCode().value()).isEqualTo(200);
         Assertions.assertThat(meResponse.getBody()).isNotNull();
@@ -421,7 +421,7 @@ class FullFlowIntegrationTest {
         ResponseEntity<String> articlesResponse = rest.exchange(
                 "/api/articles",
                 HttpMethod.GET,
-                new HttpEntity<>(headersWithCookie(cookie)),
+                new HttpEntity<>(null, headersWithCookie(cookie)),
                 String.class);
         Assertions.assertThat(articlesResponse.getStatusCode().value()).isEqualTo(200);
         List<ArticleDto> articles = objectMapper.readValue(articlesResponse.getBody(), new TypeReference<>() {
@@ -433,7 +433,7 @@ class FullFlowIntegrationTest {
         ResponseEntity<String> topicsResponse = rest.exchange(
                 "/api/topics",
                 HttpMethod.GET,
-                new HttpEntity<>(headersWithCookie(cookie)),
+                new HttpEntity<>(null, headersWithCookie(cookie)),
                 String.class);
         Assertions.assertThat(topicsResponse.getStatusCode().value()).isEqualTo(200);
         List<TopicDto> topics = objectMapper.readValue(topicsResponse.getBody(), new TypeReference<>() {
@@ -445,7 +445,7 @@ class FullFlowIntegrationTest {
         ResponseEntity<String> response = rest.exchange(
                 "/api/subscriptions",
                 HttpMethod.GET,
-                new HttpEntity<>(headersWithCookie(cookie)),
+                new HttpEntity<>(null, headersWithCookie(cookie)),
                 String.class);
         Assertions.assertThat(response.getStatusCode().value()).isEqualTo(200);
         List<UserTopicSubscriptionDto> subscriptions = objectMapper.readValue(response.getBody(),
