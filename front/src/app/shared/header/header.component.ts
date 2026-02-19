@@ -45,7 +45,6 @@ export class HeaderComponent {
 
     logout() {
         this.authDataSource.logout();
-        this.router.navigate(['/']);
     }
 
     buttons: HeaderButton[] = [

@@ -75,6 +75,22 @@ public class AuthService {
         return new AuthResponseDto(token, toUserDto(user));
     }
 
+    @Transactional(readOnly = true)
+    public AuthResponseDto refreshAccessToken(Long userId) {
+        if (userId == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid refresh token");
+        }
+
+        MddUserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid refresh token"));
+
+        String token = jwtService.generateToken(
+                String.valueOf(user.getId()),
+                Map.of("email", user.getEmail(), "username", user.getUsername()));
+
+        return new AuthResponseDto(token, toUserDto(user));
+    }
+
     public UserDto toUserDto(MddUserEntity user) {
         return new UserDto(
                 user.getId(),

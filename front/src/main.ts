@@ -6,6 +6,7 @@ import { environment } from './environments/environment';
 import { enableProdMode, ErrorHandler } from '@angular/core';
 import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { CredentialsInterceptor } from './app/core/Interceptor/CredentialsInterceptor';
+import { RefreshOn401Interceptor } from './app/core/Interceptor/RefreshOn401Interceptor';
 import { GlobalErrorHandler } from './app/shared/error/global-error-handler';
 import { provideDataSources } from './app/core/providers/data-sources.providers';
 
@@ -21,6 +22,11 @@ bootstrapApplication(AppComponent, {
     {
       provide: HTTP_INTERCEPTORS,
       useClass: CredentialsInterceptor,
+      multi: true,
+    },
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: RefreshOn401Interceptor,
       multi: true,
     },
     ...provideDataSources({ useMock: environment.useMock }),

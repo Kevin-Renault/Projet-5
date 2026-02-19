@@ -7,6 +7,7 @@ import com.openclassrooms.mddapi.dto.auth.RegisterRequest;
 import com.openclassrooms.mddapi.entity.MddUserEntity;
 import com.openclassrooms.mddapi.exception.ApiErrorResponse;
 import com.openclassrooms.mddapi.security.JwtCookieService;
+import com.openclassrooms.mddapi.security.RefreshTokenService;
 import com.openclassrooms.mddapi.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -16,6 +17,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
@@ -34,10 +37,13 @@ public class AuthController {
 
     private final AuthService authService;
     private final JwtCookieService cookieService;
+    private final RefreshTokenService refreshTokenService;
 
-    public AuthController(AuthService authService, JwtCookieService cookieService) {
+    public AuthController(AuthService authService, JwtCookieService cookieService,
+            RefreshTokenService refreshTokenService) {
         this.authService = authService;
         this.cookieService = cookieService;
+        this.refreshTokenService = refreshTokenService;
     }
 
     @PostMapping("/register")
@@ -49,9 +55,12 @@ public class AuthController {
     })
     public ResponseEntity<AuthResponseDto> register(@Valid @RequestBody RegisterRequest request) {
         AuthResponseDto response = authService.register(request);
-        ResponseCookie cookie = cookieService.createAccessTokenCookie(response.token());
+        String refreshToken = refreshTokenService.issueAndReplaceForUser(response.user().id());
+        ResponseCookie accessCookie = cookieService.createAccessTokenCookie(response.token());
+        ResponseCookie refreshCookie = cookieService.createRefreshTokenCookie(refreshToken);
         return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
                 .body(response);
     }
 
@@ -64,14 +73,38 @@ public class AuthController {
     })
     public ResponseEntity<AuthResponseDto> login(@Valid @RequestBody LoginRequest request) {
         AuthResponseDto response = authService.login(request);
-        ResponseCookie cookie = cookieService.createAccessTokenCookie(response.token());
+        String refreshToken = refreshTokenService.issueAndReplaceForUser(response.user().id());
+        ResponseCookie accessCookie = cookieService.createAccessTokenCookie(response.token());
+        ResponseCookie refreshCookie = cookieService.createRefreshTokenCookie(refreshToken);
         return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+                .body(response);
+    }
+
+    @PostMapping("/refresh")
+    @Operation(summary = "Refresh access token", description = "Uses the refresh token cookie to rotate the session and set a new access token cookie.", responses = {
+            @ApiResponse(responseCode = "200", description = "Access token refreshed", content = @Content(schema = @Schema(implementation = AuthResponseDto.class))),
+            @ApiResponse(responseCode = "401", description = "Invalid or expired refresh token", content = @Content),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public ResponseEntity<AuthResponseDto> refresh(HttpServletRequest request) {
+        String presented = extractCookieValue(request, cookieService.getRefreshCookieName());
+        RefreshTokenService.RefreshRotationResult rotation = refreshTokenService.rotate(presented);
+
+        AuthResponseDto response = authService.refreshAccessToken(rotation.userId());
+
+        ResponseCookie accessCookie = cookieService.createAccessTokenCookie(response.token());
+        ResponseCookie refreshCookie = cookieService.createRefreshTokenCookie(rotation.newRefreshToken());
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
                 .body(response);
     }
 
     @PostMapping("/logout")
-    @Operation(summary = "Logout", description = "Clears the access token cookie.", responses = {
+    @Operation(summary = "Logout", description = "Clears access + refresh token cookies and revokes the refresh token.", responses = {
             @ApiResponse(responseCode = "204", description = "Logged out (cookie cleared)", content = @Content),
             @ApiResponse(responseCode = "401", description = "Not authenticated", content = @Content),
             @ApiResponse(responseCode = "403", description = "Forbidden", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
@@ -79,10 +112,24 @@ public class AuthController {
     })
     @SecurityRequirement(name = com.openclassrooms.mddapi.config.OpenApiConfig.BEARER_AUTH_SCHEME)
     @SecurityRequirement(name = com.openclassrooms.mddapi.config.OpenApiConfig.COOKIE_AUTH_SCHEME)
-    public ResponseEntity<Void> logout() {
-        ResponseCookie cookie = cookieService.clearAccessTokenCookie();
+    public ResponseEntity<Void> logout(
+            HttpServletRequest request,
+            @Parameter(hidden = true) @AuthenticationPrincipal Object principal) {
+
+        if (principal instanceof MddUserEntity user) {
+            refreshTokenService.revokeForUser(user.getId());
+        } else {
+            // Access token may be expired; still revoke based on refresh cookie when
+            // present.
+            String presented = extractCookieValue(request, cookieService.getRefreshCookieName());
+            refreshTokenService.revokePresentedToken(presented);
+        }
+
+        ResponseCookie accessCookie = cookieService.clearAccessTokenCookie();
+        ResponseCookie refreshCookie = cookieService.clearRefreshTokenCookie();
         return ResponseEntity.noContent()
-                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
                 .build();
     }
 
@@ -99,5 +146,21 @@ public class AuthController {
             return ResponseEntity.ok(authService.toUserDto(user));
         }
         return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED).build();
+    }
+
+    private String extractCookieValue(HttpServletRequest request, String cookieName) {
+        if (cookieName == null || cookieName.isBlank()) {
+            return null;
+        }
+        Cookie[] cookies = request.getCookies();
+        if (cookies == null) {
+            return null;
+        }
+        for (Cookie cookie : cookies) {
+            if (cookieName.equals(cookie.getName())) {
+                return cookie.getValue();
+            }
+        }
+        return null;
     }
 }

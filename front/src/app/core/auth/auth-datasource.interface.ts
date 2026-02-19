@@ -9,9 +9,11 @@ export interface AuthResponse {
 export const AUTH_DATASOURCE = new InjectionToken<AuthDataSource>('AuthDataSource');
 export interface AuthDataSource {
     initSession(): Promise<void>;
+    refresh(): Observable<void>;
     login(email: string, password: string): Observable<void>;
     register(data: User): Observable<AuthResponse>;
     logout(): void;
+    clearSession(): void;
     isAuthenticated$(): Signal<boolean>;
     getCurrentUser(): User;
     refreshCurrentUser(): Observable<User>;
