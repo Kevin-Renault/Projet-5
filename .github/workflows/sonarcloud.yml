@@ -1,0 +1,240 @@
+name: SonarCloud
+
+on:
+  push:
+    branches:
+      - '**'
+    paths:
+      - 'back/**'
+      - '.github/workflows/sonarcloud.yml'
+  pull_request:
+    paths:
+      - 'back/**'
+      - '.github/workflows/sonarcloud.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sonarcloud:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: mdd
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Make Maven wrapper executable
+        working-directory: back
+        run: chmod +x mvnw
+
+      - name: Build and test (backend)
+        working-directory: back
+        env:
+          DB_MDD_NAME: mdd
+          DB_USER: root
+          DB_PASSWORD: root
+        run: >-
+          ./mvnw -B verify
+
+      - name: Coverage summary (JaCoCo)
+        working-directory: back
+        run: |
+          python3 - <<'PY'
+          import os
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          report_path = Path('target/site/jacoco/jacoco.xml')
+          if not report_path.exists():
+            raise SystemExit(f'JaCoCo report not found: {report_path} (did ./mvnw verify run?)')
+          tree = ET.parse(report_path)
+          root = tree.getroot()
+          counters = {c.attrib['type']: (int(c.attrib['covered']), int(c.attrib['missed'])) for c in root.findall('counter')}
+
+          def pct(covered, missed):
+            total = covered + missed
+            return 0.0 if total == 0 else (covered / total) * 100.0
+
+          def row(counter_type: str):
+            covered, missed = counters.get(counter_type, (0, 0))
+            total = covered + missed
+            return {
+              'type': counter_type,
+              'pct': pct(covered, missed),
+              'covered': covered,
+              'missed': missed,
+              'total': total,
+            }
+
+          rows = [
+            row('LINE'),
+            row('BRANCH'),
+            row('INSTRUCTION'),
+          ]
+
+          summary_path = os.environ.get('GITHUB_STEP_SUMMARY')
+          if not summary_path:
+            raise SystemExit('GITHUB_STEP_SUMMARY is not set')
+
+          sonar_overview = 'https://sonarcloud.io/project/overview?id=Kevin-Renault_Projet-5'
+          sonar_main_new_code = 'https://sonarcloud.io/summary/new_code?id=Kevin-Renault_Projet-5&branch=main'
+
+          repo = os.environ.get('GITHUB_REPOSITORY', '').strip()  # owner/repo
+          if repo and '/' in repo:
+            owner, name = repo.split('/', 1)
+            pages_base = f'https://{owner}.github.io/{name}'
+          else:
+            pages_base = None
+
+          ref_name = os.environ.get('GITHUB_REF_NAME', '').strip()
+          safe_ref_name = ref_name.replace('/', '-') if ref_name else None
+          deployable = ref_name in {'main', 'test/junit-jest-cypress'}
+          pages_report = (
+            f'{pages_base}/jacoco/{safe_ref_name}/index.html'
+            if deployable and pages_base and safe_ref_name
+            else None
+          )
+
+          def fmt_int(n: int) -> str:
+            return f'{n:,}'.replace(',', ' ')
+
+          table_lines = [
+            '| Metric | Coverage | Covered | Missed | Total |',
+            '|---|---:|---:|---:|---:|',
+          ]
+          for r in rows:
+            table_lines.append(
+              f"| {r['type'].title()} | {r['pct']:.2f}% | {fmt_int(r['covered'])} | {fmt_int(r['missed'])} | {fmt_int(r['total'])} |"
+            )
+
+          Path(summary_path).write_text(
+            '\n'.join([
+              '## Backend coverage (JaCoCo)',
+              '',
+              *table_lines,
+              '',
+              '### Links',
+              f'- SonarCloud overview (main): {sonar_overview}',
+              f'- SonarCloud new code (main): {sonar_main_new_code}',
+              *( [f'- JaCoCo report (GitHub Pages): {pages_report}'] if pages_report else [] ),
+              '',
+              '### Report',
+              '- Download the artifact `jacoco-report` to open the HTML report locally.',
+              '',
+              '<details><summary>Raw counters</summary>',
+              '',
+              '```text',
+              *[f"{k}: covered={c} missed={m}" for k, (c, m) in sorted(counters.items())],
+              '```',
+              '</details>',
+            ]) + '\n',
+            encoding='utf-8'
+          )
+          PY
+
+      - name: Upload JaCoCo HTML report
+        id: upload_jacoco_report
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: back/target/site/jacoco
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Add artifact download link
+        if: always()
+        shell: bash
+        run: |
+          echo "" >> "${GITHUB_STEP_SUMMARY}"
+          echo "### Downloads" >> "${GITHUB_STEP_SUMMARY}"
+          echo "- JaCoCo artifact (this run): ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts/${{ steps.upload_jacoco_report.outputs.artifact-id }}" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Prepare GitHub Pages (JaCoCo)
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/test/junit-jest-cypress'
+        shell: bash
+        run: |
+          set -euo pipefail
+          SAFE_BRANCH="${GITHUB_REF_NAME//\//-}"
+
+          rm -rf site
+          mkdir -p "site/jacoco/${SAFE_BRANCH}"
+          cp -R back/target/site/jacoco/* "site/jacoco/${SAFE_BRANCH}/"
+
+          # Disable Jekyll processing on GitHub Pages
+          touch site/.nojekyll
+
+          cat > site/index.html <<'HTML'
+          <!doctype html>
+          <html lang="en">
+            <head>
+              <meta charset="utf-8" />
+              <meta name="viewport" content="width=device-width, initial-scale=1" />
+              <title>JaCoCo Reports</title>
+            </head>
+            <body>
+              <h1>JaCoCo Reports</h1>
+              <p>Latest reports published from CI.</p>
+              <ul>
+                <li><a href="./jacoco/main/index.html">main</a></li>
+                <li><a href="./jacoco/test-junit-jest-cypress/index.html">test-junit-jest-cypress</a></li>
+              </ul>
+            </body>
+          </html>
+          HTML
+
+      - name: Deploy JaCoCo report to GitHub Pages (gh-pages)
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/test/junit-jest-cypress'
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: site
+          clean: false
+          single-commit: true
+
+      - name: Validate SonarCloud configuration (main only)
+        if: github.ref == 'refs/heads/main'
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          if [ -z "${SONAR_TOKEN}" ]; then
+            echo "Missing SONAR_TOKEN secret. Add it in: Settings > Secrets and variables > Actions.";
+            exit 1;
+          fi
+
+      - name: SonarCloud analysis (main only)
+        if: github.ref == 'refs/heads/main'
+        working-directory: back
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: >-
+          ./mvnw -B
+          org.sonarsource.scanner.maven:sonar-maven-plugin:5.5.0.6356:sonar
+          -Dsonar.host.url=https://sonarcloud.io
+          -Dsonar.projectKey=Kevin-Renault_Projet-5
+          -Dsonar.organization=kevin-renault
+          -Dsonar.token=${SONAR_TOKEN}
+          

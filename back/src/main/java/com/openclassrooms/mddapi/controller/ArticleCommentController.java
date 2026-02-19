@@ -13,12 +13,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -39,7 +39,7 @@ public class ArticleCommentController {
     }
 
     @GetMapping
-    @Operation(summary = "List comments", description = "Returns all comments. If 'articleId' is provided, returns only comments for the given article.", responses = {
+    @Operation(summary = "List comments", description = "Returns comments for the given article.", responses = {
             @ApiResponse(responseCode = "200", description = "Comments returned", content = @Content(array = @ArraySchema(schema = @Schema(implementation = CommentDto.class)))),
             @ApiResponse(responseCode = "400", description = "Invalid query parameter", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
             @ApiResponse(responseCode = "401", description = "Not authenticated", content = @Content),
@@ -47,26 +47,8 @@ public class ArticleCommentController {
             @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     })
     public List<CommentDto> getAll(
-            @Parameter(description = "Filter comments by article id", example = "1") @RequestParam(required = false) Long articleId) {
-        if (articleId != null) {
-            return commentService.getAllByArticleId(articleId);
-        }
-        return commentService.getAll();
-    }
-
-    @GetMapping("/{id}")
-    @Operation(summary = "Get comment by id", description = "Returns a single comment.", responses = {
-
-            @ApiResponse(responseCode = "200", description = "Comment returned", content = @Content(schema = @Schema(implementation = CommentDto.class))),
-            @ApiResponse(responseCode = "400", description = "Invalid id", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
-            @ApiResponse(responseCode = "401", description = "Not authenticated", content = @Content),
-            @ApiResponse(responseCode = "403", description = "Forbidden", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
-            @ApiResponse(responseCode = "404", description = "Comment not found", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
-            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
-    })
-    public CommentDto getById(
-            @Parameter(description = "Comment id", example = "1") @PathVariable Long id) {
-        return commentService.getById(id);
+            @Parameter(description = "Article id", example = "1") @RequestParam Long articleId) {
+        return commentService.getAllByArticleId(articleId);
     }
 
     @PostMapping

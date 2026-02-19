@@ -17,9 +17,7 @@ export class UserMockService implements UserDataSource {
     getById(id: number): Observable<User> {
         return of(MOCK_USERS.find(user => user.id === id)!);
     }
-    create(user: User): Observable<User> {
-        return of({ ...user, id: Date.now() });
-    }
+
     update(user: Partial<User>): Observable<User> {
         const currentUser = this.authDataSource.getCurrentUser();
         const targetId = user.id ?? currentUser?.id;

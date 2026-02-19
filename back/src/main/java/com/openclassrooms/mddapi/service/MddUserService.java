@@ -41,38 +41,6 @@ public class MddUserService {
     }
 
     @Transactional
-    public UserDto create(UserDto request) {
-        if (request == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid payload");
-        }
-
-        String username = trimToNull(request.username());
-        String email = trimToNull(request.email());
-        String password = trimToNull(request.password());
-
-        if (username == null || email == null || password == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing required fields");
-        }
-
-        if (userRepository.existsByEmail(email)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already used");
-        }
-        if (userRepository.existsByUsername(username)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already used");
-        }
-
-        requireValidPassword(password);
-
-        MddUserEntity entity = new MddUserEntity();
-        entity.setUsername(username);
-        entity.setEmail(email);
-        entity.setPassword(passwordEncoder.encode(password));
-
-        MddUserEntity saved = userRepository.save(entity);
-        return userMapper.toDto(saved);
-    }
-
-    @Transactional
     public UserDto update(MddUserEntity principal, UserDto request) {
         if (request == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid payload");

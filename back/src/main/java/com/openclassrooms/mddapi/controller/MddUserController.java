@@ -14,12 +14,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -61,21 +58,6 @@ public class MddUserController {
     public UserDto getById(
             @Parameter(description = "User id", example = "1") @PathVariable Long id) {
         return userService.getById(id);
-    }
-
-    @PostMapping
-    @Operation(summary = "Create user", description = "Creates a new user.", responses = {
-            @ApiResponse(responseCode = "201", description = "User created", content = @Content(schema = @Schema(implementation = UserDto.class))),
-            @ApiResponse(responseCode = "400", description = "Validation error", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
-            @ApiResponse(responseCode = "401", description = "Not authenticated", content = @Content),
-            @ApiResponse(responseCode = "403", description = "Forbidden", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
-            @ApiResponse(responseCode = "409", description = "Conflict", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
-            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
-    })
-    public ResponseEntity<UserDto> create(
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true, description = "User payload", content = @Content(schema = @Schema(implementation = UserDto.class))) @Valid @RequestBody UserDto request) {
-        UserDto created = userService.create(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @PutMapping
