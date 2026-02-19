@@ -9,11 +9,15 @@ import com.openclassrooms.mddapi.dto.auth.AuthResponseDto;
 import com.openclassrooms.mddapi.dto.auth.LoginRequest;
 import com.openclassrooms.mddapi.dto.auth.RegisterRequest;
 import com.openclassrooms.mddapi.dto.article.CreateArticleRequest;
+import com.openclassrooms.mddapi.repository.ArticleCommentRepository;
+import com.openclassrooms.mddapi.repository.ArticleRepository;
+import com.openclassrooms.mddapi.repository.MddUserRepository;
 import com.openclassrooms.mddapi.security.JwtCookieService;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -36,12 +40,51 @@ class FullFlowIntegrationTest {
     @Autowired
     private JwtCookieService jwtCookieService;
 
+    @Autowired
+    private MddUserRepository mddUserRepository;
+
+    @Autowired
+    private ArticleRepository articleRepository;
+
+    @Autowired
+    private ArticleCommentRepository articleCommentRepository;
+
+    private String createdTestEmail;
+    private String createdTestUsername;
+    private Long createdArticleId;
+    private Long createdCommentId;
+
+    @AfterEach
+    void cleanup() {
+        if (createdCommentId != null) {
+            articleCommentRepository.findById(createdCommentId).ifPresent(articleCommentRepository::delete);
+        }
+
+        if (createdArticleId != null) {
+            articleRepository.findById(createdArticleId).ifPresent(articleRepository::delete);
+        }
+
+        if (createdTestEmail != null) {
+            mddUserRepository.findByEmail(createdTestEmail).ifPresent(mddUserRepository::delete);
+        } else if (createdTestUsername != null) {
+            mddUserRepository.findByUsername(createdTestUsername).ifPresent(mddUserRepository::delete);
+        }
+
+        createdTestEmail = null;
+        createdTestUsername = null;
+        createdArticleId = null;
+        createdCommentId = null;
+    }
+
     @Test
     void fullIntegrationFlow_login_list_pick_comment_list_logout() throws Exception {
         String unique = UUID.randomUUID().toString().replace("-", "").substring(0, 12);
         String username = "it_" + unique;
         String email = "it_" + unique + "@example.com";
         String password = "TestP@ssw0rd1";
+
+        createdTestUsername = username;
+        createdTestEmail = email;
 
         // Setup: create user (register), then logout so the scenario starts with a
         // login.
@@ -76,9 +119,9 @@ class FullFlowIntegrationTest {
         Assertions.assertThat(topicsResponse.getStatusCode().value()).isEqualTo(200);
         List<TopicDto> topics = objectMapper.readValue(topicsResponse.getBody(), new TypeReference<>() {
         });
-        Assertions.assertThat(topics).isNotNull();
-        Assertions.assertThat(topics).isNotEmpty();
-
+        Assertions.assertThat(topics)
+                .isNotNull()
+                .isNotEmpty();
         // 3) Get articles
         List<ArticleDto> articles = getArticles(cookie);
 
@@ -97,6 +140,8 @@ class FullFlowIntegrationTest {
                     ArticleDto.class);
             Assertions.assertThat(createArticleResponse.getStatusCode().value()).isEqualTo(201);
             Assertions.assertThat(createArticleResponse.getBody()).isNotNull();
+
+            createdArticleId = createArticleResponse.getBody().id();
 
             articles = getArticles(cookie);
             Assertions.assertThat(articles).isNotEmpty();
@@ -121,6 +166,7 @@ class FullFlowIntegrationTest {
                 CommentDto.class);
         Assertions.assertThat(createCommentResponse.getStatusCode().value()).isEqualTo(201);
         Assertions.assertThat(createCommentResponse.getBody()).isNotNull();
+        createdCommentId = createCommentResponse.getBody().id();
 
         // 6) Back to articles
         ResponseEntity<String> articlesAgainResponse = rest.exchange(
