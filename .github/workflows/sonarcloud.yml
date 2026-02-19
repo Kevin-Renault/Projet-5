@@ -112,7 +112,12 @@ jobs:
 
           ref_name = os.environ.get('GITHUB_REF_NAME', '').strip()
           safe_ref_name = ref_name.replace('/', '-') if ref_name else None
-          pages_report = f'{pages_base}/jacoco/{safe_ref_name}/index.html' if pages_base and safe_ref_name else None
+          deployable = ref_name in {'main', 'test/junit-jest-cypress'}
+          pages_report = (
+            f'{pages_base}/jacoco/{safe_ref_name}/index.html'
+            if deployable and pages_base and safe_ref_name
+            else None
+          )
 
           def fmt_int(n: int) -> str:
             return f'{n:,}'.replace(',', ' ')
@@ -169,6 +174,9 @@ jobs:
           rm -rf site
           mkdir -p "site/jacoco/${SAFE_BRANCH}"
           cp -R back/target/site/jacoco/* "site/jacoco/${SAFE_BRANCH}/"
+
+          # Disable Jekyll processing on GitHub Pages
+          touch site/.nojekyll
 
           cat > site/index.html <<'HTML'
           <!doctype html>
