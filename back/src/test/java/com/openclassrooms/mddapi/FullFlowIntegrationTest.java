@@ -9,6 +9,7 @@ import com.openclassrooms.mddapi.dto.auth.AuthResponseDto;
 import com.openclassrooms.mddapi.dto.auth.LoginRequest;
 import com.openclassrooms.mddapi.dto.auth.RegisterRequest;
 import com.openclassrooms.mddapi.dto.article.CreateArticleRequest;
+import com.openclassrooms.mddapi.dto.UserDto;
 import com.openclassrooms.mddapi.repository.ArticleCommentRepository;
 import com.openclassrooms.mddapi.repository.ArticleRepository;
 import com.openclassrooms.mddapi.repository.MddUserRepository;
@@ -51,6 +52,7 @@ class FullFlowIntegrationTest {
 
     private String createdTestEmail;
     private String createdTestUsername;
+    private Long createdUserId;
     private Long createdArticleId;
     private Long createdCommentId;
 
@@ -64,7 +66,9 @@ class FullFlowIntegrationTest {
             articleRepository.findById(createdArticleId).ifPresent(articleRepository::delete);
         }
 
-        if (createdTestEmail != null) {
+        if (createdUserId != null) {
+            mddUserRepository.findById(createdUserId).ifPresent(mddUserRepository::delete);
+        } else if (createdTestEmail != null) {
             mddUserRepository.findByEmail(createdTestEmail).ifPresent(mddUserRepository::delete);
         } else if (createdTestUsername != null) {
             mddUserRepository.findByUsername(createdTestUsername).ifPresent(mddUserRepository::delete);
@@ -72,6 +76,7 @@ class FullFlowIntegrationTest {
 
         createdTestEmail = null;
         createdTestUsername = null;
+        createdUserId = null;
         createdArticleId = null;
         createdCommentId = null;
     }
@@ -92,6 +97,10 @@ class FullFlowIntegrationTest {
         ResponseEntity<AuthResponseDto> registerResponse = rest.postForEntity("/api/auth/register", registerRequest,
                 AuthResponseDto.class);
         Assertions.assertThat(registerResponse.getStatusCode().value()).isEqualTo(200);
+        Assertions.assertThat(registerResponse.getBody()).isNotNull();
+        Assertions.assertThat(registerResponse.getBody().user()).isNotNull();
+        createdUserId = registerResponse.getBody().user().id();
+        Assertions.assertThat(createdUserId).isNotNull();
         String cookie = extractCookie(registerResponse.getHeaders(), jwtCookieService.getCookieName());
         Assertions.assertThat(cookie).isNotBlank();
 
@@ -190,6 +199,106 @@ class FullFlowIntegrationTest {
                 .assertThat(
                         setCookieHeaders.stream().anyMatch(h -> h.startsWith(jwtCookieService.getCookieName() + "=")))
                 .isTrue();
+    }
+
+    @Test
+    void fullIntegrationFlow_update_profile_and_relogin() {
+        String unique = UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+        String username = "it_" + unique;
+        String email = "it_" + unique + "@example.com";
+        String password = "TestP@ssw0rd1";
+
+        createdTestUsername = username;
+        createdTestEmail = email;
+
+        // Register
+        RegisterRequest registerRequest = new RegisterRequest(username, email, password);
+        ResponseEntity<AuthResponseDto> registerResponse = rest.postForEntity(
+                "/api/auth/register",
+                registerRequest,
+                AuthResponseDto.class);
+        Assertions.assertThat(registerResponse.getStatusCode().value()).isEqualTo(200);
+        Assertions.assertThat(registerResponse.getBody()).isNotNull();
+        Assertions.assertThat(registerResponse.getBody().user()).isNotNull();
+        createdUserId = registerResponse.getBody().user().id();
+        Assertions.assertThat(createdUserId).isNotNull();
+
+        String cookie = extractCookie(registerResponse.getHeaders(), jwtCookieService.getCookieName());
+        Assertions.assertThat(cookie).isNotBlank();
+
+        // Login explicitly (after a logout) to validate the login step
+        ResponseEntity<Void> setupLogoutResponse = rest.exchange(
+                "/api/auth/logout",
+                HttpMethod.POST,
+                new HttpEntity<>(headersWithCookie(cookie)),
+                Void.class);
+        Assertions.assertThat(setupLogoutResponse.getStatusCode().value()).isEqualTo(204);
+
+        ResponseEntity<AuthResponseDto> loginResponse = rest.postForEntity(
+                "/api/auth/login",
+                new LoginRequest(email, password),
+                AuthResponseDto.class);
+        Assertions.assertThat(loginResponse.getStatusCode().value()).isEqualTo(200);
+        cookie = extractCookie(loginResponse.getHeaders(), jwtCookieService.getCookieName());
+        Assertions.assertThat(cookie).isNotBlank();
+
+        // Read profile
+        ResponseEntity<UserDto> meResponse = rest.exchange(
+                "/api/auth/me",
+                HttpMethod.GET,
+                new HttpEntity<>(headersWithCookie(cookie)),
+                UserDto.class);
+        Assertions.assertThat(meResponse.getStatusCode().value()).isEqualTo(200);
+        Assertions.assertThat(meResponse.getBody()).isNotNull();
+        Assertions.assertThat(meResponse.getBody().email()).isEqualTo(email);
+        Assertions.assertThat(meResponse.getBody().username()).isEqualTo(username);
+
+        // Update profile (username + email)
+        String newUsername = "it2_" + unique;
+        String newEmail = "it2_" + unique + "@example.com";
+        UserDto updatePayload = new UserDto(null, newUsername, newEmail, null, null, null);
+
+        ResponseEntity<UserDto> updateResponse = rest.exchange(
+                "/api/users",
+                HttpMethod.PUT,
+                new HttpEntity<>(updatePayload, headersWithCookie(cookie)),
+                UserDto.class);
+        Assertions.assertThat(updateResponse.getStatusCode().value()).isEqualTo(200);
+        Assertions.assertThat(updateResponse.getBody()).isNotNull();
+        Assertions.assertThat(updateResponse.getBody().username()).isEqualTo(newUsername);
+        Assertions.assertThat(updateResponse.getBody().email()).isEqualTo(newEmail);
+
+        // Keep cleanup robust if it falls back to email/username
+        createdTestUsername = newUsername;
+        createdTestEmail = newEmail;
+
+        // Logout
+        ResponseEntity<Void> logoutResponse = rest.exchange(
+                "/api/auth/logout",
+                HttpMethod.POST,
+                new HttpEntity<>(headersWithCookie(cookie)),
+                Void.class);
+        Assertions.assertThat(logoutResponse.getStatusCode().value()).isEqualTo(204);
+
+        // Re-login using the new email
+        ResponseEntity<AuthResponseDto> reloginResponse = rest.postForEntity(
+                "/api/auth/login",
+                new LoginRequest(newEmail, password),
+                AuthResponseDto.class);
+        Assertions.assertThat(reloginResponse.getStatusCode().value()).isEqualTo(200);
+        cookie = extractCookie(reloginResponse.getHeaders(), jwtCookieService.getCookieName());
+        Assertions.assertThat(cookie).isNotBlank();
+
+        // Verify updated profile is effective
+        ResponseEntity<UserDto> meAgainResponse = rest.exchange(
+                "/api/auth/me",
+                HttpMethod.GET,
+                new HttpEntity<>(headersWithCookie(cookie)),
+                UserDto.class);
+        Assertions.assertThat(meAgainResponse.getStatusCode().value()).isEqualTo(200);
+        Assertions.assertThat(meAgainResponse.getBody()).isNotNull();
+        Assertions.assertThat(meAgainResponse.getBody().email()).isEqualTo(newEmail);
+        Assertions.assertThat(meAgainResponse.getBody().username()).isEqualTo(newUsername);
     }
 
     private List<ArticleDto> getArticles(String cookie) throws Exception {
