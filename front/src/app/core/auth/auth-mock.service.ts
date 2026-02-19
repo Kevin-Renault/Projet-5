@@ -59,6 +59,15 @@ export class AuthMockService implements AuthDataSource {
         }
     }
 
+    refresh(): Observable<void> {
+        // En mock: pas de refresh serveur, on considère la session valide si un token existe.
+        const token = this.getToken();
+        if (!token) {
+            return throwError(() => new Error('No session'));
+        }
+        return of(void 0);
+    }
+
     login(login: string, password: string): Observable<void> {
         const user = MOCK_USERS.find(u =>
             (u.email === login || u.username === login) && u.password === password
@@ -97,6 +106,10 @@ export class AuthMockService implements AuthDataSource {
         localStorage.removeItem(this.tokenKey);
         this.setAuthState(false);
         this.currentUserSignal.set(null);
+    }
+
+    clearSession(): void {
+        this.logout();
     }
 
     setToken(token: string): void {
