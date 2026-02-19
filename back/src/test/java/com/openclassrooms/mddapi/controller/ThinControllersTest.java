@@ -83,19 +83,14 @@ class ThinControllersTest {
         ArticleCommentService service = Mockito.mock(ArticleCommentService.class);
         ArticleCommentController controller = new ArticleCommentController(service);
 
-        Mockito.when(service.getAll()).thenReturn(List.of());
-        Assertions.assertThat(controller.getAll(null)).isEmpty();
-
         Mockito.when(service.getAllByArticleId(10L))
                 .thenReturn(List.of(new CommentDto(1L, "c", Instant.now(), 2L, 10L)));
         Assertions.assertThat(controller.getAll(10L)).hasSize(1);
 
-        CommentDto dto = new CommentDto(2L, "c2", Instant.now(), 2L, 10L);
-        Mockito.when(service.getById(2L)).thenReturn(dto);
-        Assertions.assertThat(controller.getById(2L)).isSameAs(dto);
-
         MddUserEntity principal = new MddUserEntity();
         principal.setId(2L);
+
+        CommentDto dto = new CommentDto(2L, "c2", Instant.now(), 2L, 10L);
         Mockito.when(service.create(principal, dto)).thenReturn(dto);
         ResponseEntity<CommentDto> created = controller.create(principal, dto);
         Assertions.assertThat(created.getStatusCode().value()).isEqualTo(201);

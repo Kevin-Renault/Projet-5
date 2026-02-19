@@ -13,7 +13,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
 
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -40,7 +39,7 @@ public class ArticleCommentController {
     }
 
     @GetMapping
-    @Operation(summary = "List comments", description = "Returns all comments. If 'articleId' is provided, returns only comments for the given article.", responses = {
+    @Operation(summary = "List comments", description = "Returns comments for the given article.", responses = {
             @ApiResponse(responseCode = "200", description = "Comments returned", content = @Content(array = @ArraySchema(schema = @Schema(implementation = CommentDto.class)))),
             @ApiResponse(responseCode = "400", description = "Invalid query parameter", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
             @ApiResponse(responseCode = "401", description = "Not authenticated", content = @Content),
@@ -48,7 +47,7 @@ public class ArticleCommentController {
             @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     })
     public List<CommentDto> getAll(
-            @Parameter(description = "Filter comments by article id", example = "1") @RequestParam(required = false) @NotNull Long articleId) {
+            @Parameter(description = "Article id", example = "1") @RequestParam Long articleId) {
         return commentService.getAllByArticleId(articleId);
     }
 
