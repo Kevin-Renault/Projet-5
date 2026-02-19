@@ -5,6 +5,7 @@ import com.openclassrooms.mddapi.entity.MddUserEntity;
 import com.openclassrooms.mddapi.mapper.UserMapper;
 import com.openclassrooms.mddapi.repository.MddUserRepository;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -33,63 +34,46 @@ class MddUserServiceTest {
     private MddUserService service;
 
     @Test
-    void create_rejects_null_and_missing_fields() {
-        Assertions.assertThatThrownBy(() -> service.create(null))
-                .isInstanceOf(ResponseStatusException.class)
-                .hasMessageContaining("400");
+    void getAll_maps_entities() {
+        MddUserEntity e1 = new MddUserEntity();
+        e1.setId(1L);
+        MddUserEntity e2 = new MddUserEntity();
+        e2.setId(2L);
 
-        UserDto missing = new UserDto(null, null, null, null, null, null);
-        Assertions.assertThatThrownBy(() -> service.create(missing))
-                .isInstanceOf(ResponseStatusException.class)
-                .hasMessageContaining("400");
+        Mockito.when(userRepository.findAll()).thenReturn(List.of(e1, e2));
+        Mockito.when(mapper.toDto(e1)).thenReturn(new UserDto(1L, "u1", "e1", "", "user", Instant.now()));
+        Mockito.when(mapper.toDto(e2)).thenReturn(new UserDto(2L, "u2", "e2", "", "user", Instant.now()));
+
+        Assertions.assertThat(service.getAll()).hasSize(2);
     }
 
     @Test
-    void create_rejects_conflicts() {
-        UserDto dto = new UserDto(null, "u", "e@example.com", "Password123!", null, null);
-
-        Mockito.when(userRepository.existsByEmail("e@example.com")).thenReturn(true);
-        Assertions.assertThatThrownBy(() -> service.create(dto))
+    void getById_404_when_missing() {
+        Mockito.when(userRepository.findById(99L)).thenReturn(Optional.empty());
+        Assertions.assertThatThrownBy(() -> service.getById(99L))
                 .isInstanceOf(ResponseStatusException.class)
-                .hasMessageContaining("409");
-
-        Mockito.when(userRepository.existsByEmail("e@example.com")).thenReturn(false);
-        Mockito.when(userRepository.existsByUsername("u")).thenReturn(true);
-        Assertions.assertThatThrownBy(() -> service.create(dto))
-                .isInstanceOf(ResponseStatusException.class)
-                .hasMessageContaining("409");
+                .hasMessageContaining("404");
     }
 
     @Test
-    void create_happy_path_encodes_and_maps() {
-        UserDto dto = new UserDto(null, "u", "e@example.com", "Password123!", null, null);
+    void getById_maps_entity() {
+        MddUserEntity entity = new MddUserEntity();
+        entity.setId(2L);
+        Mockito.when(userRepository.findById(2L)).thenReturn(Optional.of(entity));
 
-        Mockito.when(userRepository.existsByEmail("e@example.com")).thenReturn(false);
-        Mockito.when(userRepository.existsByUsername("u")).thenReturn(false);
-        Mockito.when(passwordEncoder.encode("Password123!")).thenReturn("encoded");
+        UserDto dto = new UserDto(2L, "u2", "e2", "", "user", Instant.now());
+        Mockito.when(mapper.toDto(entity)).thenReturn(dto);
 
-        MddUserEntity saved = new MddUserEntity();
-        saved.setId(1L);
-        saved.setCreatedAt(Instant.now());
-
-        ArgumentCaptor<MddUserEntity> toSaveCaptor = ArgumentCaptor.forClass(MddUserEntity.class);
-        Mockito.when(userRepository.save(toSaveCaptor.capture())).thenReturn(saved);
-
-        UserDto mapped = new UserDto(1L, "u", "e@example.com", "", "user", saved.getCreatedAt());
-        Mockito.when(mapper.toDto(saved)).thenReturn(mapped);
-
-        UserDto out = service.create(dto);
-        Assertions.assertThat(out).isSameAs(mapped);
-
-        MddUserEntity toSave = toSaveCaptor.getValue();
-        Assertions.assertThat(toSave.getUsername()).isEqualTo("u");
-        Assertions.assertThat(toSave.getEmail()).isEqualTo("e@example.com");
-        Assertions.assertThat(toSave.getPassword()).isEqualTo("encoded");
+        Assertions.assertThat(service.getById(2L)).isSameAs(dto);
     }
 
     @Test
     void update_requires_auth_and_existing_user() {
         UserDto dto = new UserDto(null, "u", "e@example.com", null, null, null);
+
+        Assertions.assertThatThrownBy(() -> service.update(new MddUserEntity(), null))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("400");
 
         Assertions.assertThatThrownBy(() -> service.update(null, dto))
                 .isInstanceOf(ResponseStatusException.class)
@@ -140,12 +124,34 @@ class MddUserServiceTest {
 
         // happy update
         Mockito.when(userRepository.findByEmail("new@example.com")).thenReturn(Optional.empty());
-        Mockito.when(userRepository.save(existing)).thenReturn(existing);
+        Mockito.when(passwordEncoder.encode("Password123!")).thenReturn("encoded");
+
+        ArgumentCaptor<MddUserEntity> toSaveCaptor = ArgumentCaptor.forClass(MddUserEntity.class);
+        Mockito.when(userRepository.save(toSaveCaptor.capture())).thenReturn(existing);
         Mockito.when(mapper.toDto(existing)).thenReturn(new UserDto(1L, "new", "new@example.com", "", "user", null));
 
-        UserDto out = service.update(principal, new UserDto(null, "new", "new@example.com", null, null, null));
+        UserDto out = service.update(principal,
+                new UserDto(null, "new", "new@example.com", "Password123!", null, null));
         Assertions.assertThat(out.username()).isEqualTo("new");
         Assertions.assertThat(existing.getUsername()).isEqualTo("new");
         Assertions.assertThat(existing.getEmail()).isEqualTo("new@example.com");
+
+        MddUserEntity saved = toSaveCaptor.getValue();
+        Assertions.assertThat(saved.getPassword()).isEqualTo("encoded");
+    }
+
+    @Test
+    void update_rejects_invalid_password() {
+        MddUserEntity principal = new MddUserEntity();
+        principal.setId(1L);
+
+        MddUserEntity existing = new MddUserEntity();
+        existing.setId(1L);
+        Mockito.when(userRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+        UserDto invalidPassword = new UserDto(null, null, null, "weak", null, null);
+        Assertions.assertThatThrownBy(() -> service.update(principal, invalidPassword))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("400");
     }
 }

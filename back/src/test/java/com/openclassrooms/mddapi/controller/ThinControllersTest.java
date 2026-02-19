@@ -22,7 +22,7 @@ import org.springframework.http.ResponseEntity;
 class ThinControllersTest {
 
     @Test
-    void mddUserController_delegates_and_wraps_create() {
+    void mddUserController_delegates() {
         MddUserService userService = Mockito.mock(MddUserService.class);
         MddUserController controller = new MddUserController(userService);
 
@@ -32,11 +32,6 @@ class ThinControllersTest {
         UserDto dto = new UserDto(2L, "u2", "e2", "", "user", Instant.now());
         Mockito.when(userService.getById(2L)).thenReturn(dto);
         Assertions.assertThat(controller.getById(2L)).isSameAs(dto);
-
-        Mockito.when(userService.create(dto)).thenReturn(dto);
-        ResponseEntity<UserDto> created = controller.create(dto);
-        Assertions.assertThat(created.getStatusCode().value()).isEqualTo(201);
-        Assertions.assertThat(created.getBody()).isSameAs(dto);
 
         MddUserEntity principal = new MddUserEntity();
         principal.setId(1L);

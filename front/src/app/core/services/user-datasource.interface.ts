@@ -6,6 +6,5 @@ export const USER_DATASOURCE = new InjectionToken<UserDataSource>('UserDataSourc
 export interface UserDataSource {
     getAll(): Observable<User[]>;
     getById(id: number): Observable<User>;
-    create(user: User): Observable<User>;
     update(user: Partial<User>): Observable<User>;
 }
