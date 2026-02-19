@@ -40,11 +40,13 @@ abstract class AbstractIntegrationTest {
     protected HttpHeaders headersWithCookie(String cookie) {
         HttpHeaders headers = jsonHeaders();
 
-        String cookieHeader = cookie;
+        String cookieHeader = (cookie == null) ? "" : cookie.trim();
         if (csrfCookiePair != null && !csrfCookiePair.isBlank()) {
-            cookieHeader = cookieHeader + "; " + csrfCookiePair;
+            cookieHeader = cookieHeader.isBlank() ? csrfCookiePair : (cookieHeader + "; " + csrfCookiePair);
         }
-        headers.add(HttpHeaders.COOKIE, cookieHeader);
+        if (!cookieHeader.isBlank()) {
+            headers.add(HttpHeaders.COOKIE, cookieHeader);
+        }
 
         if (csrfTokenValue != null && !csrfTokenValue.isBlank()) {
             headers.add(CSRF_HEADER_NAME, csrfTokenValue);
@@ -54,9 +56,10 @@ abstract class AbstractIntegrationTest {
     }
 
     protected AuthSession registerAndGetSession(String username, String email, String password) {
+        ensureCsrf();
         ResponseEntity<AuthResponseDto> registerResponse = rest.postForEntity(
                 "/api/auth/register",
-                new RegisterRequest(username, email, password),
+                new HttpEntity<>(new RegisterRequest(username, email, password), headersWithCookie(null)),
                 AuthResponseDto.class);
 
         Assertions.assertThat(registerResponse.getStatusCode().value()).isEqualTo(200);
@@ -67,7 +70,6 @@ abstract class AbstractIntegrationTest {
         Assertions.assertThat(userId).isNotNull();
 
         captureCsrf(registerResponse.getHeaders());
-        ensureCsrf();
 
         String cookie = extractCookie(registerResponse.getHeaders(), jwtCookieService.getCookieName());
         Assertions.assertThat(cookie).isNotBlank();
@@ -76,14 +78,14 @@ abstract class AbstractIntegrationTest {
     }
 
     protected String loginAndGetCookie(String email, String password) {
+        ensureCsrf();
         ResponseEntity<AuthResponseDto> loginResponse = rest.postForEntity(
                 "/api/auth/login",
-                new LoginRequest(email, password),
+                new HttpEntity<>(new LoginRequest(email, password), headersWithCookie(null)),
                 AuthResponseDto.class);
 
         Assertions.assertThat(loginResponse.getStatusCode().value()).isEqualTo(200);
         captureCsrf(loginResponse.getHeaders());
-        ensureCsrf();
         String cookie = extractCookie(loginResponse.getHeaders(), jwtCookieService.getCookieName());
         Assertions.assertThat(cookie).isNotBlank();
         return cookie;
