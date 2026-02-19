@@ -54,6 +54,16 @@ public class ArticleService {
     public ArticleDto create(MddUserEntity principal, CreateArticleRequest request) {
         Long principalId = requireAuthenticatedUserId(principal);
 
+        if (request == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid payload");
+        }
+        if (request.title() == null || request.title().trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "title is required");
+        }
+        if (request.content() == null || request.content().trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "content is required");
+        }
+
         TopicEntity topic = topicRepository.findById(request.topicId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Topic not found"));
 
