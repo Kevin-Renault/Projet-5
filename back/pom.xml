@@ -18,6 +18,8 @@
 		<!-- SonarCloud: test + coverage reports -->
 		<sonar.junit.reportPaths>${project.basedir}/target/surefire-reports</sonar.junit.reportPaths>
 		<sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+		<!-- Exclude JPA entities from coverage metrics -->
+		<sonar.coverage.exclusions>**/entity/**</sonar.coverage.exclusions>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -101,6 +103,9 @@
 							<goal>report</goal>
 						</goals>
 						<configuration>
+							<excludes>
+								<exclude>**/entity/**</exclude>
+							</excludes>
 							<formats>
 								<format>XML</format>
 								<format>HTML</format>
