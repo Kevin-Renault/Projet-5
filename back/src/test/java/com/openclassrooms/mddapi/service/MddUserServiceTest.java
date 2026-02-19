@@ -70,8 +70,8 @@ class MddUserServiceTest {
     @Test
     void update_requires_auth_and_existing_user() {
         UserDto dto = new UserDto(null, "u", "e@example.com", null, null, null);
-
-        Assertions.assertThatThrownBy(() -> service.update(new MddUserEntity(), null))
+        MddUserEntity mddUserEntity = new MddUserEntity();
+        Assertions.assertThatThrownBy(() -> service.update(mddUserEntity, null))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("400");
 
