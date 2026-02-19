@@ -53,13 +53,14 @@ public class AuthController {
     })
     public ResponseEntity<Void> csrf(CsrfToken csrfToken) {
         ResponseCookie xsrfCookie = ResponseCookie.from("XSRF-TOKEN", csrfToken.getToken())
-                .httpOnly(false)
+                .httpOnly(true)
                 .secure(cookieService.isCookieSecure())
                 .path("/")
                 .sameSite(cookieService.getSameSite())
                 .build();
 
         return ResponseEntity.noContent()
+                .header("X-XSRF-TOKEN", csrfToken.getToken())
                 .header(HttpHeaders.SET_COOKIE, xsrfCookie.toString())
                 .build();
     }
