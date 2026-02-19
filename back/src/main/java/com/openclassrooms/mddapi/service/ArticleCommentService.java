@@ -9,7 +9,6 @@ import com.openclassrooms.mddapi.repository.ArticleCommentRepository;
 import com.openclassrooms.mddapi.repository.ArticleRepository;
 import com.openclassrooms.mddapi.repository.MddUserRepository;
 import java.util.List;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,7 +17,6 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 public class ArticleCommentService {
 
-    private static final String COMMENT_NOT_FOUND = "Comment not found";
     private static final String ARTICLE_NOT_FOUND = "Article not found";
 
     private final ArticleCommentRepository commentRepository;
@@ -35,21 +33,6 @@ public class ArticleCommentService {
         this.articleRepository = articleRepository;
         this.userRepository = userRepository;
         this.commentMapper = commentMapper;
-    }
-
-    @Transactional(readOnly = true)
-    public List<CommentDto> getAll() {
-        return commentRepository.findAll(Sort.by(Sort.Direction.ASC, "createdAt"))
-                .stream()
-                .map(commentMapper::toDto)
-                .toList();
-    }
-
-    @Transactional(readOnly = true)
-    public CommentDto getById(Long id) {
-        ArticleCommentEntity comment = commentRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, COMMENT_NOT_FOUND));
-        return commentMapper.toDto(comment);
     }
 
     @Transactional(readOnly = true)
@@ -90,46 +73,6 @@ public class ArticleCommentService {
 
         ArticleCommentEntity saved = commentRepository.save(entity);
         return commentMapper.toDto(saved);
-    }
-
-    @Transactional
-    public CommentDto update(Long id, MddUserEntity principal, CommentDto request) {
-        Long principalId = requireAuthenticatedUserId(principal);
-
-        ArticleCommentEntity comment = commentRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, COMMENT_NOT_FOUND));
-
-        Long authorId = comment.getAuthor() != null ? comment.getAuthor().getId() : null;
-        if (authorId == null || !authorId.equals(principalId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Forbidden");
-        }
-
-        if (request == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid payload");
-        }
-
-        String content = trimToNull(request.content());
-        if (content != null) {
-            comment.setContent(content);
-        }
-
-        ArticleCommentEntity saved = commentRepository.save(comment);
-        return commentMapper.toDto(saved);
-    }
-
-    @Transactional
-    public void delete(Long id, MddUserEntity principal) {
-        Long principalId = requireAuthenticatedUserId(principal);
-
-        ArticleCommentEntity comment = commentRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, COMMENT_NOT_FOUND));
-
-        Long authorId = comment.getAuthor() != null ? comment.getAuthor().getId() : null;
-        if (authorId == null || !authorId.equals(principalId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Forbidden");
-        }
-
-        commentRepository.delete(comment);
     }
 
     private static Long requireAuthenticatedUserId(MddUserEntity principal) {
