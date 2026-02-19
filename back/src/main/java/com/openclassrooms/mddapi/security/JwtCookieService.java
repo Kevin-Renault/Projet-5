@@ -37,6 +37,14 @@ public class JwtCookieService {
         return refreshCookieName;
     }
 
+    public boolean isCookieSecure() {
+        return cookieSecure;
+    }
+
+    public String getSameSite() {
+        return sameSite;
+    }
+
     public ResponseCookie createAccessTokenCookie(String token) {
         return ResponseCookie.from(cookieName, token)
                 .httpOnly(true)

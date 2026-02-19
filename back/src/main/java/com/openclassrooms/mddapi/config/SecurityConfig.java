@@ -12,6 +12,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
@@ -26,7 +29,13 @@ public class SecurityConfig {
         http
                 .cors(cors -> {
                 })
-                .csrf(csrf -> csrf.disable())
+                .csrf(csrf -> csrf
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+                        // Allow first login/register without an existing CSRF cookie.
+                        .ignoringRequestMatchers(
+                                new AntPathRequestMatcher("/api/auth/login", "POST"),
+                                new AntPathRequestMatcher("/api/auth/register", "POST")))
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(authenticationEntryPoint))
                 .authorizeHttpRequests(auth -> auth
@@ -39,6 +48,7 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**").permitAll()
 
                         // Auth endpoints (accept trailing slash too)
+                        .requestMatchers(HttpMethod.GET, "/api/auth/csrf", "/api/auth/csrf/").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/login/").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/register/").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/refresh", "/api/auth/refresh/").permitAll()
