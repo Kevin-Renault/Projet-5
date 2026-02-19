@@ -41,6 +41,7 @@ public class SecurityConfig {
                         // Auth endpoints (accept trailing slash too)
                         .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/login/").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/register/").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/refresh", "/api/auth/refresh/").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
