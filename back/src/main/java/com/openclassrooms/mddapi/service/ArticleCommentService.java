@@ -76,6 +76,10 @@ public class ArticleCommentService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Content is required");
         }
 
+        if (request.articleId() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Article ID is required");
+        }
+
         ArticleEntity article = articleRepository.findById(request.articleId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, ARTICLE_NOT_FOUND));
 
