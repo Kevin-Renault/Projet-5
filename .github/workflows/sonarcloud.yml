@@ -157,12 +157,21 @@ jobs:
           PY
 
       - name: Upload JaCoCo HTML report
+        id: upload_jacoco_report
         uses: actions/upload-artifact@v4
         with:
           name: jacoco-report
           path: back/target/site/jacoco
           if-no-files-found: error
           retention-days: 14
+
+      - name: Add artifact download link
+        if: always()
+        shell: bash
+        run: |
+          echo "" >> "${GITHUB_STEP_SUMMARY}"
+          echo "### Downloads" >> "${GITHUB_STEP_SUMMARY}"
+          echo "- JaCoCo artifact (this run): ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts/${{ steps.upload_jacoco_report.outputs.artifact-id }}" >> "${GITHUB_STEP_SUMMARY}"
 
       - name: Prepare GitHub Pages (JaCoCo)
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/test/junit-jest-cypress'
