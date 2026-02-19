@@ -39,9 +39,13 @@ class ValidationIntegrationTest extends AbstractIntegrationTest {
     void register_with_invalid_email_returns_400() {
         String unique = uniqueSuffix();
 
-        ResponseEntity<AuthResponseDto> response = rest.postForEntity(
+        ensureCsrf();
+
+        ResponseEntity<AuthResponseDto> response = rest.exchange(
                 "/api/auth/register",
-                new RegisterRequest("it_" + unique, "not-an-email", "TestP@ssw0rd1"),
+                HttpMethod.POST,
+                new HttpEntity<>(new RegisterRequest("it_" + unique, "not-an-email", "TestP@ssw0rd1"),
+                        headersWithCookie(null)),
                 AuthResponseDto.class);
 
         Assertions.assertThat(response.getStatusCode().value()).isEqualTo(400);
@@ -56,9 +60,11 @@ class ValidationIntegrationTest extends AbstractIntegrationTest {
         AuthSession session = registerAndGetSession("it_" + unique, email, password);
         createdUserId = session.userId();
 
-        ResponseEntity<String> second = rest.postForEntity(
+        ensureCsrf();
+        ResponseEntity<String> second = rest.exchange(
                 "/api/auth/register",
-                new RegisterRequest("it2_" + unique, email, password),
+                HttpMethod.POST,
+                new HttpEntity<>(new RegisterRequest("it2_" + unique, email, password), headersWithCookie(null)),
                 String.class);
 
         Assertions.assertThat(second.getStatusCode().value()).isIn(400, 409);
