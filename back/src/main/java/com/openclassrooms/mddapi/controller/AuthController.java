@@ -24,6 +24,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -44,6 +45,23 @@ public class AuthController {
         this.authService = authService;
         this.cookieService = cookieService;
         this.refreshTokenService = refreshTokenService;
+    }
+
+    @GetMapping("/csrf")
+    @Operation(summary = "Get CSRF token", description = "For browser clients: ensures the XSRF-TOKEN cookie is set so unsafe requests can include the X-XSRF-TOKEN header.", responses = {
+            @ApiResponse(responseCode = "204", description = "CSRF token cookie set", content = @Content)
+    })
+    public ResponseEntity<Void> csrf(CsrfToken csrfToken) {
+        ResponseCookie xsrfCookie = ResponseCookie.from("XSRF-TOKEN", csrfToken.getToken())
+                .httpOnly(false)
+                .secure(cookieService.isCookieSecure())
+                .path("/")
+                .sameSite(cookieService.getSameSite())
+                .build();
+
+        return ResponseEntity.noContent()
+                .header(HttpHeaders.SET_COOKIE, xsrfCookie.toString())
+                .build();
     }
 
     @PostMapping("/register")

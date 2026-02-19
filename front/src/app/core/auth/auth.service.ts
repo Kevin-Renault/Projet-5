@@ -1,6 +1,6 @@
 import { Injectable, inject, signal, Signal, ErrorHandler } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { catchError, firstValueFrom, map, Observable, take, tap } from 'rxjs';
+import { catchError, firstValueFrom, map, Observable, switchMap, take, tap } from 'rxjs';
 import { AuthDataSource, AuthResponse } from './auth-datasource.interface';
 import { User } from '../models/user.model';
 import { toObservable } from '@angular/core/rxjs-interop';
@@ -26,6 +26,14 @@ export class AuthService implements AuthDataSource {
     readonly isloggedIn = this.#isLoggedIn.asReadonly();
 
     async initSession(): Promise<void> {
+        // Ensure the XSRF cookie is present so POST/PUT/DELETE requests are accepted
+        // when CSRF protection is enabled on the backend.
+        try {
+            await firstValueFrom(this.initCsrf());
+        } catch {
+            // Non-blocking: session init can still proceed.
+        }
+
         try {
             await firstValueFrom(this.refreshCurrentUser());
         } catch {
@@ -40,7 +48,14 @@ export class AuthService implements AuthDataSource {
     }
 
     refresh(): Observable<void> {
-        return this.http.post<void>(`${this.apiUrl}/refresh`, {}, { observe: 'response' }).pipe(
+        return this.initCsrf().pipe(
+            switchMap(() => this.http.post<void>(`${this.apiUrl}/refresh`, {}, { observe: 'response' })),
+            map(() => { })
+        );
+    }
+
+    private initCsrf(): Observable<void> {
+        return this.http.get<void>(`${this.apiUrl}/csrf`, { observe: 'response' }).pipe(
             map(() => { })
         );
     }
@@ -72,7 +87,8 @@ export class AuthService implements AuthDataSource {
     }
 
     login(email: string, password: string): Observable<void> {
-        return this.http.post<AuthResponse>(`${this.apiUrl}/login`, { email, password }).pipe(
+        return this.initCsrf().pipe(
+            switchMap(() => this.http.post<AuthResponse>(`${this.apiUrl}/login`, { email, password })),
             tap((response) => {
                 this.updateSession(response.user, true);
             }),
@@ -86,13 +102,15 @@ export class AuthService implements AuthDataSource {
     }
 
     register(data: User): Observable<AuthResponse> {
-        return this.http.post<AuthResponse>(`${this.apiUrl}/register`, data).pipe(
+        return this.initCsrf().pipe(
+            switchMap(() => this.http.post<AuthResponse>(`${this.apiUrl}/register`, data)),
             tap((response) => this.updateSession(response.user))
         );
     }
 
     logout(): void {
-        this.http.post<void>(`${this.apiUrl}/logout`, {}).pipe(
+        this.initCsrf().pipe(
+            switchMap(() => this.http.post<void>(`${this.apiUrl}/logout`, {})),
             tap(() => {
                 this.clearSession();
                 // Navigate only after the backend cleared HttpOnly cookies.
