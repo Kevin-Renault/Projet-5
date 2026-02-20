@@ -305,17 +305,37 @@ jobs:
             raise SystemExit('GITHUB_STEP_SUMMARY is not set')
 
           xml_files = sorted(glob.glob('front/cypress/results/*.xml'))
-          suites = 0
-          tests = failures = errors = skipped = 0
+          suites_total = 0
+          suites_failed = 0
+          suites_skipped = 0
+
+          tests_total = 0
+          tests_failures = 0
+          tests_errors = 0
+          tests_skipped = 0
           duration = 0.0
 
           def parse_testsuite(elem):
-            global suites, tests, failures, errors, skipped, duration
-            suites += 1
-            tests += int(elem.attrib.get('tests', '0') or 0)
-            failures += int(elem.attrib.get('failures', '0') or 0)
-            errors += int(elem.attrib.get('errors', '0') or 0)
-            skipped += int(elem.attrib.get('skipped', '0') or 0)
+            global suites_total, suites_failed, suites_skipped
+            global tests_total, tests_failures, tests_errors, tests_skipped, duration
+
+            suites_total += 1
+
+            suite_tests = int(elem.attrib.get('tests', '0') or 0)
+            suite_failures = int(elem.attrib.get('failures', '0') or 0)
+            suite_errors = int(elem.attrib.get('errors', '0') or 0)
+            suite_skipped = int(elem.attrib.get('skipped', '0') or 0)
+
+            tests_total += suite_tests
+            tests_failures += suite_failures
+            tests_errors += suite_errors
+            tests_skipped += suite_skipped
+
+            if suite_tests > 0 and suite_skipped >= suite_tests:
+              suites_skipped += 1
+            elif (suite_failures + suite_errors) > 0:
+              suites_failed += 1
+
             try:
               duration += float(elem.attrib.get('time', '0') or 0)
             except ValueError:
@@ -333,7 +353,12 @@ jobs:
               for ts in root.findall('testsuite'):
                 parse_testsuite(ts)
 
-          passed = max(0, tests - failures - errors - skipped)
+          suites_passed = max(0, suites_total - suites_failed - suites_skipped)
+          tests_failed = tests_failures + tests_errors
+          tests_passed = max(0, tests_total - tests_failed - tests_skipped)
+
+          def pct(passed: int, total: int) -> float:
+            return 0.0 if total <= 0 else (passed / total) * 100.0
 
           def fmt_int(n: int) -> str:
             return f'{n:,}'.replace(',', ' ')
@@ -362,20 +387,17 @@ jobs:
           )
 
           table_lines = [
-            '| Metric | Value |',
-            '|---|---:|',
-            f'| JUnit files | {fmt_int(len(xml_files))} |',
-            f'| Test suites | {fmt_int(suites)} |',
-            f'| Tests | {fmt_int(tests)} |',
-            f'| Passed | {fmt_int(passed)} |',
-            f'| Failed | {fmt_int(failures + errors)} |',
-            f'| Skipped | {fmt_int(skipped)} |',
-            f'| Duration | {fmt_duration(duration)} |',
+            '| Metric | Pass rate | Passed | Skipped | Total |',
+            '|---|---:|---:|---:|---:|',
+            f"| Suites | {pct(suites_passed, suites_total):.2f}% | {fmt_int(suites_passed)} | {fmt_int(suites_skipped)} | {fmt_int(suites_total)} |",
+            f"| Tests | {pct(tests_passed, tests_total):.2f}% | {fmt_int(tests_passed)} | {fmt_int(tests_skipped)} | {fmt_int(tests_total)} |",
           ]
 
           lines = [
             '',
             '## Frontend E2E (Cypress)',
+            '',
+            f'**JUnit files**: {fmt_int(len(xml_files))}  |  **Duration**: {fmt_duration(duration)}',
             '',
             *table_lines,
             '',
