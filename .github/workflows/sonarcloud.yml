@@ -169,6 +169,98 @@ jobs:
         working-directory: front
         run: npm ci
 
+      - name: Run unit tests (Jest)
+        working-directory: front
+        run: npm run test:unit:ci
+
+      - name: Unit coverage summary (Jest)
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          summary_path = os.environ.get('GITHUB_STEP_SUMMARY')
+          if not summary_path:
+            raise SystemExit('GITHUB_STEP_SUMMARY is not set')
+
+          coverage_path = Path('front/coverage/coverage-summary.json')
+          results_path = Path('front/jest-results.json')
+
+          tests = passed = failed = pending = 0
+          if results_path.exists():
+            try:
+              data = json.loads(results_path.read_text(encoding='utf-8'))
+              # Jest JSON uses these keys
+              tests = int(data.get('numTotalTests', 0) or 0)
+              passed = int(data.get('numPassedTests', 0) or 0)
+              failed = int(data.get('numFailedTests', 0) or 0)
+              pending = int(data.get('numPendingTests', 0) or 0)
+            except Exception:
+              pass
+
+          cov = None
+          if coverage_path.exists():
+            try:
+              cov = json.loads(coverage_path.read_text(encoding='utf-8')).get('total')
+            except Exception:
+              cov = None
+
+          def fmt_int(n: int) -> str:
+            return f'{n:,}'.replace(',', ' ')
+
+          def cov_row(label: str, key: str):
+            if not cov or key not in cov:
+              return f'| {label} | n/a | n/a | n/a | n/a |'
+            c = cov[key]
+            return f"| {label} | {c.get('pct', 0):.2f}% | {fmt_int(int(c.get('covered', 0) or 0))} | {fmt_int(int(c.get('skipped', 0) or 0))} | {fmt_int(int(c.get('total', 0) or 0))} |"
+
+          table_lines = [
+            '| Metric | Coverage | Covered | Skipped | Total |',
+            '|---|---:|---:|---:|---:|',
+            cov_row('Statements', 'statements'),
+            cov_row('Branches', 'branches'),
+            cov_row('Functions', 'functions'),
+            cov_row('Lines', 'lines'),
+          ]
+
+          repo = os.environ.get('GITHUB_REPOSITORY', '').strip()  # owner/repo
+          if repo and '/' in repo:
+            owner, name = repo.split('/', 1)
+            pages_base = f'https://{owner}.github.io/{name}'
+          else:
+            pages_base = None
+
+          ref_name = os.environ.get('GITHUB_REF_NAME', '').strip()
+          safe_ref_name = ref_name.replace('/', '-') if ref_name else None
+          deployable = ref_name in {'main', 'test/junit-jest-cypress'}
+          pages_report = (
+            f'{pages_base}/jest/{safe_ref_name}/index.html'
+            if deployable and pages_base and safe_ref_name
+            else None
+          )
+
+          lines = [
+            '',
+            '## Frontend unit tests (Jest)',
+            '',
+            f'**Tests**: total={fmt_int(tests)} passed={fmt_int(passed)} failed={fmt_int(failed)} pending={fmt_int(pending)}',
+            '',
+            *table_lines,
+            '',
+            '### Links',
+            *( [f'- Jest coverage report (GitHub Pages): {pages_report}'] if pages_report else [] ),
+            '',
+            '### Report',
+            '- Download the artifact `jest-report` to open the HTML coverage report locally.',
+          ]
+
+          summary_file = Path(summary_path)
+          existing = summary_file.read_text(encoding='utf-8') if summary_file.exists() else ''
+          summary_file.write_text(existing + '\n'.join(lines) + '\n', encoding='utf-8')
+          PY
+
       - name: Start backend (for Cypress)
         shell: bash
         env:
@@ -308,6 +400,18 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+      - name: Upload Jest coverage report
+        if: always()
+        id: upload_jest_report
+        uses: actions/upload-artifact@v4
+        with:
+          name: jest-report
+          path: |
+            front/coverage
+            front/jest-results.json
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Upload Cypress report
         if: always()
         id: upload_cypress_report
@@ -328,6 +432,9 @@ jobs:
           echo "" >> "${GITHUB_STEP_SUMMARY}"
           echo "### Downloads" >> "${GITHUB_STEP_SUMMARY}"
           echo "- JaCoCo artifact (this run): ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts/${{ steps.upload_jacoco_report.outputs.artifact-id }}" >> "${GITHUB_STEP_SUMMARY}"
+          if [ -n "${{ steps.upload_jest_report.outputs.artifact-id }}" ]; then
+            echo "- Jest artifact (this run): ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts/${{ steps.upload_jest_report.outputs.artifact-id }}" >> "${GITHUB_STEP_SUMMARY}"
+          fi
           if [ -n "${{ steps.upload_cypress_report.outputs.artifact-id }}" ]; then
             echo "- Cypress artifact (this run): ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts/${{ steps.upload_cypress_report.outputs.artifact-id }}" >> "${GITHUB_STEP_SUMMARY}"
           fi
@@ -348,6 +455,12 @@ jobs:
           mkdir -p "site/cypress/${SAFE_BRANCH}"
           if ls front/cypress/results/*.xml >/dev/null 2>&1; then
             cp -R front/cypress/results/* "site/cypress/${SAFE_BRANCH}/"
+          fi
+
+          # Jest: publish HTML coverage report
+          mkdir -p "site/jest/${SAFE_BRANCH}"
+          if [ -d "front/coverage/lcov-report" ]; then
+            cp -R front/coverage/lcov-report/* "site/jest/${SAFE_BRANCH}/"
           fi
 
           # Generate a minimal HTML index (works even if no XML is present)
@@ -446,6 +559,12 @@ jobs:
                   <a href="./jacoco/main/index.html">main</a>
                   |
                   <a href="./jacoco/test-junit-jest-cypress/index.html">test-junit-jest-cypress</a>
+                </li>
+                <li>
+                  Jest:
+                  <a href="./jest/main/index.html">main</a>
+                  |
+                  <a href="./jest/test-junit-jest-cypress/index.html">test-junit-jest-cypress</a>
                 </li>
                 <li>
                   Cypress:
