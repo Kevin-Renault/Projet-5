@@ -10,8 +10,16 @@ export class CsrfTokenService {
         }
     }
 
+    setToken(token: string | null | undefined): void {
+        this.set(token);
+    }
+
     get(): string | undefined {
         return this.token;
+    }
+
+    getToken(): string | null {
+        return this.token ?? null;
     }
 
     clear(): void {

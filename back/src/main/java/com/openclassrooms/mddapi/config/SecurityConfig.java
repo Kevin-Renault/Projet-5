@@ -11,9 +11,9 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.security.web.session.SessionManagementFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -54,7 +54,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/auth/refresh", "/api/auth/refresh/").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/logout", "/api/auth/logout/").permitAll()
                         .anyRequest().authenticated())
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                // Place JWT auth AFTER SessionManagementFilter to avoid triggering
+                // session authentication strategies (incl. CSRF token clearing) on
+                // every stateless request.
+                .addFilterAfter(jwtAuthenticationFilter, SessionManagementFilter.class);
 
         return http.build();
     }

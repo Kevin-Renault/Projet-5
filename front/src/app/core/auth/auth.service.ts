@@ -1,11 +1,10 @@
 import { Injectable, inject, signal, Signal, ErrorHandler } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { Router } from '@angular/router';
 import { catchError, firstValueFrom, map, Observable, switchMap, take, tap } from 'rxjs';
 import { AuthDataSource, AuthResponse } from './auth-datasource.interface';
 import { User } from '../models/user.model';
-import { Router } from '@angular/router';
-import { toObservable } from '@angular/core/rxjs-interop';
-
 import { CsrfTokenService } from './csrf-token.service';
 @Injectable({ providedIn: 'root' })
 export class AuthService implements AuthDataSource {
@@ -13,8 +12,8 @@ export class AuthService implements AuthDataSource {
     private readonly http = inject(HttpClient);
     private readonly errorHandler = inject(ErrorHandler);
     private readonly router = inject(Router);
-    private readonly apiUrl = '/api/auth';
     private readonly csrfTokenService = inject(CsrfTokenService);
+    private readonly apiUrl = '/api/auth';
 
     // Signaux privés pour gérer l'état
     private readonly _currentUser = signal<User | null>(null);

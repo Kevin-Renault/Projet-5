@@ -9,7 +9,18 @@ export class AuthGuard implements CanActivate {
     constructor(
         private readonly router: Router) { }
 
-    canActivate(): boolean | UrlTree {
-        return this.authDataSource.isAuthenticated$()() ? true : this.router.parseUrl('/');
+    async canActivate(): Promise<boolean | UrlTree> {
+        const isAuthenticated = this.authDataSource.isAuthenticated$();
+
+        if (isAuthenticated()) {
+            return true;
+        }
+
+        try {
+            await this.authDataSource.initSession();
+            return isAuthenticated() ? true : this.router.parseUrl('/');
+        } catch {
+            return this.router.parseUrl('/');
+        }
     }
 }

@@ -10,7 +10,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Optional;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
@@ -34,7 +36,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        if (SecurityContextHolder.getContext().getAuthentication() != null) {
+        Authentication existing = SecurityContextHolder.getContext().getAuthentication();
+        // When this filter runs late in the chain, an AnonymousAuthenticationToken may
+        // already be present. In that case, we still want to authenticate from the JWT.
+        if (existing != null && existing.isAuthenticated() && !(existing instanceof AnonymousAuthenticationToken)) {
             filterChain.doFilter(request, response);
             return;
         }

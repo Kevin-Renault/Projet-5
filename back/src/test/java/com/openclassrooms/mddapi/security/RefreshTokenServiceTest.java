@@ -4,20 +4,25 @@ import com.openclassrooms.mddapi.entity.RefreshTokenEntity;
 import com.openclassrooms.mddapi.repository.RefreshTokenRepository;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.web.server.ResponseStatusException;
 
 class RefreshTokenServiceTest {
 
+    private static final String TOKEN_NAME = "token";
     @Test
-    void issueAndReplaceForUser_saves_hashed_token() {
+    void issueAndReplaceForUserSavesHashedToken() {
         RefreshTokenRepository repo = Mockito.mock(RefreshTokenRepository.class);
         Mockito.when(repo.save(Mockito.any())).thenAnswer(inv -> inv.getArgument(0));
 
-        RefreshTokenService service = new RefreshTokenService(repo, 3600);
+        @SuppressWarnings("unchecked")
+        ObjectProvider<RefreshTokenService> selfProvider = Mockito.mock(ObjectProvider.class);
+        RefreshTokenService service = new RefreshTokenService(repo, 3600, selfProvider);
 
         Instant before = Instant.now();
         String token = service.issueAndReplaceForUser(12L);
@@ -35,9 +40,12 @@ class RefreshTokenServiceTest {
     }
 
     @Test
-    void rotate_missing_token_throws_unauthorized() {
+    void rotateMissingTokenThrowsUnauthorized() {
         RefreshTokenRepository repo = Mockito.mock(RefreshTokenRepository.class);
-        RefreshTokenService service = new RefreshTokenService(repo, 3600);
+
+        @SuppressWarnings("unchecked")
+        ObjectProvider<RefreshTokenService> selfProvider = Mockito.mock(ObjectProvider.class);
+        RefreshTokenService service = new RefreshTokenService(repo, 3600, selfProvider);
 
         ResponseStatusException ex = Assertions.catchThrowableOfType(
                 () -> service.rotate("  "),
@@ -46,20 +54,22 @@ class RefreshTokenServiceTest {
     }
 
     @Test
-    void rotate_unknown_token_throws_unauthorized() {
+    void rotateUnknownTokenThrowsUnauthorized() {
         RefreshTokenRepository repo = Mockito.mock(RefreshTokenRepository.class);
         Mockito.when(repo.findByTokenHash(Mockito.anyString())).thenReturn(Optional.empty());
 
-        RefreshTokenService service = new RefreshTokenService(repo, 3600);
+        @SuppressWarnings("unchecked")
+        ObjectProvider<RefreshTokenService> selfProvider = Mockito.mock(ObjectProvider.class);
+        RefreshTokenService service = new RefreshTokenService(repo, 3600, selfProvider);
 
         ResponseStatusException ex = Assertions.catchThrowableOfType(
-                () -> service.rotate("token"),
+                () -> service.rotate(TOKEN_NAME),
                 ResponseStatusException.class);
         Assertions.assertThat(ex.getStatusCode().value()).isEqualTo(401);
     }
 
     @Test
-    void rotate_expired_token_deletes_and_throws_unauthorized() {
+    void rotateExpiredTokenDeletesAndThrowsUnauthorized() {
         RefreshTokenRepository repo = Mockito.mock(RefreshTokenRepository.class);
         RefreshTokenEntity existing = new RefreshTokenEntity();
         existing.setUserId(1L);
@@ -68,17 +78,19 @@ class RefreshTokenServiceTest {
 
         Mockito.when(repo.findByTokenHash(Mockito.anyString())).thenReturn(Optional.of(existing));
 
-        RefreshTokenService service = new RefreshTokenService(repo, 3600);
+    @SuppressWarnings("unchecked")
+    ObjectProvider<RefreshTokenService> selfProvider = Mockito.mock(ObjectProvider.class);
+    RefreshTokenService service = new RefreshTokenService(repo, 3600, selfProvider);
 
         ResponseStatusException ex = Assertions.catchThrowableOfType(
-                () -> service.rotate("token"),
+                () -> service.rotate(TOKEN_NAME),
                 ResponseStatusException.class);
         Assertions.assertThat(ex.getStatusCode().value()).isEqualTo(401);
         Mockito.verify(repo).delete(existing);
     }
 
     @Test
-    void rotate_valid_token_rotates_and_returns_new_token() {
+    void rotateValidTokenRotatesAndReturnsNewToken() {
         RefreshTokenRepository repo = Mockito.mock(RefreshTokenRepository.class);
         RefreshTokenEntity existing = new RefreshTokenEntity();
         existing.setUserId(7L);
@@ -88,8 +100,14 @@ class RefreshTokenServiceTest {
         Mockito.when(repo.findByTokenHash(Mockito.anyString())).thenReturn(Optional.of(existing));
         Mockito.when(repo.save(Mockito.any())).thenAnswer(inv -> inv.getArgument(0));
 
-        RefreshTokenService service = new RefreshTokenService(repo, 3600);
-        RefreshTokenService.RefreshRotationResult result = service.rotate("token");
+        @SuppressWarnings("unchecked")
+        ObjectProvider<RefreshTokenService> selfProvider = Mockito.mock(ObjectProvider.class);
+        AtomicReference<RefreshTokenService> selfRef = new AtomicReference<>();
+        Mockito.when(selfProvider.getObject()).thenAnswer(inv -> selfRef.get());
+
+        RefreshTokenService service = new RefreshTokenService(repo, 3600, selfProvider);
+        selfRef.set(service);
+        RefreshTokenService.RefreshRotationResult result = service.rotate(TOKEN_NAME);
 
         Assertions.assertThat(result.userId()).isEqualTo(7L);
         Assertions.assertThat(result.newRefreshToken()).isNotBlank();

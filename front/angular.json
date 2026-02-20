@@ -79,6 +79,57 @@
           },
           "defaultConfiguration": "production"
         },
+        "build-e2e-coverage": {
+          "builder": "@angular-builders/custom-webpack:browser",
+          "options": {
+            "outputPath": "dist/front-e2e-coverage",
+            "index": "src/index.html",
+            "main": "src/main.ts",
+            "polyfills": [
+              "src/polyfills.ts"
+            ],
+            "tsConfig": "tsconfig.app.json",
+            "inlineStyleLanguage": "scss",
+            "assets": [
+              "src/favicon.png",
+              "src/assets"
+            ],
+            "styles": [
+              "./node_modules/@angular/material/prebuilt-themes/deeppurple-amber.css",
+              "src/styles/styles.scss"
+            ],
+            "scripts": [],
+            "customWebpackConfig": {
+              "path": "./extra-webpack.config.js"
+            },
+            "sourceMap": true,
+            "optimization": false,
+            "namedChunks": true,
+            "extractLicenses": false
+          },
+          "configurations": {
+            "development": {
+              "sourceMap": true,
+              "optimization": false,
+              "namedChunks": true,
+              "extractLicenses": false
+            }
+          },
+          "defaultConfiguration": "development"
+        },
+        "serve-e2e-coverage": {
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "options": {
+            "proxyConfig": "proxy.conf.json",
+            "buildTarget": "front:build-e2e-coverage"
+          },
+          "configurations": {
+            "development": {
+              "buildTarget": "front:build-e2e-coverage:development"
+            }
+          },
+          "defaultConfiguration": "development"
+        },
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {

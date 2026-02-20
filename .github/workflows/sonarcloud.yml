@@ -6,10 +6,12 @@ on:
       - '**'
     paths:
       - 'back/**'
+      - 'front/**'
       - '.github/workflows/sonarcloud.yml'
   pull_request:
     paths:
       - 'back/**'
+      - 'front/**'
       - '.github/workflows/sonarcloud.yml'
   workflow_dispatch:
 
@@ -39,6 +41,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: front/package-lock.json
 
       - name: Set up JDK
         uses: actions/setup-java@v4
@@ -156,6 +165,292 @@ jobs:
           )
           PY
 
+      - name: Install dependencies (frontend)
+        working-directory: front
+        run: npm ci
+
+      - name: Run unit tests (Jest)
+        working-directory: front
+        run: npm run test:unit:ci
+
+      - name: Unit coverage summary (Jest)
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          summary_path = os.environ.get('GITHUB_STEP_SUMMARY')
+          if not summary_path:
+            raise SystemExit('GITHUB_STEP_SUMMARY is not set')
+
+          coverage_path = Path('front/coverage/coverage-summary.json')
+          results_path = Path('front/jest-results.json')
+
+          tests = passed = failed = pending = 0
+          if results_path.exists():
+            try:
+              data = json.loads(results_path.read_text(encoding='utf-8'))
+              # Jest JSON uses these keys
+              tests = int(data.get('numTotalTests', 0) or 0)
+              passed = int(data.get('numPassedTests', 0) or 0)
+              failed = int(data.get('numFailedTests', 0) or 0)
+              pending = int(data.get('numPendingTests', 0) or 0)
+            except Exception:
+              pass
+
+          cov = None
+          if coverage_path.exists():
+            try:
+              cov = json.loads(coverage_path.read_text(encoding='utf-8')).get('total')
+            except Exception:
+              cov = None
+
+          def fmt_int(n: int) -> str:
+            return f'{n:,}'.replace(',', ' ')
+
+          def cov_row(label: str, key: str):
+            if not cov or key not in cov:
+              return f'| {label} | n/a | n/a | n/a | n/a |'
+            c = cov[key]
+            return f"| {label} | {c.get('pct', 0):.2f}% | {fmt_int(int(c.get('covered', 0) or 0))} | {fmt_int(int(c.get('skipped', 0) or 0))} | {fmt_int(int(c.get('total', 0) or 0))} |"
+
+          table_lines = [
+            '| Metric | Coverage | Covered | Skipped | Total |',
+            '|---|---:|---:|---:|---:|',
+            cov_row('Statements', 'statements'),
+            cov_row('Branches', 'branches'),
+            cov_row('Functions', 'functions'),
+            cov_row('Lines', 'lines'),
+          ]
+
+          repo = os.environ.get('GITHUB_REPOSITORY', '').strip()  # owner/repo
+          if repo and '/' in repo:
+            owner, name = repo.split('/', 1)
+            pages_base = f'https://{owner}.github.io/{name}'
+          else:
+            pages_base = None
+
+          ref_name = os.environ.get('GITHUB_REF_NAME', '').strip()
+          safe_ref_name = ref_name.replace('/', '-') if ref_name else None
+          deployable = ref_name in {'main', 'test/junit-jest-cypress'}
+          pages_report = (
+            f'{pages_base}/jest/{safe_ref_name}/index.html'
+            if deployable and pages_base and safe_ref_name
+            else None
+          )
+
+          lines = [
+            '',
+            '## Frontend unit tests (Jest)',
+            '',
+            f'**Tests**: total={fmt_int(tests)} passed={fmt_int(passed)} failed={fmt_int(failed)} pending={fmt_int(pending)}',
+            '',
+            *table_lines,
+            '',
+            '### Links',
+            *( [f'- Jest coverage report (GitHub Pages): {pages_report}'] if pages_report else [] ),
+            '',
+            '### Report',
+            '- Download the artifact `jest-report` to open the HTML coverage report locally.',
+          ]
+
+          summary_file = Path(summary_path)
+          existing = summary_file.read_text(encoding='utf-8') if summary_file.exists() else ''
+          summary_file.write_text(existing + '\n'.join(lines) + '\n', encoding='utf-8')
+          PY
+
+      - name: Start backend (for Cypress)
+        shell: bash
+        env:
+          DB_MDD_NAME: mdd
+          DB_USER: root
+          DB_PASSWORD: root
+        run: |
+          set -euo pipefail
+          java -version
+          nohup java -jar back/target/mdd-api-0.0.1-SNAPSHOT.jar > back.log 2>&1 &
+
+          echo "Waiting for backend to be ready..."
+          for i in {1..60}; do
+            if curl -fsS "http://localhost:8080/api/auth/csrf" >/dev/null; then
+              echo "Backend is ready."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Backend did not become ready in time."
+          echo "---- back.log (tail) ----"
+          tail -n 200 back.log || true
+          exit 1
+
+      - name: Run Cypress E2E (JUnit)
+        working-directory: front
+        env:
+          CYPRESS_CACHE_FOLDER: ~/.cache/Cypress
+        run: npm run test:e2e:cov
+
+      - name: Generate E2E code coverage report (nyc)
+        if: always()
+        working-directory: front
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf coverage-e2e
+          if [ -d ".nyc_output" ] && ls .nyc_output/* >/dev/null 2>&1; then
+            npx nyc report || echo "nyc report failed; coverage summary may be unavailable."
+          else
+            echo "No .nyc_output coverage found; skipping nyc report generation."
+          fi
+
+      - name: E2E summary (Cypress)
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import glob
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          summary_path = os.environ.get('GITHUB_STEP_SUMMARY')
+          if not summary_path:
+            raise SystemExit('GITHUB_STEP_SUMMARY is not set')
+
+          xml_files = sorted(glob.glob('front/cypress/results/*.xml'))
+          coverage_path = Path('front/coverage-e2e/coverage-summary.json')
+          suites_total = 0
+          suites_failed = 0
+          suites_skipped = 0
+
+          tests_total = 0
+          tests_failures = 0
+          tests_errors = 0
+          tests_skipped = 0
+          duration = 0.0
+
+          def parse_testsuite(elem):
+            global suites_total, suites_failed, suites_skipped
+            global tests_total, tests_failures, tests_errors, tests_skipped, duration
+
+            suites_total += 1
+
+            suite_tests = int(elem.attrib.get('tests', '0') or 0)
+            suite_failures = int(elem.attrib.get('failures', '0') or 0)
+            suite_errors = int(elem.attrib.get('errors', '0') or 0)
+            suite_skipped = int(elem.attrib.get('skipped', '0') or 0)
+
+            tests_total += suite_tests
+            tests_failures += suite_failures
+            tests_errors += suite_errors
+            tests_skipped += suite_skipped
+
+            if suite_tests > 0 and suite_skipped >= suite_tests:
+              suites_skipped += 1
+            elif (suite_failures + suite_errors) > 0:
+              suites_failed += 1
+
+            try:
+              duration += float(elem.attrib.get('time', '0') or 0)
+            except ValueError:
+              pass
+
+          for f in xml_files:
+            try:
+              root = ET.parse(f).getroot()
+            except ET.ParseError:
+              continue
+
+            if root.tag == 'testsuite':
+              parse_testsuite(root)
+            elif root.tag == 'testsuites':
+              for ts in root.findall('testsuite'):
+                parse_testsuite(ts)
+
+          suites_passed = max(0, suites_total - suites_failed - suites_skipped)
+          tests_failed = tests_failures + tests_errors
+          tests_passed = max(0, tests_total - tests_failed - tests_skipped)
+
+          cov = None
+          if coverage_path.exists():
+            try:
+              cov = json.loads(coverage_path.read_text(encoding='utf-8')).get('total')
+            except Exception:
+              cov = None
+
+          def pct(passed: int, total: int) -> float:
+            return 0.0 if total <= 0 else (passed / total) * 100.0
+
+          def fmt_int(n: int) -> str:
+            return f'{n:,}'.replace(',', ' ')
+
+          def fmt_duration(seconds: float) -> str:
+            if seconds < 60:
+              return f'{seconds:.1f}s'
+            mins = int(seconds // 60)
+            secs = seconds - (mins * 60)
+            return f'{mins}m {secs:.0f}s'
+
+          repo = os.environ.get('GITHUB_REPOSITORY', '').strip()  # owner/repo
+          if repo and '/' in repo:
+            owner, name = repo.split('/', 1)
+            pages_base = f'https://{owner}.github.io/{name}'
+          else:
+            pages_base = None
+
+          ref_name = os.environ.get('GITHUB_REF_NAME', '').strip()
+          safe_ref_name = ref_name.replace('/', '-') if ref_name else None
+          deployable = ref_name in {'main', 'test/junit-jest-cypress'}
+          pages_report = (
+            f'{pages_base}/cypress/{safe_ref_name}/index.html'
+            if deployable and pages_base and safe_ref_name
+            else None
+          )
+
+          pages_coverage = (
+            f'{pages_base}/cypress/{safe_ref_name}/coverage/index.html'
+            if deployable and pages_base and safe_ref_name
+            else None
+          )
+
+          def cov_row(label: str, key: str):
+            if not cov or key not in cov:
+              return f'| {label} | n/a | n/a | n/a | n/a |'
+            c = cov[key]
+            return f"| {label} | {c.get('pct', 0):.2f}% | {fmt_int(int(c.get('covered', 0) or 0))} | {fmt_int(int(c.get('skipped', 0) or 0))} | {fmt_int(int(c.get('total', 0) or 0))} |"
+
+          table_lines = [
+            '| Metric | Coverage | Covered | Skipped | Total |',
+            '|---|---:|---:|---:|---:|',
+            cov_row('Statements', 'statements'),
+            cov_row('Branches', 'branches'),
+            cov_row('Functions', 'functions'),
+            cov_row('Lines', 'lines'),
+          ]
+
+          lines = [
+            '',
+            '## Frontend E2E (Cypress)',
+            '',
+            f'**Tests**: total={fmt_int(tests_total)} passed={fmt_int(tests_passed)} failed={fmt_int(tests_failed)} skipped={fmt_int(tests_skipped)}',
+            f'**JUnit files**: {fmt_int(len(xml_files))}  |  **Duration**: {fmt_duration(duration)}',
+            '',
+            *table_lines,
+            '',
+            '### Links',
+            *( [f'- Cypress report (GitHub Pages): {pages_report}'] if pages_report else [] ),
+            *( [f'- Cypress E2E code coverage (GitHub Pages): {pages_coverage}'] if pages_coverage else [] ),
+            '',
+            '### Report',
+            '- Download the artifact `cypress-report` to inspect JUnit XML and (if any) screenshots/videos.',
+          ]
+
+          summary_file = Path(summary_path)
+          existing = summary_file.read_text(encoding='utf-8') if summary_file.exists() else ''
+          summary_file.write_text(existing + '\n'.join(lines) + '\n', encoding='utf-8')
+          PY
+
       - name: Upload JaCoCo HTML report
         id: upload_jacoco_report
         uses: actions/upload-artifact@v4
@@ -165,6 +460,33 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+      - name: Upload Jest coverage report
+        if: always()
+        id: upload_jest_report
+        uses: actions/upload-artifact@v4
+        with:
+          name: jest-report
+          path: |
+            front/coverage
+            front/jest-results.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload Cypress report
+        if: always()
+        id: upload_cypress_report
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-report
+          path: |
+            front/cypress/results
+            front/cypress/screenshots
+            front/cypress/videos
+            front/coverage-e2e
+            front/.nyc_output
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Add artifact download link
         if: always()
         shell: bash
@@ -172,6 +494,12 @@ jobs:
           echo "" >> "${GITHUB_STEP_SUMMARY}"
           echo "### Downloads" >> "${GITHUB_STEP_SUMMARY}"
           echo "- JaCoCo artifact (this run): ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts/${{ steps.upload_jacoco_report.outputs.artifact-id }}" >> "${GITHUB_STEP_SUMMARY}"
+          if [ -n "${{ steps.upload_jest_report.outputs.artifact-id }}" ]; then
+            echo "- Jest artifact (this run): ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts/${{ steps.upload_jest_report.outputs.artifact-id }}" >> "${GITHUB_STEP_SUMMARY}"
+          fi
+          if [ -n "${{ steps.upload_cypress_report.outputs.artifact-id }}" ]; then
+            echo "- Cypress artifact (this run): ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts/${{ steps.upload_cypress_report.outputs.artifact-id }}" >> "${GITHUB_STEP_SUMMARY}"
+          fi
 
       - name: Prepare GitHub Pages (JaCoCo)
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/test/junit-jest-cypress'
@@ -179,32 +507,231 @@ jobs:
         run: |
           set -euo pipefail
           SAFE_BRANCH="${GITHUB_REF_NAME//\//-}"
+          export SAFE_BRANCH
 
           rm -rf site
           mkdir -p "site/jacoco/${SAFE_BRANCH}"
           cp -R back/target/site/jacoco/* "site/jacoco/${SAFE_BRANCH}/"
 
+          # Cypress: publish JUnit XML (and a tiny index) for the same branch
+          mkdir -p "site/cypress/${SAFE_BRANCH}"
+          if ls front/cypress/results/*.xml >/dev/null 2>&1; then
+            cp -R front/cypress/results/* "site/cypress/${SAFE_BRANCH}/"
+          fi
+
+          # Cypress E2E code coverage: publish nyc HTML report
+          mkdir -p "site/cypress/${SAFE_BRANCH}/coverage"
+          if [ -d "front/coverage-e2e" ]; then
+            cp -R front/coverage-e2e/* "site/cypress/${SAFE_BRANCH}/coverage/" || true
+          fi
+
+          # Jest: publish HTML coverage report
+          mkdir -p "site/jest/${SAFE_BRANCH}"
+          if [ -d "front/coverage/lcov-report" ]; then
+            cp -R front/coverage/lcov-report/* "site/jest/${SAFE_BRANCH}/"
+          fi
+
+          # Generate a minimal HTML index (works even if no XML is present)
+          python3 - <<'PY'
+          import os
+          import glob
+          import json
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          safe_branch = os.environ.get('SAFE_BRANCH', 'unknown')
+          out_dir = Path('site') / 'cypress' / safe_branch
+          out_dir.mkdir(parents=True, exist_ok=True)
+          out_file = out_dir / 'index.html'
+
+          xml_files = sorted(glob.glob('front/cypress/results/*.xml'))
+          coverage_path = Path('front/coverage-e2e/coverage-summary.json')
+          cov = None
+          if coverage_path.exists():
+            try:
+              cov = json.loads(coverage_path.read_text(encoding='utf-8')).get('total')
+            except Exception:
+              cov = None
+          suites = 0
+          tests = failures = errors = skipped = 0
+          duration = 0.0
+
+          def parse_testsuite(elem):
+            global suites, tests, failures, errors, skipped, duration
+            suites += 1
+            tests += int(elem.attrib.get('tests', '0') or 0)
+            failures += int(elem.attrib.get('failures', '0') or 0)
+            errors += int(elem.attrib.get('errors', '0') or 0)
+            skipped += int(elem.attrib.get('skipped', '0') or 0)
+            try:
+              duration += float(elem.attrib.get('time', '0') or 0)
+            except ValueError:
+              pass
+
+          for f in xml_files:
+            try:
+              root = ET.parse(f).getroot()
+            except ET.ParseError:
+              continue
+            if root.tag == 'testsuite':
+              parse_testsuite(root)
+            elif root.tag == 'testsuites':
+              for ts in root.findall('testsuite'):
+                parse_testsuite(ts)
+
+          tests_failed = failures + errors
+          tests_passed = max(0, tests - tests_failed - skipped)
+
+          # Suites: infer failed/skipped by aggregating testsuites
+          suites_total = 0
+          suites_failed = 0
+          suites_skipped = 0
+
+          def pct(passed: int, total: int) -> float:
+            return 0.0 if total <= 0 else (passed / total) * 100.0
+
+          # Re-parse per-suite to infer suite-level status
+          for f in xml_files:
+            try:
+              root = ET.parse(f).getroot()
+            except ET.ParseError:
+              continue
+
+            candidates = []
+            if root.tag == 'testsuite':
+              candidates = [root]
+            elif root.tag == 'testsuites':
+              candidates = list(root.findall('testsuite'))
+
+            for ts in candidates:
+              suites_total += 1
+              suite_tests = int(ts.attrib.get('tests', '0') or 0)
+              suite_failures = int(ts.attrib.get('failures', '0') or 0)
+              suite_errors = int(ts.attrib.get('errors', '0') or 0)
+              suite_skipped = int(ts.attrib.get('skipped', '0') or 0)
+              if suite_tests > 0 and suite_skipped >= suite_tests:
+                suites_skipped += 1
+              elif (suite_failures + suite_errors) > 0:
+                suites_failed += 1
+
+          suites_passed = max(0, suites_total - suites_failed - suites_skipped)
+          junit_links = "\n".join([f'<li><a href="./{Path(x).name}">{Path(x).name}</a></li>' for x in xml_files])
+
+          def cov_row(label: str, key: str):
+            if not cov or key not in cov:
+              return f'    <tr><td>{label}</td><td>n/a</td><td>n/a</td><td>n/a</td><td>n/a</td></tr>'
+            c = cov[key]
+            return f"    <tr><td>{label}</td><td>{c.get('pct', 0):.2f}%</td><td>{c.get('covered', 0)}</td><td>{c.get('skipped', 0)}</td><td>{c.get('total', 0)}</td></tr>"
+
+          coverage_table_html = "\n".join([
+            '<table border="1" cellpadding="6" cellspacing="0">',
+            '  <thead>',
+            '    <tr><th>Metric</th><th>Coverage</th><th>Covered</th><th>Skipped</th><th>Total</th></tr>',
+            '  </thead>',
+            '  <tbody>',
+            cov_row('Statements', 'statements'),
+            cov_row('Branches', 'branches'),
+            cov_row('Functions', 'functions'),
+            cov_row('Lines', 'lines'),
+            '  </tbody>',
+            '</table>',
+          ])
+
+          coverage_link = ''
+          if (Path('front/coverage-e2e') / 'index.html').exists():
+            coverage_link = '<p><a href="./coverage/index.html">Open Cypress E2E code coverage report</a></p>'
+
+          out_file.write_text(
+            "\n".join([
+              '<!doctype html>',
+              '<html lang="en">',
+              '  <head>',
+              '    <meta charset="utf-8" />',
+              '    <meta name="viewport" content="width=device-width, initial-scale=1" />',
+              '    <title>Cypress E2E Report</title>',
+              '  </head>',
+              '  <body>',
+              '    <h1>Cypress E2E Report</h1>',
+              f'    <p>Branch: <strong>{safe_branch}</strong></p>',
+              '    <h2>Summary</h2>',
+              f'    <p><strong>Tests</strong>: total={tests} passed={tests_passed} failed={tests_failed} skipped={skipped}</p>',
+              f'    <p><strong>JUnit files</strong>: {len(xml_files)} | <strong>Duration</strong>: {duration:.1f}s</p>',
+              '    <h2>Code coverage</h2>',
+              coverage_table_html,
+              coverage_link,
+              '    <h2>JUnit XML</h2>',
+              '    <ul>',
+              (junit_links if junit_links else '      <li>No JUnit XML found.</li>'),
+              '    </ul>',
+              '  </body>',
+              '</html>',
+            ]) + "\n",
+            encoding='utf-8'
+          )
+          PY
+
           # Disable Jekyll processing on GitHub Pages
           touch site/.nojekyll
 
-          cat > site/index.html <<'HTML'
+          if [ "${SAFE_BRANCH}" = "main" ]; then
+            cat > site/index.html <<'HTML'
           <!doctype html>
           <html lang="en">
             <head>
               <meta charset="utf-8" />
               <meta name="viewport" content="width=device-width, initial-scale=1" />
-              <title>JaCoCo Reports</title>
+              <title>CI Reports</title>
             </head>
             <body>
-              <h1>JaCoCo Reports</h1>
+              <h1>CI Reports</h1>
               <p>Latest reports published from CI.</p>
               <ul>
-                <li><a href="./jacoco/main/index.html">main</a></li>
-                <li><a href="./jacoco/test-junit-jest-cypress/index.html">test-junit-jest-cypress</a></li>
+                <li>
+                  JaCoCo:
+                  <a href="./jacoco/main/index.html">main</a>
+                </li>
+                <li>
+                  Jest:
+                  <a href="./jest/main/index.html">main</a>
+                </li>
+                <li>
+                  Cypress:
+                  <a href="./cypress/main/index.html">main</a>
+                </li>
               </ul>
             </body>
           </html>
           HTML
+          else
+            cat > site/index.html <<HTML
+          <!doctype html>
+          <html lang="en">
+            <head>
+              <meta charset="utf-8" />
+              <meta name="viewport" content="width=device-width, initial-scale=1" />
+              <title>CI Reports</title>
+            </head>
+            <body>
+              <h1>CI Reports</h1>
+              <p>Latest reports published from CI.</p>
+              <ul>
+                <li>
+                  JaCoCo:
+                  <a href="./jacoco/${SAFE_BRANCH}/index.html">${SAFE_BRANCH}</a>
+                </li>
+                <li>
+                  Jest:
+                  <a href="./jest/${SAFE_BRANCH}/index.html">${SAFE_BRANCH}</a>
+                </li>
+                <li>
+                  Cypress:
+                  <a href="./cypress/${SAFE_BRANCH}/index.html">${SAFE_BRANCH}</a>
+                </li>
+              </ul>
+            </body>
+          </html>
+          HTML
+          fi
 
       - name: Deploy JaCoCo report to GitHub Pages (gh-pages)
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/test/junit-jest-cypress'
