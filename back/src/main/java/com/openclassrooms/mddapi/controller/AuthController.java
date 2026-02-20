@@ -20,6 +20,7 @@ import jakarta.validation.Valid;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.util.UUID;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -52,16 +53,11 @@ public class AuthController {
             @ApiResponse(responseCode = "204", description = "CSRF token cookie set", content = @Content)
     })
     public ResponseEntity<Void> csrf(CsrfToken csrfToken) {
-        ResponseCookie xsrfCookie = ResponseCookie.from("XSRF-TOKEN", csrfToken.getToken())
-                .httpOnly(false)
-                .secure(cookieService.isCookieSecure())
-                .path("/")
-                .sameSite(cookieService.getSameSite())
-                .build();
-
-        return ResponseEntity.noContent()
-                .header(HttpHeaders.SET_COOKIE, xsrfCookie.toString())
-                .build();
+        // Spring Security may defer CSRF token generation until it's actually accessed.
+        // Touch it here to force CookieCsrfTokenRepository to emit the XSRF-TOKEN
+        // cookie.
+        csrfToken.getToken();
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/register")
@@ -76,9 +72,11 @@ public class AuthController {
         String refreshToken = refreshTokenService.issueAndReplaceForUser(response.user().id());
         ResponseCookie accessCookie = cookieService.createAccessTokenCookie(response.token());
         ResponseCookie refreshCookie = cookieService.createRefreshTokenCookie(refreshToken);
+        ResponseCookie xsrfCookie = createXsrfTokenCookie();
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
                 .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, xsrfCookie.toString())
                 .body(response);
     }
 
@@ -94,9 +92,11 @@ public class AuthController {
         String refreshToken = refreshTokenService.issueAndReplaceForUser(response.user().id());
         ResponseCookie accessCookie = cookieService.createAccessTokenCookie(response.token());
         ResponseCookie refreshCookie = cookieService.createRefreshTokenCookie(refreshToken);
+        ResponseCookie xsrfCookie = createXsrfTokenCookie();
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
                 .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, xsrfCookie.toString())
                 .body(response);
     }
 
@@ -114,10 +114,12 @@ public class AuthController {
 
         ResponseCookie accessCookie = cookieService.createAccessTokenCookie(response.token());
         ResponseCookie refreshCookie = cookieService.createRefreshTokenCookie(rotation.newRefreshToken());
+        ResponseCookie xsrfCookie = createXsrfTokenCookie();
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
                 .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, xsrfCookie.toString())
                 .body(response);
     }
 
@@ -180,5 +182,14 @@ public class AuthController {
             }
         }
         return null;
+    }
+
+    private ResponseCookie createXsrfTokenCookie() {
+        return ResponseCookie.from("XSRF-TOKEN", UUID.randomUUID().toString())
+                .httpOnly(false)
+                .secure(cookieService.isCookieSecure())
+                .path("/")
+                .sameSite(cookieService.getSameSite())
+                .build();
     }
 }
