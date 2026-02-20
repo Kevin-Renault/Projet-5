@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserTopicSubscriptionController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mdd-api</a> &gt; <a href="index.source.html" class="el_package">com.openclassrooms.mddapi.controller</a> &gt; <span class="el_source">UserTopicSubscriptionController.java</span></div><h1>UserTopicSubscriptionController.java</h1><pre class="source lang-java linenums">package com.openclassrooms.mddapi.controller;
+
+import com.openclassrooms.mddapi.dto.UserTopicSubscriptionDto;
+import com.openclassrooms.mddapi.entity.MddUserEntity;
+import com.openclassrooms.mddapi.exception.ApiErrorResponse;
+import com.openclassrooms.mddapi.service.UserTopicSubscriptionService;
+import jakarta.validation.Valid;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping(&quot;/api/subscriptions&quot;)
+@Tag(name = &quot;Subscriptions&quot;, description = &quot;Manage the authenticated user's topic subscriptions.&quot;)
+@SecurityRequirement(name = com.openclassrooms.mddapi.config.OpenApiConfig.BEARER_AUTH_SCHEME)
+@SecurityRequirement(name = com.openclassrooms.mddapi.config.OpenApiConfig.COOKIE_AUTH_SCHEME)
+public class UserTopicSubscriptionController {
+
+    private final UserTopicSubscriptionService subscriptionService;
+
+<span class="fc" id="L35">    public UserTopicSubscriptionController(UserTopicSubscriptionService subscriptionService) {</span>
+<span class="fc" id="L36">        this.subscriptionService = subscriptionService;</span>
+<span class="fc" id="L37">    }</span>
+
+    @GetMapping
+    @Operation(summary = &quot;List my subscriptions&quot;, description = &quot;Returns the topics the authenticated user is subscribed to.&quot;, responses = {
+            @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Subscriptions returned&quot;, content = @Content(array = @ArraySchema(schema = @Schema(implementation = UserTopicSubscriptionDto.class)))),
+            @ApiResponse(responseCode = &quot;401&quot;, description = &quot;Not authenticated&quot;, content = @Content),
+            @ApiResponse(responseCode = &quot;403&quot;, description = &quot;Forbidden&quot;, content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = &quot;500&quot;, description = &quot;Internal server error&quot;, content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public List&lt;UserTopicSubscriptionDto&gt; getAll(
+            @Parameter(hidden = true) @AuthenticationPrincipal MddUserEntity principal) {
+<span class="fc" id="L48">        return subscriptionService.getByUser(principal);</span>
+    }
+
+    @PostMapping
+    @Operation(summary = &quot;Subscribe to a topic&quot;, description = &quot;Subscribes the authenticated user to a topic.&quot;, responses = {
+            @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Subscription updated&quot;, content = @Content(array = @ArraySchema(schema = @Schema(implementation = UserTopicSubscriptionDto.class)))),
+            @ApiResponse(responseCode = &quot;400&quot;, description = &quot;Validation error&quot;, content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = &quot;401&quot;, description = &quot;Not authenticated&quot;, content = @Content),
+            @ApiResponse(responseCode = &quot;403&quot;, description = &quot;Forbidden&quot;, content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = &quot;404&quot;, description = &quot;Topic not found&quot;, content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = &quot;500&quot;, description = &quot;Internal server error&quot;, content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public List&lt;UserTopicSubscriptionDto&gt; subscribe(
+            @Parameter(hidden = true) @AuthenticationPrincipal MddUserEntity principal,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true, description = &quot;Subscription payload&quot;, content = @Content(schema = @Schema(implementation = UserTopicSubscriptionDto.class))) @Valid @RequestBody UserTopicSubscriptionDto request) {
+<span class="fc" id="L63">        return subscriptionService.subscribe(principal, request.topicId());</span>
+    }
+
+    @DeleteMapping
+    @Operation(summary = &quot;Unsubscribe from a topic&quot;, description = &quot;Unsubscribes the authenticated user from a topic.&quot;, responses = {
+            @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Subscription updated&quot;, content = @Content(array = @ArraySchema(schema = @Schema(implementation = UserTopicSubscriptionDto.class)))),
+            @ApiResponse(responseCode = &quot;400&quot;, description = &quot;Invalid query parameter&quot;, content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = &quot;401&quot;, description = &quot;Not authenticated&quot;, content = @Content),
+            @ApiResponse(responseCode = &quot;403&quot;, description = &quot;Forbidden&quot;, content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = &quot;404&quot;, description = &quot;Topic not found&quot;, content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = &quot;500&quot;, description = &quot;Internal server error&quot;, content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public List&lt;UserTopicSubscriptionDto&gt; unsubscribe(
+            @Parameter(hidden = true) @AuthenticationPrincipal MddUserEntity principal,
+            @Parameter(description = &quot;Topic id&quot;, example = &quot;1&quot;) @RequestParam Long topicId) {
+<span class="fc" id="L78">        return subscriptionService.unsubscribe(principal, topicId);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="Mocha Tests" time="7.648" tests="1" failures="0">
+  <testsuite name="Root Suite" timestamp="2026-02-20T13:16:27" tests="0" file="cypress/e2e/full_flow.cy.js" time="0.000" failures="0">
+  </testsuite>
+  <testsuite name="Full integration flow" timestamp="2026-02-20T13:16:27" tests="1" time="7.643" failures="0">
+    <testcase name="Full integration flow register, login, comment, logout" time="7.481" classname="register, login, comment, logout">
+    </testcase>
+  </testsuite>
+</testsuites>

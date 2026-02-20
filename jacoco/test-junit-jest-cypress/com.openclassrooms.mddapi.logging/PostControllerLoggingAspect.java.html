@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PostControllerLoggingAspect.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mdd-api</a> &gt; <a href="index.source.html" class="el_package">com.openclassrooms.mddapi.logging</a> &gt; <span class="el_source">PostControllerLoggingAspect.java</span></div><h1>PostControllerLoggingAspect.java</h1><pre class="source lang-java linenums">package com.openclassrooms.mddapi.logging;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.security.Principal;
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Aspect;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+
+@Aspect
+@Component
+<span class="fc" id="L17">public class PostControllerLoggingAspect {</span>
+<span class="fc" id="L18">    private static final Logger logger = LoggerFactory.getLogger(PostControllerLoggingAspect.class);</span>
+
+    @Around(&quot;within(com.openclassrooms.mddapi.controller..*)&quot;)
+    public Object logPostControllerCalls(ProceedingJoinPoint joinPoint) throws Throwable {
+<span class="fc" id="L22">        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();</span>
+<span class="pc bpc" id="L23" title="1 of 2 branches missed.">        if (attributes == null) {</span>
+<span class="nc" id="L24">            return joinPoint.proceed();</span>
+        }
+
+<span class="fc" id="L27">        HttpServletRequest request = attributes.getRequest();</span>
+<span class="pc bpc" id="L28" title="1 of 4 branches missed.">        if (request.getMethod() == null || !&quot;POST&quot;.equalsIgnoreCase(request.getMethod())) {</span>
+<span class="fc" id="L29">            return joinPoint.proceed();</span>
+        }
+
+<span class="fc" id="L32">        HttpServletResponse response = attributes.getResponse();</span>
+<span class="fc" id="L33">        String requestUri = request.getRequestURI();</span>
+<span class="fc" id="L34">        String handler = joinPoint.getSignature().toShortString();</span>
+
+<span class="fc" id="L36">        Principal principal = request.getUserPrincipal();</span>
+<span class="pc bpc" id="L37" title="1 of 4 branches missed.">        String user = (principal != null &amp;&amp; principal.getName() != null) ? principal.getName() : &quot;anonymous&quot;;</span>
+
+<span class="fc" id="L39">        long startNanos = System.nanoTime();</span>
+        try {
+<span class="fc" id="L41">            logger.info(&quot;POST {} -&gt; {} user={}&quot;, requestUri, handler, user);</span>
+<span class="fc" id="L42">            Object result = joinPoint.proceed();</span>
+
+<span class="fc" id="L44">            long durationMs = (System.nanoTime() - startNanos) / 1_000_000;</span>
+<span class="pc bpc" id="L45" title="1 of 2 branches missed.">            Integer status = (response != null) ? response.getStatus() : null;</span>
+<span class="pc bpc" id="L46" title="1 of 2 branches missed.">            if (status != null) {</span>
+<span class="fc" id="L47">                logger.info(&quot;POST {} &lt;- {} status={} durationMs={}&quot;, requestUri, handler, status, durationMs);</span>
+            } else {
+<span class="nc" id="L49">                logger.info(&quot;POST {} &lt;- {} durationMs={}&quot;, requestUri, handler, durationMs);</span>
+            }
+
+<span class="fc" id="L52">            return result;</span>
+<span class="fc" id="L53">        } catch (Throwable ex) {</span>
+<span class="fc" id="L54">            long durationMs = (System.nanoTime() - startNanos) / 1_000_000;</span>
+<span class="fc" id="L55">            logger.warn(&quot;POST {} !! {} durationMs={} errorType={} message={}&quot;, requestUri, handler, durationMs,</span>
+<span class="fc" id="L56">                    ex.getClass().getSimpleName(), ex.getMessage(), ex);</span>
+<span class="fc" id="L57">            throw ex;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

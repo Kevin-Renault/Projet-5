@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JwtAuthenticationFilter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mdd-api</a> &gt; <a href="index.source.html" class="el_package">com.openclassrooms.mddapi.security</a> &gt; <span class="el_source">JwtAuthenticationFilter.java</span></div><h1>JwtAuthenticationFilter.java</h1><pre class="source lang-java linenums">package com.openclassrooms.mddapi.security;
+
+import com.openclassrooms.mddapi.entity.MddUserEntity;
+import com.openclassrooms.mddapi.repository.MddUserRepository;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.Optional;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+@Component
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    private final JwtService jwtService;
+    private final JwtCookieService cookieService;
+    private final MddUserRepository userRepository;
+
+    public JwtAuthenticationFilter(JwtService jwtService, JwtCookieService cookieService,
+<span class="fc" id="L29">            MddUserRepository userRepository) {</span>
+<span class="fc" id="L30">        this.jwtService = jwtService;</span>
+<span class="fc" id="L31">        this.cookieService = cookieService;</span>
+<span class="fc" id="L32">        this.userRepository = userRepository;</span>
+<span class="fc" id="L33">    }</span>
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
+
+<span class="fc" id="L39">        Authentication existing = SecurityContextHolder.getContext().getAuthentication();</span>
+        // When this filter runs late in the chain, an AnonymousAuthenticationToken may
+        // already be present. In that case, we still want to authenticate from the JWT.
+<span class="pc bpc" id="L42" title="1 of 6 branches missed.">        if (existing != null &amp;&amp; existing.isAuthenticated() &amp;&amp; !(existing instanceof AnonymousAuthenticationToken)) {</span>
+<span class="nc" id="L43">            filterChain.doFilter(request, response);</span>
+<span class="nc" id="L44">            return;</span>
+        }
+
+<span class="fc" id="L47">        String token = extractToken(request);</span>
+<span class="fc bfc" id="L48" title="All 6 branches covered.">        if (token == null || token.isBlank() || !jwtService.isTokenValid(token)) {</span>
+<span class="fc" id="L49">            filterChain.doFilter(request, response);</span>
+<span class="fc" id="L50">            return;</span>
+        }
+
+<span class="fc" id="L53">        String subject = jwtService.extractSubject(token);</span>
+        // subject = userId
+        Long userId;
+        try {
+<span class="fc" id="L57">            userId = Long.valueOf(subject);</span>
+<span class="fc" id="L58">        } catch (NumberFormatException ex) {</span>
+<span class="fc" id="L59">            filterChain.doFilter(request, response);</span>
+<span class="fc" id="L60">            return;</span>
+<span class="fc" id="L61">        }</span>
+
+<span class="fc" id="L63">        Optional&lt;MddUserEntity&gt; userOpt = userRepository.findById(userId);</span>
+<span class="fc bfc" id="L64" title="All 2 branches covered.">        if (userOpt.isEmpty()) {</span>
+<span class="fc" id="L65">            filterChain.doFilter(request, response);</span>
+<span class="fc" id="L66">            return;</span>
+        }
+
+<span class="fc" id="L69">        MddUserEntity user = userOpt.get();</span>
+<span class="fc" id="L70">        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(</span>
+                user,
+                null,
+<span class="fc" id="L73">                Collections.emptyList());</span>
+<span class="fc" id="L74">        auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));</span>
+<span class="fc" id="L75">        SecurityContextHolder.getContext().setAuthentication(auth);</span>
+
+<span class="fc" id="L77">        filterChain.doFilter(request, response);</span>
+<span class="fc" id="L78">    }</span>
+
+    private String extractToken(HttpServletRequest request) {
+<span class="fc" id="L81">        String authHeader = request.getHeader(&quot;Authorization&quot;);</span>
+<span class="pc bpc" id="L82" title="1 of 4 branches missed.">        if (authHeader != null &amp;&amp; authHeader.startsWith(&quot;Bearer &quot;)) {</span>
+<span class="fc" id="L83">            return authHeader.substring(7);</span>
+        }
+
+<span class="fc" id="L86">        Cookie[] cookies = request.getCookies();</span>
+<span class="fc bfc" id="L87" title="All 2 branches covered.">        if (cookies == null) {</span>
+<span class="fc" id="L88">            return null;</span>
+        }
+<span class="fc" id="L90">        String cookieName = cookieService.getCookieName();</span>
+<span class="fc bfc" id="L91" title="All 2 branches covered.">        for (Cookie cookie : cookies) {</span>
+<span class="fc bfc" id="L92" title="All 2 branches covered.">            if (cookieName.equals(cookie.getName())) {</span>
+<span class="fc" id="L93">                return cookie.getValue();</span>
+            }
+        }
+<span class="fc" id="L96">        return null;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

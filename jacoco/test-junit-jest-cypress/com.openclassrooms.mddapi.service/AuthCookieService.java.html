@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuthCookieService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mdd-api</a> &gt; <a href="index.source.html" class="el_package">com.openclassrooms.mddapi.service</a> &gt; <span class="el_source">AuthCookieService.java</span></div><h1>AuthCookieService.java</h1><pre class="source lang-java linenums">package com.openclassrooms.mddapi.service;
+
+import java.time.Duration;
+import org.springframework.http.ResponseCookie;
+import org.springframework.stereotype.Service;
+
+@Service
+<span class="fc" id="L8">public class AuthCookieService {</span>
+
+    private static final String ACCESS_TOKEN_COOKIE = &quot;ACCESS_TOKEN&quot;;
+    private static final String REFRESH_TOKEN_COOKIE = &quot;REFRESH_TOKEN&quot;;
+    private static final String API_AUTH_PATH = &quot;/api/auth&quot;;
+    private static final String SAME_SITE = &quot;Lax&quot;;
+
+    public ResponseCookie accessCookie(String jwt) {
+<span class="fc" id="L16">        return ResponseCookie.from(ACCESS_TOKEN_COOKIE, jwt)</span>
+<span class="fc" id="L17">                .httpOnly(true)</span>
+<span class="fc" id="L18">                .secure(true)</span>
+<span class="fc" id="L19">                .sameSite(SAME_SITE) // &quot;Strict&quot; si tu n'as aucun besoin cross-site</span>
+<span class="fc" id="L20">                .path(&quot;/&quot;)</span>
+<span class="fc" id="L21">                .maxAge(Duration.ofMinutes(10))</span>
+<span class="fc" id="L22">                .build();</span>
+    }
+
+    public ResponseCookie refreshCookie(String refreshToken) {
+<span class="fc" id="L26">        return ResponseCookie.from(REFRESH_TOKEN_COOKIE, refreshToken)</span>
+<span class="fc" id="L27">                .httpOnly(true)</span>
+<span class="fc" id="L28">                .secure(true)</span>
+<span class="fc" id="L29">                .sameSite(SAME_SITE)</span>
+<span class="fc" id="L30">                .path(API_AUTH_PATH) // réduit la surface d’envoi</span>
+<span class="fc" id="L31">                .maxAge(Duration.ofDays(30))</span>
+<span class="fc" id="L32">                .build();</span>
+    }
+
+    public ResponseCookie clearAccess() {
+<span class="fc" id="L36">        return ResponseCookie.from(ACCESS_TOKEN_COOKIE, &quot;&quot;)</span>
+<span class="fc" id="L37">                .httpOnly(true).secure(true).sameSite(SAME_SITE).path(&quot;/&quot;)</span>
+<span class="fc" id="L38">                .maxAge(Duration.ZERO).build();</span>
+    }
+
+    public ResponseCookie clearRefresh() {
+<span class="fc" id="L42">        return ResponseCookie.from(REFRESH_TOKEN_COOKIE, &quot;&quot;)</span>
+<span class="fc" id="L43">                .httpOnly(true).secure(true).sameSite(SAME_SITE).path(API_AUTH_PATH)</span>
+<span class="fc" id="L44">                .maxAge(Duration.ZERO).build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

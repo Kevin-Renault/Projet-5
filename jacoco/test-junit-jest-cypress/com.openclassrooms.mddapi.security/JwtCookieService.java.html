@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JwtCookieService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mdd-api</a> &gt; <a href="index.source.html" class="el_package">com.openclassrooms.mddapi.security</a> &gt; <span class="el_source">JwtCookieService.java</span></div><h1>JwtCookieService.java</h1><pre class="source lang-java linenums">package com.openclassrooms.mddapi.security;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseCookie;
+import org.springframework.stereotype.Service;
+
+@Service
+public class JwtCookieService {
+
+    private final String cookieName;
+    private final String refreshCookieName;
+    private final boolean cookieSecure;
+    private final String sameSite;
+    private final long expirationSeconds;
+    private final long refreshExpirationSeconds;
+
+    public JwtCookieService(
+            @Value(&quot;${security.jwt.cookie-name:access_token}&quot;) String cookieName,
+            @Value(&quot;${security.jwt.refresh-cookie-name:refresh_token}&quot;) String refreshCookieName,
+            @Value(&quot;${security.jwt.cookie-secure:false}&quot;) boolean cookieSecure,
+            @Value(&quot;${security.jwt.cookie-samesite:Lax}&quot;) String sameSite,
+            @Value(&quot;${security.jwt.expiration-seconds:86400}&quot;) long expirationSeconds,
+<span class="fc" id="L23">            @Value(&quot;${security.jwt.refresh-expiration-seconds:2592000}&quot;) long refreshExpirationSeconds) {</span>
+<span class="fc" id="L24">        this.cookieName = cookieName;</span>
+<span class="fc" id="L25">        this.refreshCookieName = refreshCookieName;</span>
+<span class="fc" id="L26">        this.cookieSecure = cookieSecure;</span>
+<span class="fc" id="L27">        this.sameSite = sameSite;</span>
+<span class="fc" id="L28">        this.expirationSeconds = expirationSeconds;</span>
+<span class="fc" id="L29">        this.refreshExpirationSeconds = refreshExpirationSeconds;</span>
+<span class="fc" id="L30">    }</span>
+
+    public String getCookieName() {
+<span class="fc" id="L33">        return cookieName;</span>
+    }
+
+    public String getRefreshCookieName() {
+<span class="nc" id="L37">        return refreshCookieName;</span>
+    }
+
+    public boolean isCookieSecure() {
+<span class="fc" id="L41">        return cookieSecure;</span>
+    }
+
+    public String getSameSite() {
+<span class="fc" id="L45">        return sameSite;</span>
+    }
+
+    public ResponseCookie createAccessTokenCookie(String token) {
+<span class="fc" id="L49">        return ResponseCookie.from(cookieName, token)</span>
+<span class="fc" id="L50">                .httpOnly(true)</span>
+<span class="fc" id="L51">                .secure(cookieSecure)</span>
+<span class="fc" id="L52">                .path(&quot;/&quot;)</span>
+<span class="fc" id="L53">                .sameSite(sameSite)</span>
+<span class="fc" id="L54">                .maxAge(expirationSeconds)</span>
+<span class="fc" id="L55">                .build();</span>
+    }
+
+    public ResponseCookie clearAccessTokenCookie() {
+<span class="fc" id="L59">        return ResponseCookie.from(cookieName, &quot;&quot;)</span>
+<span class="fc" id="L60">                .httpOnly(true)</span>
+<span class="fc" id="L61">                .secure(cookieSecure)</span>
+<span class="fc" id="L62">                .path(&quot;/&quot;)</span>
+<span class="fc" id="L63">                .sameSite(sameSite)</span>
+<span class="fc" id="L64">                .maxAge(0)</span>
+<span class="fc" id="L65">                .build();</span>
+    }
+
+    public ResponseCookie createRefreshTokenCookie(String token) {
+<span class="fc" id="L69">        return ResponseCookie.from(refreshCookieName, token)</span>
+<span class="fc" id="L70">                .httpOnly(true)</span>
+<span class="fc" id="L71">                .secure(cookieSecure)</span>
+                // Restreint l'envoi du refresh cookie à la surface auth uniquement.
+<span class="fc" id="L73">                .path(&quot;/api/auth&quot;)</span>
+<span class="fc" id="L74">                .sameSite(sameSite)</span>
+<span class="fc" id="L75">                .maxAge(refreshExpirationSeconds)</span>
+<span class="fc" id="L76">                .build();</span>
+    }
+
+    public ResponseCookie clearRefreshTokenCookie() {
+<span class="fc" id="L80">        return ResponseCookie.from(refreshCookieName, &quot;&quot;)</span>
+<span class="fc" id="L81">                .httpOnly(true)</span>
+<span class="fc" id="L82">                .secure(cookieSecure)</span>
+<span class="fc" id="L83">                .path(&quot;/api/auth&quot;)</span>
+<span class="fc" id="L84">                .sameSite(sameSite)</span>
+<span class="fc" id="L85">                .maxAge(0)</span>
+<span class="fc" id="L86">                .build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

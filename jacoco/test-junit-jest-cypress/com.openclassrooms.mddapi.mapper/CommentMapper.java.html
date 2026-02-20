@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CommentMapper.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mdd-api</a> &gt; <a href="index.source.html" class="el_package">com.openclassrooms.mddapi.mapper</a> &gt; <span class="el_source">CommentMapper.java</span></div><h1>CommentMapper.java</h1><pre class="source lang-java linenums">package com.openclassrooms.mddapi.mapper;
+
+import com.openclassrooms.mddapi.dto.CommentDto;
+import com.openclassrooms.mddapi.entity.ArticleEntity;
+import com.openclassrooms.mddapi.entity.ArticleCommentEntity;
+import com.openclassrooms.mddapi.entity.MddUserEntity;
+import org.springframework.stereotype.Component;
+
+@Component
+<span class="fc" id="L10">public class CommentMapper {</span>
+
+    public CommentDto toDto(ArticleCommentEntity entity) {
+<span class="fc bfc" id="L13" title="All 2 branches covered.">        if (entity == null) {</span>
+<span class="fc" id="L14">            return null;</span>
+        }
+<span class="fc bfc" id="L16" title="All 2 branches covered.">        Long authorId = entity.getAuthor() != null ? entity.getAuthor().getId() : null;</span>
+<span class="fc bfc" id="L17" title="All 2 branches covered.">        Long articleId = entity.getArticle() != null ? entity.getArticle().getId() : null;</span>
+<span class="fc" id="L18">        return new CommentDto(entity.getId(), entity.getContent(), entity.getCreatedAt(), authorId, articleId);</span>
+    }
+
+    public ArticleCommentEntity toEntity(CommentDto dto) {
+<span class="fc bfc" id="L22" title="All 2 branches covered.">        if (dto == null) {</span>
+<span class="fc" id="L23">            return null;</span>
+        }
+<span class="fc" id="L25">        ArticleCommentEntity entity = new ArticleCommentEntity();</span>
+<span class="fc" id="L26">        entity.setId(dto.id());</span>
+<span class="fc" id="L27">        entity.setContent(dto.content());</span>
+<span class="fc" id="L28">        entity.setCreatedAt(dto.createdAt());</span>
+
+<span class="pc bpc" id="L30" title="1 of 2 branches missed.">        if (dto.authorId() != null) {</span>
+<span class="fc" id="L31">            MddUserEntity author = new MddUserEntity();</span>
+<span class="fc" id="L32">            author.setId(dto.authorId());</span>
+<span class="fc" id="L33">            entity.setAuthor(author);</span>
+        }
+<span class="pc bpc" id="L35" title="1 of 2 branches missed.">        if (dto.articleId() != null) {</span>
+<span class="fc" id="L36">            ArticleEntity article = new ArticleEntity();</span>
+<span class="fc" id="L37">            article.setId(dto.articleId());</span>
+<span class="fc" id="L38">            entity.setArticle(article);</span>
+        }
+<span class="fc" id="L40">        return entity;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
