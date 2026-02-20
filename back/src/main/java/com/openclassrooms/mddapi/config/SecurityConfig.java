@@ -11,15 +11,18 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.session.NullAuthenticatedSessionStrategy;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.session.SessionManagementFilter;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+    @Bean
+    public CookieCsrfTokenRepository csrfTokenRepository() {
+        return new CookieCsrfTokenRepository();
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(
@@ -31,19 +34,9 @@ public class SecurityConfig {
                 .cors(cors -> {
                 })
                 .csrf(csrf -> csrf
-                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                        // For SPA clients that read the XSRF-TOKEN cookie and echo it
-                        // back in the X-XSRF-TOKEN header.
-                        .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
-                        // Allow first login/register without an existing CSRF cookie.
-                        .ignoringRequestMatchers(
-                                new AntPathRequestMatcher("/api/auth/login", "POST"),
-                                new AntPathRequestMatcher("/api/auth/register", "POST")))
-                .sessionManagement(sm -> sm
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                        // Prevent Spring Security from clearing the CSRF token on
-                        // every request that authenticates via our stateless JWT.
-                        .sessionAuthenticationStrategy(new NullAuthenticatedSessionStrategy()))
+                        .csrfTokenRepository(csrfTokenRepository())
+                        .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(authenticationEntryPoint))
                 .authorizeHttpRequests(auth -> auth
                         // CORS preflight

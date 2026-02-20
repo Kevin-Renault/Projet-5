@@ -8,24 +8,25 @@ export class CredentialsInterceptor implements HttpInterceptor {
     private readonly csrfTokenService = inject(CsrfTokenService);
 
     intercept(req: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
-        let patched = req.clone({ withCredentials: true });
+        const csrfToken = this.csrfTokenService.get();
+        const needsCsrf = this.needsCsrfHeader(req);
 
-        // When the backend uses an HttpOnly CSRF cookie, the browser cannot read it to
-        // populate the XSRF header. We instead store the token from /api/auth/csrf response
-        // header (X-XSRF-TOKEN) and replay it on state-changing requests.
-        if (this.isUnsafeMethod(patched.method) && !patched.headers.has('X-XSRF-TOKEN')) {
-            const csrfToken = this.csrfTokenService.getToken();
-            if (csrfToken) {
-                patched = patched.clone({
-                    headers: patched.headers.set('X-XSRF-TOKEN', csrfToken),
-                });
-            }
-        }
+        const reqWithCreds = req.clone({
+            withCredentials: true,
+            setHeaders: needsCsrf && csrfToken && !req.headers.has('X-XSRF-TOKEN')
+                ? { 'X-XSRF-TOKEN': csrfToken }
+                : {},
+        });
 
-        return next.handle(patched);
+        return next.handle(reqWithCreds);
     }
 
-    private isUnsafeMethod(method: string): boolean {
-        return method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS';
+    private needsCsrfHeader(req: HttpRequest<unknown>): boolean {
+        // Only protect unsafe methods.
+        if (['GET', 'HEAD', 'OPTIONS'].includes(req.method.toUpperCase())) {
+            return false;
+        }
+        // Limit to API calls; avoids touching external URLs.
+        return req.url.includes('/api/');
     }
 }

@@ -355,10 +355,12 @@ class FullFlowIntegrationTest {
     }
 
     private String registerUserAndGetCookie(String username, String email, String password) {
+        ensureCsrf();
         RegisterRequest registerRequest = new RegisterRequest(username, email, password);
-        ResponseEntity<AuthResponseDto> registerResponse = rest.postForEntity(
+        ResponseEntity<AuthResponseDto> registerResponse = rest.exchange(
                 "/api/auth/register",
-                registerRequest,
+                HttpMethod.POST,
+                new HttpEntity<>(registerRequest, headersWithCookie(null)),
                 AuthResponseDto.class);
 
         Assertions.assertThat(registerResponse.getStatusCode().value()).isEqualTo(200);
@@ -369,7 +371,6 @@ class FullFlowIntegrationTest {
         Assertions.assertThat(createdUserId).isNotNull();
 
         captureCsrf(registerResponse.getHeaders());
-        ensureCsrf();
 
         String cookie = extractCookie(registerResponse.getHeaders(), jwtCookieService.getCookieName());
         Assertions.assertThat(cookie).isNotBlank();
@@ -377,14 +378,15 @@ class FullFlowIntegrationTest {
     }
 
     private String loginAndGetCookie(String email, String password) {
-        ResponseEntity<AuthResponseDto> loginResponse = rest.postForEntity(
+        ensureCsrf();
+        ResponseEntity<AuthResponseDto> loginResponse = rest.exchange(
                 "/api/auth/login",
-                new LoginRequest(email, password),
+                HttpMethod.POST,
+                new HttpEntity<>(new LoginRequest(email, password), headersWithCookie(null)),
                 AuthResponseDto.class);
 
         Assertions.assertThat(loginResponse.getStatusCode().value()).isEqualTo(200);
         captureCsrf(loginResponse.getHeaders());
-        ensureCsrf();
         String cookie = extractCookie(loginResponse.getHeaders(), jwtCookieService.getCookieName());
         Assertions.assertThat(cookie).isNotBlank();
         return cookie;
@@ -522,11 +524,13 @@ class FullFlowIntegrationTest {
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setAccept(List.of(MediaType.APPLICATION_JSON));
 
-        String cookieHeader = cookie;
+        String cookieHeader = (cookie == null) ? "" : cookie.trim();
         if (csrfCookiePair != null && !csrfCookiePair.isBlank()) {
-            cookieHeader = cookieHeader + "; " + csrfCookiePair;
+            cookieHeader = cookieHeader.isBlank() ? csrfCookiePair : (cookieHeader + "; " + csrfCookiePair);
         }
-        headers.add(HttpHeaders.COOKIE, cookieHeader);
+        if (!cookieHeader.isBlank()) {
+            headers.add(HttpHeaders.COOKIE, cookieHeader);
+        }
 
         if (csrfTokenValue != null && !csrfTokenValue.isBlank()) {
             headers.add(CSRF_HEADER_NAME, csrfTokenValue);

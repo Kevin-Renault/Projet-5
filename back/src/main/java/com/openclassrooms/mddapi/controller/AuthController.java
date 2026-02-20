@@ -54,10 +54,13 @@ public class AuthController {
     })
     public ResponseEntity<Void> csrf(CsrfToken csrfToken) {
         // Spring Security may defer CSRF token generation until it's actually accessed.
-        // Touch it here to force CookieCsrfTokenRepository to emit the XSRF-TOKEN
-        // cookie.
-        csrfToken.getToken();
-        return ResponseEntity.noContent().build();
+        // Touch it here to force CookieCsrfTokenRepository to emit the XSRF-TOKEN cookie.
+        String token = csrfToken.getToken();
+
+        // Expose the token for clients that cannot read the cookie (e.g. HttpOnly).
+        return ResponseEntity.noContent()
+            .header("X-XSRF-TOKEN", token)
+            .build();
     }
 
     @PostMapping("/register")
