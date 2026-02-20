@@ -387,7 +387,7 @@ jobs:
           )
 
           table_lines = [
-            '| Metric | Pass rate | Passed | Skipped | Total |',
+            '| Metric | Coverage | Covered | Skipped | Total |',
             '|---|---:|---:|---:|---:|',
             f"| Suites | {pct(suites_passed, suites_total):.2f}% | {fmt_int(suites_passed)} | {fmt_int(suites_skipped)} | {fmt_int(suites_total)} |",
             f"| Tests | {pct(tests_passed, tests_total):.2f}% | {fmt_int(tests_passed)} | {fmt_int(tests_skipped)} | {fmt_int(tests_total)} |",
@@ -525,8 +525,55 @@ jobs:
               for ts in root.findall('testsuite'):
                 parse_testsuite(ts)
 
-          passed = max(0, tests - failures - errors - skipped)
+          tests_failed = failures + errors
+          tests_passed = max(0, tests - tests_failed - skipped)
+
+          # Suites: infer failed/skipped by aggregating testsuites
+          suites_total = 0
+          suites_failed = 0
+          suites_skipped = 0
+
+          def pct(passed: int, total: int) -> float:
+            return 0.0 if total <= 0 else (passed / total) * 100.0
+
+          # Re-parse per-suite to infer suite-level status
+          for f in xml_files:
+            try:
+              root = ET.parse(f).getroot()
+            except ET.ParseError:
+              continue
+
+            candidates = []
+            if root.tag == 'testsuite':
+              candidates = [root]
+            elif root.tag == 'testsuites':
+              candidates = list(root.findall('testsuite'))
+
+            for ts in candidates:
+              suites_total += 1
+              suite_tests = int(ts.attrib.get('tests', '0') or 0)
+              suite_failures = int(ts.attrib.get('failures', '0') or 0)
+              suite_errors = int(ts.attrib.get('errors', '0') or 0)
+              suite_skipped = int(ts.attrib.get('skipped', '0') or 0)
+              if suite_tests > 0 and suite_skipped >= suite_tests:
+                suites_skipped += 1
+              elif (suite_failures + suite_errors) > 0:
+                suites_failed += 1
+
+          suites_passed = max(0, suites_total - suites_failed - suites_skipped)
           junit_links = "\n".join([f'<li><a href="./{Path(x).name}">{Path(x).name}</a></li>' for x in xml_files])
+
+          table_html = "\n".join([
+            '<table border="1" cellpadding="6" cellspacing="0">',
+            '  <thead>',
+            '    <tr><th>Metric</th><th>Coverage</th><th>Covered</th><th>Skipped</th><th>Total</th></tr>',
+            '  </thead>',
+            '  <tbody>',
+            f'    <tr><td>Suites</td><td>{pct(suites_passed, suites_total):.2f}%</td><td>{suites_passed}</td><td>{suites_skipped}</td><td>{suites_total}</td></tr>',
+            f'    <tr><td>Tests</td><td>{pct(tests_passed, tests):.2f}%</td><td>{tests_passed}</td><td>{skipped}</td><td>{tests}</td></tr>',
+            '  </tbody>',
+            '</table>',
+          ])
 
           out_file.write_text(
             "\n".join([
@@ -541,15 +588,8 @@ jobs:
               '    <h1>Cypress E2E Report</h1>',
               f'    <p>Branch: <strong>{safe_branch}</strong></p>',
               '    <h2>Summary</h2>',
-              '    <ul>',
-              f'      <li>JUnit files: {len(xml_files)}</li>',
-              f'      <li>Suites: {suites}</li>',
-              f'      <li>Tests: {tests}</li>',
-              f'      <li>Passed: {passed}</li>',
-              f'      <li>Failed: {failures + errors}</li>',
-              f'      <li>Skipped: {skipped}</li>',
-              f'      <li>Duration (s): {duration:.1f}</li>',
-              '    </ul>',
+              f'    <p><strong>JUnit files</strong>: {len(xml_files)} | <strong>Duration</strong>: {duration:.1f}s</p>',
+              table_html,
               '    <h2>JUnit XML</h2>',
               '    <ul>',
               (junit_links if junit_links else '      <li>No JUnit XML found.</li>'),
