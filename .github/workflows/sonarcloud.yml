@@ -6,10 +6,12 @@ on:
       - '**'
     paths:
       - 'back/**'
+      - 'front/**'
       - '.github/workflows/sonarcloud.yml'
   pull_request:
     paths:
       - 'back/**'
+      - 'front/**'
       - '.github/workflows/sonarcloud.yml'
   workflow_dispatch:
 
@@ -39,6 +41,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: front/package-lock.json
 
       - name: Set up JDK
         uses: actions/setup-java@v4
@@ -156,6 +165,140 @@ jobs:
           )
           PY
 
+      - name: Install dependencies (frontend)
+        working-directory: front
+        run: npm ci
+
+      - name: Start backend (for Cypress)
+        shell: bash
+        env:
+          DB_MDD_NAME: mdd
+          DB_USER: root
+          DB_PASSWORD: root
+        run: |
+          set -euo pipefail
+          java -version
+          nohup java -jar back/target/mdd-api-0.0.1-SNAPSHOT.jar > back.log 2>&1 &
+
+          echo "Waiting for backend to be ready..."
+          for i in {1..60}; do
+            if curl -fsS "http://localhost:8080/api/auth/csrf" >/dev/null; then
+              echo "Backend is ready."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Backend did not become ready in time."
+          echo "---- back.log (tail) ----"
+          tail -n 200 back.log || true
+          exit 1
+
+      - name: Run Cypress E2E (JUnit)
+        working-directory: front
+        env:
+          CYPRESS_CACHE_FOLDER: ~/.cache/Cypress
+        run: npm run test:e2e
+
+      - name: E2E summary (Cypress)
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import os
+          import glob
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          summary_path = os.environ.get('GITHUB_STEP_SUMMARY')
+          if not summary_path:
+            raise SystemExit('GITHUB_STEP_SUMMARY is not set')
+
+          xml_files = sorted(glob.glob('front/cypress/results/*.xml'))
+          suites = 0
+          tests = failures = errors = skipped = 0
+          duration = 0.0
+
+          def parse_testsuite(elem):
+            global suites, tests, failures, errors, skipped, duration
+            suites += 1
+            tests += int(elem.attrib.get('tests', '0') or 0)
+            failures += int(elem.attrib.get('failures', '0') or 0)
+            errors += int(elem.attrib.get('errors', '0') or 0)
+            skipped += int(elem.attrib.get('skipped', '0') or 0)
+            try:
+              duration += float(elem.attrib.get('time', '0') or 0)
+            except ValueError:
+              pass
+
+          for f in xml_files:
+            try:
+              root = ET.parse(f).getroot()
+            except ET.ParseError:
+              continue
+
+            if root.tag == 'testsuite':
+              parse_testsuite(root)
+            elif root.tag == 'testsuites':
+              for ts in root.findall('testsuite'):
+                parse_testsuite(ts)
+
+          passed = max(0, tests - failures - errors - skipped)
+
+          def fmt_int(n: int) -> str:
+            return f'{n:,}'.replace(',', ' ')
+
+          def fmt_duration(seconds: float) -> str:
+            if seconds < 60:
+              return f'{seconds:.1f}s'
+            mins = int(seconds // 60)
+            secs = seconds - (mins * 60)
+            return f'{mins}m {secs:.0f}s'
+
+          repo = os.environ.get('GITHUB_REPOSITORY', '').strip()  # owner/repo
+          if repo and '/' in repo:
+            owner, name = repo.split('/', 1)
+            pages_base = f'https://{owner}.github.io/{name}'
+          else:
+            pages_base = None
+
+          ref_name = os.environ.get('GITHUB_REF_NAME', '').strip()
+          safe_ref_name = ref_name.replace('/', '-') if ref_name else None
+          deployable = ref_name in {'main', 'test/junit-jest-cypress'}
+          pages_report = (
+            f'{pages_base}/cypress/{safe_ref_name}/index.html'
+            if deployable and pages_base and safe_ref_name
+            else None
+          )
+
+          table_lines = [
+            '| Metric | Value |',
+            '|---|---:|',
+            f'| JUnit files | {fmt_int(len(xml_files))} |',
+            f'| Test suites | {fmt_int(suites)} |',
+            f'| Tests | {fmt_int(tests)} |',
+            f'| Passed | {fmt_int(passed)} |',
+            f'| Failed | {fmt_int(failures + errors)} |',
+            f'| Skipped | {fmt_int(skipped)} |',
+            f'| Duration | {fmt_duration(duration)} |',
+          ]
+
+          lines = [
+            '',
+            '## Frontend E2E (Cypress)',
+            '',
+            *table_lines,
+            '',
+            '### Links',
+            *( [f'- Cypress report (GitHub Pages): {pages_report}'] if pages_report else [] ),
+            '',
+            '### Report',
+            '- Download the artifact `cypress-report` to inspect JUnit XML and (if any) screenshots/videos.',
+          ]
+
+          summary_file = Path(summary_path)
+          existing = summary_file.read_text(encoding='utf-8') if summary_file.exists() else ''
+          summary_file.write_text(existing + '\n'.join(lines) + '\n', encoding='utf-8')
+          PY
+
       - name: Upload JaCoCo HTML report
         id: upload_jacoco_report
         uses: actions/upload-artifact@v4
@@ -165,6 +308,19 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+      - name: Upload Cypress report
+        if: always()
+        id: upload_cypress_report
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-report
+          path: |
+            front/cypress/results
+            front/cypress/screenshots
+            front/cypress/videos
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Add artifact download link
         if: always()
         shell: bash
@@ -172,6 +328,9 @@ jobs:
           echo "" >> "${GITHUB_STEP_SUMMARY}"
           echo "### Downloads" >> "${GITHUB_STEP_SUMMARY}"
           echo "- JaCoCo artifact (this run): ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts/${{ steps.upload_jacoco_report.outputs.artifact-id }}" >> "${GITHUB_STEP_SUMMARY}"
+          if [ -n "${{ steps.upload_cypress_report.outputs.artifact-id }}" ]; then
+            echo "- Cypress artifact (this run): ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts/${{ steps.upload_cypress_report.outputs.artifact-id }}" >> "${GITHUB_STEP_SUMMARY}"
+          fi
 
       - name: Prepare GitHub Pages (JaCoCo)
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/test/junit-jest-cypress'
@@ -179,10 +338,93 @@ jobs:
         run: |
           set -euo pipefail
           SAFE_BRANCH="${GITHUB_REF_NAME//\//-}"
+          export SAFE_BRANCH
 
           rm -rf site
           mkdir -p "site/jacoco/${SAFE_BRANCH}"
           cp -R back/target/site/jacoco/* "site/jacoco/${SAFE_BRANCH}/"
+
+          # Cypress: publish JUnit XML (and a tiny index) for the same branch
+          mkdir -p "site/cypress/${SAFE_BRANCH}"
+          if ls front/cypress/results/*.xml >/dev/null 2>&1; then
+            cp -R front/cypress/results/* "site/cypress/${SAFE_BRANCH}/"
+          fi
+
+          # Generate a minimal HTML index (works even if no XML is present)
+          python3 - <<'PY'
+          import os
+          import glob
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          safe_branch = os.environ.get('SAFE_BRANCH', 'unknown')
+          out_dir = Path('site') / 'cypress' / safe_branch
+          out_dir.mkdir(parents=True, exist_ok=True)
+          out_file = out_dir / 'index.html'
+
+          xml_files = sorted(glob.glob('front/cypress/results/*.xml'))
+          suites = 0
+          tests = failures = errors = skipped = 0
+          duration = 0.0
+
+          def parse_testsuite(elem):
+            global suites, tests, failures, errors, skipped, duration
+            suites += 1
+            tests += int(elem.attrib.get('tests', '0') or 0)
+            failures += int(elem.attrib.get('failures', '0') or 0)
+            errors += int(elem.attrib.get('errors', '0') or 0)
+            skipped += int(elem.attrib.get('skipped', '0') or 0)
+            try:
+              duration += float(elem.attrib.get('time', '0') or 0)
+            except ValueError:
+              pass
+
+          for f in xml_files:
+            try:
+              root = ET.parse(f).getroot()
+            except ET.ParseError:
+              continue
+            if root.tag == 'testsuite':
+              parse_testsuite(root)
+            elif root.tag == 'testsuites':
+              for ts in root.findall('testsuite'):
+                parse_testsuite(ts)
+
+          passed = max(0, tests - failures - errors - skipped)
+          junit_links = "\n".join([f'<li><a href="./{Path(x).name}">{Path(x).name}</a></li>' for x in xml_files])
+
+          out_file.write_text(
+            "\n".join([
+              '<!doctype html>',
+              '<html lang="en">',
+              '  <head>',
+              '    <meta charset="utf-8" />',
+              '    <meta name="viewport" content="width=device-width, initial-scale=1" />',
+              '    <title>Cypress E2E Report</title>',
+              '  </head>',
+              '  <body>',
+              '    <h1>Cypress E2E Report</h1>',
+              f'    <p>Branch: <strong>{safe_branch}</strong></p>',
+              '    <h2>Summary</h2>',
+              '    <ul>',
+              f'      <li>JUnit files: {len(xml_files)}</li>',
+              f'      <li>Suites: {suites}</li>',
+              f'      <li>Tests: {tests}</li>',
+              f'      <li>Passed: {passed}</li>',
+              f'      <li>Failed: {failures + errors}</li>',
+              f'      <li>Skipped: {skipped}</li>',
+              f'      <li>Duration (s): {duration:.1f}</li>',
+              '    </ul>',
+              '    <h2>JUnit XML</h2>',
+              '    <ul>',
+              (junit_links if junit_links else '      <li>No JUnit XML found.</li>'),
+              '    </ul>',
+              '  </body>',
+              '</html>',
+            ]) + "\n",
+            encoding='utf-8'
+          )
+          PY
 
           # Disable Jekyll processing on GitHub Pages
           touch site/.nojekyll
@@ -193,14 +435,24 @@ jobs:
             <head>
               <meta charset="utf-8" />
               <meta name="viewport" content="width=device-width, initial-scale=1" />
-              <title>JaCoCo Reports</title>
+              <title>CI Reports</title>
             </head>
             <body>
-              <h1>JaCoCo Reports</h1>
+              <h1>CI Reports</h1>
               <p>Latest reports published from CI.</p>
               <ul>
-                <li><a href="./jacoco/main/index.html">main</a></li>
-                <li><a href="./jacoco/test-junit-jest-cypress/index.html">test-junit-jest-cypress</a></li>
+                <li>
+                  JaCoCo:
+                  <a href="./jacoco/main/index.html">main</a>
+                  |
+                  <a href="./jacoco/test-junit-jest-cypress/index.html">test-junit-jest-cypress</a>
+                </li>
+                <li>
+                  Cypress:
+                  <a href="./cypress/main/index.html">main</a>
+                  |
+                  <a href="./cypress/test-junit-jest-cypress/index.html">test-junit-jest-cypress</a>
+                </li>
               </ul>
             </body>
           </html>
