@@ -5,6 +5,7 @@ import { AuthDataSource, AuthResponse } from './auth-datasource.interface';
 import { User } from '../models/user.model';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
+import { CsrfTokenService } from './csrf-token.service';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService implements AuthDataSource {
@@ -12,6 +13,7 @@ export class AuthService implements AuthDataSource {
     private readonly http = inject(HttpClient);
     private readonly errorHandler = inject(ErrorHandler);
     private readonly router = inject(Router);
+    private readonly csrfTokenService = inject(CsrfTokenService);
     private readonly apiUrl = '/api/auth';
 
     // Signaux privés pour gérer l'état
@@ -56,7 +58,12 @@ export class AuthService implements AuthDataSource {
 
     private initCsrf(): Observable<void> {
         return this.http.get<void>(`${this.apiUrl}/csrf`, { observe: 'response' }).pipe(
-            map(() => { })
+            map((res) => {
+                const token = res.headers.get('X-XSRF-TOKEN');
+                if (token) {
+                    this.csrfTokenService.setToken(token);
+                }
+            })
         );
     }
 
@@ -84,6 +91,7 @@ export class AuthService implements AuthDataSource {
         this._currentUser.set(null);
         this._currentUserId.set(null);
         this.#isLoggedIn.set(false);
+        this.csrfTokenService.clear();
     }
 
     login(email: string, password: string): Observable<void> {
