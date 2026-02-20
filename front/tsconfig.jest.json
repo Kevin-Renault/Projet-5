@@ -7,8 +7,8 @@
         "module": "commonjs"
     },
     "include": [
-        "src/**/*.ts",
-        "src/**/*.spec.ts",
+        "src/**/*.jest.spec.ts",
+        "src/setup-jest.ts",
         "src/**/*.d.ts"
     ]
 }
