@@ -17,30 +17,30 @@
 import './commands'
 
 beforeEach(() => {
-	// Stabilise les layouts responsives en CI/headless.
-	cy.viewport(1920, 1080)
+    // Stabilise les layouts responsives en CI/headless.
+    cy.viewport(1920, 1080)
 })
 
 Cypress.on('uncaught:exception', (err) => {
-	const msg = (err && (err as any).message) ? String((err as any).message) : ''
+    const msg = (err && (err as any).message) ? String((err as any).message) : ''
 
-	// Erreurs fréquentes et non bloquantes sur des UI Material/ResizeObserver
-	if (
-		msg.includes('ResizeObserver loop limit exceeded') ||
-		msg.includes('ResizeObserver loop completed with undelivered notifications')
-	) {
-		return false
-	}
+    // Erreurs fréquentes et non bloquantes sur des UI Material/ResizeObserver
+    if (
+        msg.includes('ResizeObserver loop limit exceeded') ||
+        msg.includes('ResizeObserver loop completed with undelivered notifications')
+    ) {
+        return false
+    }
 
-	// Laisse Cypress échouer sur les vraies erreurs applicatives.
-	return true
+    // Laisse Cypress échouer sur les vraies erreurs applicatives.
+    return true
 })
 
 afterEach(() => {
-	cy.window({ log: false }).then((win) => {
-		const coverage = (win as any).__coverage__
-		if (coverage) {
-			cy.task('saveCoverage', coverage, { log: false })
-		}
-	})
+    cy.window({ log: false }).then((win) => {
+        const coverage = (win as any).__coverage__
+        if (coverage) {
+            cy.task('saveCoverage', coverage, { log: false })
+        }
+    })
 })
