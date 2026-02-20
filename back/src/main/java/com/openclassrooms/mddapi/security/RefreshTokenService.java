@@ -9,6 +9,7 @@ import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.Objects;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -24,13 +25,16 @@ public class RefreshTokenService {
     private final RefreshTokenRepository repository;
     private final long refreshExpirationSeconds;
     private final SecureRandom secureRandom;
+    private final ObjectProvider<RefreshTokenService> selfProvider;
 
     public RefreshTokenService(
             RefreshTokenRepository repository,
-            @Value("${security.jwt.refresh-expiration-seconds:2592000}") long refreshExpirationSeconds) {
+            @Value("${security.jwt.refresh-expiration-seconds:2592000}") long refreshExpirationSeconds,
+            ObjectProvider<RefreshTokenService> selfProvider) {
         this.repository = repository;
         this.refreshExpirationSeconds = refreshExpirationSeconds;
         this.secureRandom = new SecureRandom();
+        this.selfProvider = selfProvider;
     }
 
     @Transactional
@@ -40,6 +44,9 @@ public class RefreshTokenService {
         }
 
         repository.deleteByUserId(userId);
+        // Ensure the UNIQUE(user_id) constraint won't be hit when inserting the
+        // new token in the same transaction.
+        repository.flush();
 
         String rawToken = generateOpaqueToken();
         RefreshTokenEntity entity = new RefreshTokenEntity();
@@ -84,7 +91,7 @@ public class RefreshTokenService {
 
         Long userId = existing.getUserId();
         repository.delete(existing);
-        String newRefreshToken = issueAndReplaceForUser(userId);
+        String newRefreshToken = selfProvider.getObject().issueAndReplaceForUser(userId);
         return new RefreshRotationResult(userId, newRefreshToken);
     }
 
