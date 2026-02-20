@@ -1,17 +1,24 @@
 {
-  "all": false,
-  "extension": [".ts"],
-  "include": ["src/**/*.ts"],
-  "exclude": [
-    "**/*.spec.ts",
-    "**/*.jest.spec.ts",
-    "**/*.cy.ts",
-    "cypress/**",
-    "src/test.ts"
-  ],
-  "temp-dir": ".nyc_output",
-  "report-dir": "coverage-e2e",
-  "reporter": ["json-summary", "html"],
-  "sourceMap": true,
-  "instrument": false
+    "all": false,
+    "extension": [
+        ".ts"
+    ],
+    "include": [
+        "src/**/*.ts"
+    ],
+    "exclude": [
+        "**/*.spec.ts",
+        "**/*.jest.spec.ts",
+        "**/*.cy.ts",
+        "cypress/**",
+        "src/test.ts"
+    ],
+    "temp-dir": ".nyc_output",
+    "report-dir": "coverage-e2e",
+    "reporter": [
+        "json-summary",
+        "html"
+    ],
+    "sourceMap": true,
+    "instrument": false
 }
