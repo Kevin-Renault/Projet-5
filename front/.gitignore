@@ -40,6 +40,10 @@ testem.log
 # Jest
 jest-results.json
 
+# Cypress E2E code coverage (nyc)
+/.nyc_output
+/coverage-e2e
+
 # System files
 .DS_Store
 Thumbs.db

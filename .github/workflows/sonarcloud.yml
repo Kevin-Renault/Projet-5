@@ -289,12 +289,26 @@ jobs:
         working-directory: front
         env:
           CYPRESS_CACHE_FOLDER: ~/.cache/Cypress
-        run: npm run test:e2e
+        run: npm run test:e2e:cov
+
+      - name: Generate E2E code coverage report (nyc)
+        if: always()
+        working-directory: front
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf coverage-e2e
+          if [ -d ".nyc_output" ] && ls .nyc_output/* >/dev/null 2>&1; then
+            npx nyc report || echo "nyc report failed; coverage summary may be unavailable."
+          else
+            echo "No .nyc_output coverage found; skipping nyc report generation."
+          fi
 
       - name: E2E summary (Cypress)
         if: always()
         run: |
           python3 - <<'PY'
+          import json
           import os
           import glob
           import xml.etree.ElementTree as ET
@@ -305,6 +319,7 @@ jobs:
             raise SystemExit('GITHUB_STEP_SUMMARY is not set')
 
           xml_files = sorted(glob.glob('front/cypress/results/*.xml'))
+          coverage_path = Path('front/coverage-e2e/coverage-summary.json')
           suites_total = 0
           suites_failed = 0
           suites_skipped = 0
@@ -357,6 +372,13 @@ jobs:
           tests_failed = tests_failures + tests_errors
           tests_passed = max(0, tests_total - tests_failed - tests_skipped)
 
+          cov = None
+          if coverage_path.exists():
+            try:
+              cov = json.loads(coverage_path.read_text(encoding='utf-8')).get('total')
+            except Exception:
+              cov = None
+
           def pct(passed: int, total: int) -> float:
             return 0.0 if total <= 0 else (passed / total) * 100.0
 
@@ -386,23 +408,39 @@ jobs:
             else None
           )
 
+          pages_coverage = (
+            f'{pages_base}/cypress/{safe_ref_name}/coverage/index.html'
+            if deployable and pages_base and safe_ref_name
+            else None
+          )
+
+          def cov_row(label: str, key: str):
+            if not cov or key not in cov:
+              return f'| {label} | n/a | n/a | n/a | n/a |'
+            c = cov[key]
+            return f"| {label} | {c.get('pct', 0):.2f}% | {fmt_int(int(c.get('covered', 0) or 0))} | {fmt_int(int(c.get('skipped', 0) or 0))} | {fmt_int(int(c.get('total', 0) or 0))} |"
+
           table_lines = [
             '| Metric | Coverage | Covered | Skipped | Total |',
             '|---|---:|---:|---:|---:|',
-            f"| Suites | {pct(suites_passed, suites_total):.2f}% | {fmt_int(suites_passed)} | {fmt_int(suites_skipped)} | {fmt_int(suites_total)} |",
-            f"| Tests | {pct(tests_passed, tests_total):.2f}% | {fmt_int(tests_passed)} | {fmt_int(tests_skipped)} | {fmt_int(tests_total)} |",
+            cov_row('Statements', 'statements'),
+            cov_row('Branches', 'branches'),
+            cov_row('Functions', 'functions'),
+            cov_row('Lines', 'lines'),
           ]
 
           lines = [
             '',
             '## Frontend E2E (Cypress)',
             '',
+            f'**Tests**: total={fmt_int(tests_total)} passed={fmt_int(tests_passed)} failed={fmt_int(tests_failed)} skipped={fmt_int(tests_skipped)}',
             f'**JUnit files**: {fmt_int(len(xml_files))}  |  **Duration**: {fmt_duration(duration)}',
             '',
             *table_lines,
             '',
             '### Links',
             *( [f'- Cypress report (GitHub Pages): {pages_report}'] if pages_report else [] ),
+            *( [f'- Cypress E2E code coverage (GitHub Pages): {pages_coverage}'] if pages_coverage else [] ),
             '',
             '### Report',
             '- Download the artifact `cypress-report` to inspect JUnit XML and (if any) screenshots/videos.',
@@ -444,6 +482,8 @@ jobs:
             front/cypress/results
             front/cypress/screenshots
             front/cypress/videos
+            front/coverage-e2e
+            front/.nyc_output
           if-no-files-found: warn
           retention-days: 14
 
@@ -479,6 +519,12 @@ jobs:
             cp -R front/cypress/results/* "site/cypress/${SAFE_BRANCH}/"
           fi
 
+          # Cypress E2E code coverage: publish nyc HTML report
+          mkdir -p "site/cypress/${SAFE_BRANCH}/coverage"
+          if [ -d "front/coverage-e2e" ]; then
+            cp -R front/coverage-e2e/* "site/cypress/${SAFE_BRANCH}/coverage/" || true
+          fi
+
           # Jest: publish HTML coverage report
           mkdir -p "site/jest/${SAFE_BRANCH}"
           if [ -d "front/coverage/lcov-report" ]; then
@@ -489,6 +535,7 @@ jobs:
           python3 - <<'PY'
           import os
           import glob
+          import json
           import xml.etree.ElementTree as ET
           from pathlib import Path
 
@@ -498,6 +545,13 @@ jobs:
           out_file = out_dir / 'index.html'
 
           xml_files = sorted(glob.glob('front/cypress/results/*.xml'))
+          coverage_path = Path('front/coverage-e2e/coverage-summary.json')
+          cov = None
+          if coverage_path.exists():
+            try:
+              cov = json.loads(coverage_path.read_text(encoding='utf-8')).get('total')
+            except Exception:
+              cov = None
           suites = 0
           tests = failures = errors = skipped = 0
           duration = 0.0
@@ -563,17 +617,29 @@ jobs:
           suites_passed = max(0, suites_total - suites_failed - suites_skipped)
           junit_links = "\n".join([f'<li><a href="./{Path(x).name}">{Path(x).name}</a></li>' for x in xml_files])
 
-          table_html = "\n".join([
+          def cov_row(label: str, key: str):
+            if not cov or key not in cov:
+              return f'    <tr><td>{label}</td><td>n/a</td><td>n/a</td><td>n/a</td><td>n/a</td></tr>'
+            c = cov[key]
+            return f"    <tr><td>{label}</td><td>{c.get('pct', 0):.2f}%</td><td>{c.get('covered', 0)}</td><td>{c.get('skipped', 0)}</td><td>{c.get('total', 0)}</td></tr>"
+
+          coverage_table_html = "\n".join([
             '<table border="1" cellpadding="6" cellspacing="0">',
             '  <thead>',
             '    <tr><th>Metric</th><th>Coverage</th><th>Covered</th><th>Skipped</th><th>Total</th></tr>',
             '  </thead>',
             '  <tbody>',
-            f'    <tr><td>Suites</td><td>{pct(suites_passed, suites_total):.2f}%</td><td>{suites_passed}</td><td>{suites_skipped}</td><td>{suites_total}</td></tr>',
-            f'    <tr><td>Tests</td><td>{pct(tests_passed, tests):.2f}%</td><td>{tests_passed}</td><td>{skipped}</td><td>{tests}</td></tr>',
+            cov_row('Statements', 'statements'),
+            cov_row('Branches', 'branches'),
+            cov_row('Functions', 'functions'),
+            cov_row('Lines', 'lines'),
             '  </tbody>',
             '</table>',
           ])
+
+          coverage_link = ''
+          if (Path('front/coverage-e2e') / 'index.html').exists():
+            coverage_link = '<p><a href="./coverage/index.html">Open Cypress E2E code coverage report</a></p>'
 
           out_file.write_text(
             "\n".join([
@@ -588,8 +654,11 @@ jobs:
               '    <h1>Cypress E2E Report</h1>',
               f'    <p>Branch: <strong>{safe_branch}</strong></p>',
               '    <h2>Summary</h2>',
+              f'    <p><strong>Tests</strong>: total={tests} passed={tests_passed} failed={tests_failed} skipped={skipped}</p>',
               f'    <p><strong>JUnit files</strong>: {len(xml_files)} | <strong>Duration</strong>: {duration:.1f}s</p>',
-              table_html,
+              '    <h2>Code coverage</h2>',
+              coverage_table_html,
+              coverage_link,
               '    <h2>JUnit XML</h2>',
               '    <ul>',
               (junit_links if junit_links else '      <li>No JUnit XML found.</li>'),
@@ -604,7 +673,8 @@ jobs:
           # Disable Jekyll processing on GitHub Pages
           touch site/.nojekyll
 
-          cat > site/index.html <<'HTML'
+          if [ "${SAFE_BRANCH}" = "main" ]; then
+            cat > site/index.html <<'HTML'
           <!doctype html>
           <html lang="en">
             <head>
@@ -619,25 +689,49 @@ jobs:
                 <li>
                   JaCoCo:
                   <a href="./jacoco/main/index.html">main</a>
-                  |
-                  <a href="./jacoco/test-junit-jest-cypress/index.html">test-junit-jest-cypress</a>
                 </li>
                 <li>
                   Jest:
                   <a href="./jest/main/index.html">main</a>
-                  |
-                  <a href="./jest/test-junit-jest-cypress/index.html">test-junit-jest-cypress</a>
                 </li>
                 <li>
                   Cypress:
                   <a href="./cypress/main/index.html">main</a>
-                  |
-                  <a href="./cypress/test-junit-jest-cypress/index.html">test-junit-jest-cypress</a>
                 </li>
               </ul>
             </body>
           </html>
           HTML
+          else
+            cat > site/index.html <<HTML
+          <!doctype html>
+          <html lang="en">
+            <head>
+              <meta charset="utf-8" />
+              <meta name="viewport" content="width=device-width, initial-scale=1" />
+              <title>CI Reports</title>
+            </head>
+            <body>
+              <h1>CI Reports</h1>
+              <p>Latest reports published from CI.</p>
+              <ul>
+                <li>
+                  JaCoCo:
+                  <a href="./jacoco/${SAFE_BRANCH}/index.html">${SAFE_BRANCH}</a>
+                </li>
+                <li>
+                  Jest:
+                  <a href="./jest/${SAFE_BRANCH}/index.html">${SAFE_BRANCH}</a>
+                </li>
+                <li>
+                  Cypress:
+                  <a href="./cypress/${SAFE_BRANCH}/index.html">${SAFE_BRANCH}</a>
+                </li>
+              </ul>
+            </body>
+          </html>
+          HTML
+          fi
 
       - name: Deploy JaCoCo report to GitHub Pages (gh-pages)
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/test/junit-jest-cypress'
