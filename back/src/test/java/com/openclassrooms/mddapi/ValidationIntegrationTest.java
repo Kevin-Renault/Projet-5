@@ -44,7 +44,10 @@ class ValidationIntegrationTest extends AbstractIntegrationTest {
         ResponseEntity<AuthResponseDto> response = rest.exchange(
                 ApiEndpoints.AUTH_REGISTER,
                 HttpMethod.POST,
-                new HttpEntity<>(new RegisterRequest("it_" + unique, "not-an-email", "TestP@ssw0rd1"),
+                new HttpEntity<>(new RegisterRequest(
+                        TestConstants.TEST_USER_PREFIX + unique,
+                        TestConstants.INVALID_EMAIL,
+                        TestConstants.TEST_PASSWORD),
                         headersWithCookie(null)),
                 AuthResponseDto.class);
 
@@ -54,17 +57,21 @@ class ValidationIntegrationTest extends AbstractIntegrationTest {
     @Test
     void register_with_duplicate_email_is_rejected() {
         String unique = uniqueSuffix();
-        String email = "it_" + unique + "@example.com";
-        String password = "TestP@ssw0rd1";
+        String email = TestConstants.TEST_USER_PREFIX + unique + TestConstants.TEST_EMAIL_DOMAIN;
+        String password = TestConstants.TEST_PASSWORD;
 
-        AuthSession session = registerAndGetSession("it_" + unique, email, password);
+        AuthSession session = registerAndGetSession(TestConstants.TEST_USER_PREFIX + unique, email, password);
         createdUserId = session.userId();
 
         ensureCsrf();
         ResponseEntity<String> second = rest.exchange(
                 ApiEndpoints.AUTH_REGISTER,
                 HttpMethod.POST,
-                new HttpEntity<>(new RegisterRequest("it2_" + unique, email, password), headersWithCookie(null)),
+                new HttpEntity<>(new RegisterRequest(
+                        TestConstants.TEST_USER_PREFIX + "2_" + unique,
+                        email,
+                        password),
+                        headersWithCookie(null)),
                 String.class);
 
         Assertions.assertThat(second.getStatusCode().value()).isIn(400, 409);
@@ -74,9 +81,9 @@ class ValidationIntegrationTest extends AbstractIntegrationTest {
     void subscribe_with_null_topic_id_returns_400() {
         String unique = uniqueSuffix();
         AuthSession session = registerAndGetSession(
-                "it_" + unique,
-                "it_" + unique + "@example.com",
-                "TestP@ssw0rd1");
+                TestConstants.TEST_USER_PREFIX + unique,
+                TestConstants.TEST_USER_PREFIX + unique + TestConstants.TEST_EMAIL_DOMAIN,
+                TestConstants.TEST_PASSWORD);
         createdUserId = session.userId();
 
         ResponseEntity<String> response = rest.exchange(
