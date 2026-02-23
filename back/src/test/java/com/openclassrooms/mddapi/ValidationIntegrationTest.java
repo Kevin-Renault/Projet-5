@@ -42,7 +42,7 @@ class ValidationIntegrationTest extends AbstractIntegrationTest {
         ensureCsrf();
 
         ResponseEntity<AuthResponseDto> response = rest.exchange(
-                "/api/auth/register",
+                ApiEndpoints.AUTH_REGISTER,
                 HttpMethod.POST,
                 new HttpEntity<>(new RegisterRequest("it_" + unique, "not-an-email", "TestP@ssw0rd1"),
                         headersWithCookie(null)),
@@ -62,7 +62,7 @@ class ValidationIntegrationTest extends AbstractIntegrationTest {
 
         ensureCsrf();
         ResponseEntity<String> second = rest.exchange(
-                "/api/auth/register",
+                ApiEndpoints.AUTH_REGISTER,
                 HttpMethod.POST,
                 new HttpEntity<>(new RegisterRequest("it2_" + unique, email, password), headersWithCookie(null)),
                 String.class);
@@ -80,7 +80,7 @@ class ValidationIntegrationTest extends AbstractIntegrationTest {
         createdUserId = session.userId();
 
         ResponseEntity<String> response = rest.exchange(
-                "/api/subscriptions",
+                ApiEndpoints.SUBSCRIPTIONS,
                 HttpMethod.POST,
                 new HttpEntity<>(new UserTopicSubscriptionDto(null), headersWithCookie(session.cookie())),
                 String.class);

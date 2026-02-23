@@ -2,6 +2,7 @@ package com.openclassrooms.mddapi.config;
 
 import com.openclassrooms.mddapi.security.JwtAuthenticationFilter;
 import com.openclassrooms.mddapi.security.RestAuthenticationEntryPoint;
+import com.openclassrooms.mddapi.ApiEndpoints;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -49,18 +50,20 @@ public class SecurityConfig {
                                                 .requestMatchers("/swagger-ui/**").permitAll()
 
                                                 // Auth endpoints (accept trailing slash too)
-                                                .requestMatchers(HttpMethod.GET, "/api/auth/csrf", "/api/auth/csrf/")
+                                                .requestMatchers(HttpMethod.GET, ApiEndpoints.AUTH_CSRF,
+                                                                ApiEndpoints.AUTH_CSRF + "/")
                                                 .permitAll()
-                                                .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/login/")
+                                                .requestMatchers(HttpMethod.POST, ApiEndpoints.AUTH_LOGIN,
+                                                                ApiEndpoints.AUTH_LOGIN + "/")
                                                 .permitAll()
-                                                .requestMatchers(HttpMethod.POST, "/api/auth/register",
-                                                                "/api/auth/register/")
+                                                .requestMatchers(HttpMethod.POST, ApiEndpoints.AUTH_REGISTER,
+                                                                ApiEndpoints.AUTH_REGISTER + "/")
                                                 .permitAll()
-                                                .requestMatchers(HttpMethod.POST, "/api/auth/refresh",
-                                                                "/api/auth/refresh/")
+                                                .requestMatchers(HttpMethod.POST, ApiEndpoints.AUTH_REFRESH,
+                                                                ApiEndpoints.AUTH_REFRESH + "/")
                                                 .permitAll()
-                                                .requestMatchers(HttpMethod.POST, "/api/auth/logout",
-                                                                "/api/auth/logout/")
+                                                .requestMatchers(HttpMethod.POST, ApiEndpoints.AUTH_LOGOUT,
+                                                                ApiEndpoints.AUTH_LOGOUT + "/")
                                                 .permitAll()
                                                 .anyRequest().authenticated())
                                 // Place JWT auth AFTER SessionManagementFilter to avoid triggering
