@@ -4,6 +4,20 @@
         "name": "MDD API",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
+    "event": [
+        {
+            "listen": "prerequest",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    "// Ajoute le header X-XSRF-TOKEN avec la valeur de la variable globale xsrf_token si elle existe",
+                    "var xsrf = pm.globals.get('xsrf_token');",
+                    "if(xsrf){ pm.request.headers.upsert({ key: 'X-XSRF-TOKEN', value: xsrf }); }"
+                ]
+            }
+        }
+    ],
+    "description": "\n# MDD API Postman Collection\n\n## Authentification\n\n- L'API utilise un cookie JWT pour l'authentification.\n- Le token CSRF est géré automatiquement par le backend (aucune action manuelle requise dans Postman).\n- Après login ou register, le cookie JWT est défini et utilisé pour toutes les requêtes protégées.\n- Les endpoints sont centralisés dans le backend via ApiEndpoints.java.\n\n## Variables\n\n- {{baseUrl}} : URL de base de l'API\n- {{jwt}} : token JWT (pour tests manuels, mais le cookie est prioritaire)\n- {{userId}}, {{topicId}}, {{articleId}}, {{commentId}} : valeurs dynamiques pour les tests.\n\n## Endpoints\n\n- Tous les chemins d'API sont alignés avec ApiEndpoints.java.\n- Les valeurs de test sont centralisées dans TestConstants.java.\n\n## Utilisation\n\n- Utilisez Register ou Login pour initialiser l'authentification.\n- Les scripts Postman gèrent automatiquement la récupération des variables nécessaires.\n- Pour tester les endpoints protégés, assurez-vous d'être authentifié (cookie JWT présent).\n\n",
     "variable": [
         {
             "key": "baseUrl",
@@ -56,6 +70,37 @@
         {
             "name": "Auth",
             "item": [
+                {
+                    "name": "Get CSRF Token (public) - sets XSRF-TOKEN",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                                    "var xsrfCookie = pm.cookies.get('XSRF-TOKEN');",
+                                    "pm.test('Has XSRF-TOKEN cookie', function () { pm.expect(xsrfCookie).to.exist; });",
+                                    "if(xsrfCookie){ pm.globals.set('xsrf_token', xsrfCookie); }"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/api/auth/csrf",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "auth",
+                                "csrf"
+                            ]
+                        }
+                    }
+                },
                 {
                     "name": "Register (public) - sets {{jwt}} + {{userId}}",
                     "event": [
@@ -326,22 +371,6 @@
             "name": "Comments",
             "item": [
                 {
-                    "name": "Get all comments (protected)",
-                    "request": {
-                        "method": "GET",
-                        "url": {
-                            "raw": "{{baseUrl}}/api/comments",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "comments"
-                            ]
-                        }
-                    }
-                },
-                {
                     "name": "Get comments by articleId (protected)",
                     "request": {
                         "method": "GET",
@@ -359,23 +388,6 @@
                                     "key": "articleId",
                                     "value": "{{articleId}}"
                                 }
-                            ]
-                        }
-                    }
-                },
-                {
-                    "name": "Get comment by id (protected)",
-                    "request": {
-                        "method": "GET",
-                        "url": {
-                            "raw": "{{baseUrl}}/api/comments/{{commentId}}",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "comments",
-                                "{{commentId}}"
                             ]
                         }
                     }
@@ -423,195 +435,11 @@
         },
         {
             "name": "Subscriptions",
-            "item": [
-                {
-                    "name": "Get subscriptions by userId (protected)",
-                    "request": {
-                        "method": "GET",
-                        "url": {
-                            "raw": "{{baseUrl}}/api/subscriptions?userId={{userId}}",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "subscriptions"
-                            ],
-                            "query": [
-                                {
-                                    "key": "userId",
-                                    "value": "{{userId}}"
-                                }
-                            ]
-                        }
-                    }
-                },
-                {
-                    "name": "Get subscriptions by topicId (protected)",
-                    "request": {
-                        "method": "GET",
-                        "url": {
-                            "raw": "{{baseUrl}}/api/subscriptions?topicId={{topicId}}",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "subscriptions"
-                            ],
-                            "query": [
-                                {
-                                    "key": "topicId",
-                                    "value": "{{topicId}}"
-                                }
-                            ]
-                        }
-                    }
-                },
-                {
-                    "name": "Subscribe to topic (protected)",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n  \"userId\": {{userId}},\n  \"topicId\": {{topicId}}\n}"
-                        },
-                        "url": {
-                            "raw": "{{baseUrl}}/api/subscriptions",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "subscriptions"
-                            ]
-                        }
-                    }
-                },
-                {
-                    "name": "Unsubscribe from topic (protected)",
-                    "request": {
-                        "method": "DELETE",
-                        "url": {
-                            "raw": "{{baseUrl}}/api/subscriptions?userId={{userId}}&topicId={{topicId}}",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "subscriptions"
-                            ],
-                            "query": [
-                                {
-                                    "key": "userId",
-                                    "value": "{{userId}}"
-                                },
-                                {
-                                    "key": "topicId",
-                                    "value": "{{topicId}}"
-                                }
-                            ]
-                        }
-                    }
-                }
-            ]
+            "item": []
         },
         {
             "name": "Users",
-            "item": [
-                {
-                    "name": "Get all users (protected)",
-                    "request": {
-                        "method": "GET",
-                        "url": {
-                            "raw": "{{baseUrl}}/api/users",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "users"
-                            ]
-                        }
-                    }
-                },
-                {
-                    "name": "Get user by id (protected)",
-                    "request": {
-                        "method": "GET",
-                        "url": {
-                            "raw": "{{baseUrl}}/api/users/{{userId}}",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "users",
-                                "{{userId}}"
-                            ]
-                        }
-                    }
-                },
-                {
-                    "name": "Create user (protected)",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n  \"username\": \"{{username}}\",\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
-                        },
-                        "url": {
-                            "raw": "{{baseUrl}}/api/users",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "users"
-                            ]
-                        }
-                    }
-                },
-                {
-                    "name": "Update user (protected) - partial payload allowed",
-                    "request": {
-                        "method": "PUT",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n  \"username\": \"{{username}}\"\n}"
-                        },
-                        "url": {
-                            "raw": "{{baseUrl}}/api/users/{{userId}}",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "users",
-                                "{{userId}}"
-                            ]
-                        }
-                    }
-                }
-            ]
+            "item": []
         }
     ]
 }
