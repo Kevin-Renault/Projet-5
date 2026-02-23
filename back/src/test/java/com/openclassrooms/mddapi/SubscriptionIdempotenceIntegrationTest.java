@@ -74,7 +74,7 @@ class SubscriptionIdempotenceIntegrationTest extends AbstractIntegrationTest {
 
     private List<TopicDto> getTopics(String cookie) throws Exception {
         ResponseEntity<String> topicsResponse = rest.exchange(
-                "/api/topics",
+                ApiEndpoints.TOPICS,
                 HttpMethod.GET,
                 new HttpEntity<>(null, headersWithCookie(cookie)),
                 String.class);

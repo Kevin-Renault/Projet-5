@@ -15,10 +15,11 @@ import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import com.openclassrooms.mddapi.ApiEndpoints;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/topics")
+@RequestMapping(ApiEndpoints.TOPICS)
 @Tag(name = "Topics", description = "Retrieve available topics.")
 @SecurityRequirement(name = com.openclassrooms.mddapi.config.OpenApiConfig.BEARER_AUTH_SCHEME)
 @SecurityRequirement(name = com.openclassrooms.mddapi.config.OpenApiConfig.COOKIE_AUTH_SCHEME)
