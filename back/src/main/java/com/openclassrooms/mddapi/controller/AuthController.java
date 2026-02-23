@@ -37,6 +37,8 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Authentication", description = "Register, login, logout and retrieve the current user.")
 public class AuthController {
 
+    private static final String CSRF_HEADER_NAME = "X-XSRF-TOKEN";
+
     private final AuthService authService;
     private final JwtCookieService cookieService;
     private final RefreshTokenService refreshTokenService;
@@ -54,33 +56,42 @@ public class AuthController {
     })
     public ResponseEntity<Void> csrf(CsrfToken csrfToken) {
         // Spring Security may defer CSRF token generation until it's actually accessed.
-        // Touch it here to force CookieCsrfTokenRepository to emit the XSRF-TOKEN cookie.
+        // Touch it here to force CookieCsrfTokenRepository to emit the XSRF-TOKEN
+        // cookie.
         String token = csrfToken.getToken();
 
         // Expose the token for clients that cannot read the cookie (e.g. HttpOnly).
         return ResponseEntity.noContent()
-            .header("X-XSRF-TOKEN", token)
-            .build();
+                .header(CSRF_HEADER_NAME, token)
+                .build();
     }
 
     @PostMapping("/register")
-    @Operation(summary = "Register a new user", description = "Creates a new user account and sets an access token cookie in the response.", responses = {
+    @Operation(summary = "Register a new user", description = "Creates a new user account and sets access, refresh, and XSRF-TOKEN cookies in the response.", responses = {
             @ApiResponse(responseCode = "200", description = "User registered and authenticated", content = @Content(schema = @Schema(implementation = AuthResponseDto.class))),
             @ApiResponse(responseCode = "400", description = "Validation error", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
             @ApiResponse(responseCode = "409", description = "Conflict (e.g. email already exists)", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
             @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     })
-    public ResponseEntity<AuthResponseDto> register(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<AuthResponseDto> register(
+            @Valid @RequestBody RegisterRequest request,
+            HttpServletRequest httpRequest) {
         AuthResponseDto response = authService.register(request);
         String refreshToken = refreshTokenService.issueAndReplaceForUser(response.user().id());
         ResponseCookie accessCookie = cookieService.createAccessTokenCookie(response.token());
         ResponseCookie refreshCookie = cookieService.createRefreshTokenCookie(refreshToken);
-        ResponseCookie xsrfCookie = createXsrfTokenCookie();
-        return ResponseEntity.ok()
+        String token = extractXsrfTokenValue(httpRequest);
+        ResponseCookie xsrfCookie = createXsrfTokenCookie(token);
+
+        ResponseEntity.BodyBuilder builder = ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
                 .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
-                .header(HttpHeaders.SET_COOKIE, xsrfCookie.toString())
-                .body(response);
+                .header(HttpHeaders.SET_COOKIE, xsrfCookie.toString());
+
+        if (token != null && !token.isBlank()) {
+            builder.header(CSRF_HEADER_NAME, token);
+        }
+        return builder.body(response);
     }
 
     @PostMapping("/login")
@@ -91,16 +102,29 @@ public class AuthController {
             @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     })
     public ResponseEntity<AuthResponseDto> login(@Valid @RequestBody LoginRequest request) {
+        return login(request, null);
+    }
+
+    public ResponseEntity<AuthResponseDto> login(
+            @Valid @RequestBody LoginRequest request,
+            HttpServletRequest httpRequest) {
         AuthResponseDto response = authService.login(request);
         String refreshToken = refreshTokenService.issueAndReplaceForUser(response.user().id());
         ResponseCookie accessCookie = cookieService.createAccessTokenCookie(response.token());
         ResponseCookie refreshCookie = cookieService.createRefreshTokenCookie(refreshToken);
-        ResponseCookie xsrfCookie = createXsrfTokenCookie();
-        return ResponseEntity.ok()
+        String token = extractXsrfTokenValue(httpRequest);
+        ResponseCookie xsrfCookie = createXsrfTokenCookie(token);
+
+        ResponseEntity.BodyBuilder builder = ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
                 .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
-                .header(HttpHeaders.SET_COOKIE, xsrfCookie.toString())
-                .body(response);
+                .header(HttpHeaders.SET_COOKIE, xsrfCookie.toString());
+
+        if (token != null && !token.isBlank()) {
+            builder.header(CSRF_HEADER_NAME, token);
+        }
+
+        return builder.body(response);
     }
 
     @PostMapping("/refresh")
@@ -117,13 +141,19 @@ public class AuthController {
 
         ResponseCookie accessCookie = cookieService.createAccessTokenCookie(response.token());
         ResponseCookie refreshCookie = cookieService.createRefreshTokenCookie(rotation.newRefreshToken());
-        ResponseCookie xsrfCookie = createXsrfTokenCookie();
+        String token = extractXsrfTokenValue(request);
+        ResponseCookie xsrfCookie = createXsrfTokenCookie(token);
 
-        return ResponseEntity.ok()
+        ResponseEntity.BodyBuilder builder = ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
                 .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
-                .header(HttpHeaders.SET_COOKIE, xsrfCookie.toString())
-                .body(response);
+                .header(HttpHeaders.SET_COOKIE, xsrfCookie.toString());
+
+        if (token != null && !token.isBlank()) {
+            builder.header(CSRF_HEADER_NAME, token);
+        }
+
+        return builder.body(response);
     }
 
     @PostMapping("/logout")
@@ -187,12 +217,36 @@ public class AuthController {
         return null;
     }
 
-    private ResponseCookie createXsrfTokenCookie() {
-        return ResponseCookie.from("XSRF-TOKEN", UUID.randomUUID().toString())
-                .httpOnly(false)
+    private ResponseCookie createXsrfTokenCookie(String token) {
+        String value = (token == null) ? "" : token;
+        return ResponseCookie.from("XSRF-TOKEN", value)
+                .httpOnly(true)
                 .secure(cookieService.isCookieSecure())
                 .path("/")
                 .sameSite(cookieService.getSameSite())
                 .build();
     }
+
+    private String extractXsrfTokenValue(HttpServletRequest request) {
+        if (request == null) {
+            return UUID.randomUUID().toString();
+        }
+
+        Cookie[] cookies = request.getCookies();
+        if (cookies == null) {
+            return UUID.randomUUID().toString();
+        }
+
+        for (Cookie cookie : cookies) {
+            if (cookie != null && "XSRF-TOKEN".equals(cookie.getName())) {
+                String value = cookie.getValue();
+                if (value != null && !value.isBlank()) {
+                    return value;
+                }
+            }
+        }
+
+        return UUID.randomUUID().toString();
+    }
+
 }

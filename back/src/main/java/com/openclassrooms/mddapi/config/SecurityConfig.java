@@ -18,52 +18,61 @@ import org.springframework.security.web.session.SessionManagementFilter;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+        @Bean
+        public CookieCsrfTokenRepository csrfTokenRepository() {
+                CookieCsrfTokenRepository repository = new CookieCsrfTokenRepository();
+                repository.setCookiePath("/");
+                return repository;
+        }
 
-    @Bean
-    public CookieCsrfTokenRepository csrfTokenRepository() {
-        return new CookieCsrfTokenRepository();
-    }
+        @Bean
+        public SecurityFilterChain securityFilterChain(
+                        HttpSecurity http,
+                        JwtAuthenticationFilter jwtAuthenticationFilter,
+                        RestAuthenticationEntryPoint authenticationEntryPoint) throws Exception {
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(
-            HttpSecurity http,
-            JwtAuthenticationFilter jwtAuthenticationFilter,
-            RestAuthenticationEntryPoint authenticationEntryPoint) throws Exception {
+                http
+                                .cors(cors -> {
+                                })
+                                .csrf(csrf -> csrf
+                                                .csrfTokenRepository(csrfTokenRepository())
+                                                .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
+                                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                                .exceptionHandling(ex -> ex.authenticationEntryPoint(authenticationEntryPoint))
+                                .authorizeHttpRequests(auth -> auth
+                                                // CORS preflight
+                                                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-        http
-                .cors(cors -> {
-                })
-                .csrf(csrf -> csrf
-                        .csrfTokenRepository(csrfTokenRepository())
-                        .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
-                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .exceptionHandling(ex -> ex.authenticationEntryPoint(authenticationEntryPoint))
-                .authorizeHttpRequests(auth -> auth
-                        // CORS preflight
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                                                // Swagger / OpenAPI
+                                                .requestMatchers("/v3/api-docs/**").permitAll()
+                                                .requestMatchers("/swagger-ui.html").permitAll()
+                                                .requestMatchers("/swagger-ui/**").permitAll()
 
-                        // Swagger / OpenAPI
-                        .requestMatchers("/v3/api-docs/**").permitAll()
-                        .requestMatchers("/swagger-ui.html").permitAll()
-                        .requestMatchers("/swagger-ui/**").permitAll()
+                                                // Auth endpoints (accept trailing slash too)
+                                                .requestMatchers(HttpMethod.GET, "/api/auth/csrf", "/api/auth/csrf/")
+                                                .permitAll()
+                                                .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/login/")
+                                                .permitAll()
+                                                .requestMatchers(HttpMethod.POST, "/api/auth/register",
+                                                                "/api/auth/register/")
+                                                .permitAll()
+                                                .requestMatchers(HttpMethod.POST, "/api/auth/refresh",
+                                                                "/api/auth/refresh/")
+                                                .permitAll()
+                                                .requestMatchers(HttpMethod.POST, "/api/auth/logout",
+                                                                "/api/auth/logout/")
+                                                .permitAll()
+                                                .anyRequest().authenticated())
+                                // Place JWT auth AFTER SessionManagementFilter to avoid triggering
+                                // session authentication strategies (incl. CSRF token clearing) on
+                                // every stateless request.
+                                .addFilterAfter(jwtAuthenticationFilter, SessionManagementFilter.class);
 
-                        // Auth endpoints (accept trailing slash too)
-                        .requestMatchers(HttpMethod.GET, "/api/auth/csrf", "/api/auth/csrf/").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/login/").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/register/").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/auth/refresh", "/api/auth/refresh/").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/auth/logout", "/api/auth/logout/").permitAll()
-                        .anyRequest().authenticated())
-                // Place JWT auth AFTER SessionManagementFilter to avoid triggering
-                // session authentication strategies (incl. CSRF token clearing) on
-                // every stateless request.
-                .addFilterAfter(jwtAuthenticationFilter, SessionManagementFilter.class);
+                return http.build();
+        }
 
-        return http.build();
-    }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+        @Bean
+        public PasswordEncoder passwordEncoder() {
+                return new BCryptPasswordEncoder();
+        }
 }
