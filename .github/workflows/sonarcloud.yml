@@ -289,7 +289,9 @@ jobs:
         working-directory: front
         env:
           CYPRESS_CACHE_FOLDER: ~/.cache/Cypress
-        run: npm run test:e2e:cov
+        run: |
+          npm run cypress:run
+          npm run e2e:coverage
 
       - name: Generate E2E code coverage report (nyc)
         if: always()
