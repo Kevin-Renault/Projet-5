@@ -316,18 +316,6 @@ jobs:
         run: |
           npm run cypress:run
 
-      - name: Generate E2E code coverage report (nyc)
-        if: always()
-        working-directory: front
-        shell: bash
-        run: |
-          set -euo pipefail
-          rm -rf coverage-e2e
-          if [ -d ".nyc_output" ] && ls .nyc_output/* >/dev/null 2>&1; then
-            npx nyc report || echo "nyc report failed; coverage summary may be unavailable."
-          else
-            echo "No .nyc_output coverage found; skipping nyc report generation."
-          fi
 
       - name: E2E summary (Cypress)
         if: always()
