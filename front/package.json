@@ -10,7 +10,7 @@
     "test:unit": "jest --config jest.config.js",
     "test:unit:ci": "jest --config jest.config.js --ci --runInBand --coverage --json --outputFile=jest-results.json",
     "e2e": "ng e2e",
-    "e2e:ci": "ng run mdd-app:e2e-ci",
+    "e2e:ci": "cypress run",
     "e2e:coverage": "npx nyc report --reporter=lcov --reporter=text-summary",
     "cypress:open": "cypress open",
     "cypress:run": "cypress run"
