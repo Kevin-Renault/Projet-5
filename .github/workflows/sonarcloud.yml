@@ -297,11 +297,11 @@ jobs:
           exit 1
       - name: Start frontend (Angular)
         working-directory: front
-        run: npm run start -- --port 4201 &
+        run: npm run start -- --port 4200 &
       - name: Wait for frontend to be ready
         run: |
           for i in {1..30}; do
-            if curl -fsS "http://localhost:4201" >/dev/null; then
+            if curl -fsS "http://localhost:4200" >/dev/null; then
               echo "Frontend is ready."
               exit 0
             fi
