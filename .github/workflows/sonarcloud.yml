@@ -284,7 +284,31 @@ jobs:
           echo "---- back.log (tail) ----"
           tail -n 200 back.log || true
           exit 1
-
+      - name: Wait for backend to be ready
+        run: |
+          for i in {1..60}; do
+            if curl -fsS "http://localhost:8080/api/auth/csrf" >/dev/null; then
+              echo "Backend is ready."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Backend did not become ready in time."
+          exit 1
+      - name: Start frontend (Angular)
+        working-directory: front
+        run: npm run start -- --port 4201 &
+      - name: Wait for frontend to be ready
+        run: |
+          for i in {1..30}; do
+            if curl -fsS "http://localhost:4201" >/dev/null; then
+              echo "Frontend is ready."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Frontend did not become ready in time."
+          exit 1
       - name: Run Cypress E2E (JUnit)
         working-directory: front
         env:
