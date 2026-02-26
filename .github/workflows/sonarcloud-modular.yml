@@ -64,6 +64,10 @@ jobs:
       - name: Make Maven wrapper executable
         working-directory: back
         run: chmod +x mvnw
+      - name: Verify Java version
+        run: java -version
+      - name: Verify JAVA_HOME
+        run: echo $JAVA_HOME
       - name: Build and test (backend)
         working-directory: back
         env:
