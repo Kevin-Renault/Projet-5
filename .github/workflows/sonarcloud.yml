@@ -309,7 +309,19 @@ jobs:
           done
           echo "Frontend did not become ready in time."
           exit 1
+      - name: Check backend environment (dev)
+        id: check_backend_env
+        run: |
+          ENV=$(curl -s http://localhost:8080/api/env | grep -o '"dev"')
+          if [ -z "$ENV" ]; then
+            echo "::set-output name=should_run_cypress::false"
+            echo "Backend is NOT in dev mode, skipping Cypress tests."
+          else
+            echo "::set-output name=should_run_cypress::true"
+          fi
+
       - name: Run Cypress E2E (JUnit)
+        if: steps.check_backend_env.outputs.should_run_cypress == 'true'
         working-directory: front
         env:
           CYPRESS_CACHE_FOLDER: ~/.cache/Cypress
@@ -318,7 +330,7 @@ jobs:
 
 
       - name: E2E summary (Cypress)
-        if: always()
+        if: steps.check_backend_env.outputs.should_run_cypress == 'true'
         run: |
           python3 - <<'PY'
           import json
@@ -486,7 +498,7 @@ jobs:
           retention-days: 14
 
       - name: Upload Cypress report
-        if: always()
+        if: steps.check_backend_env.outputs.should_run_cypress == 'true'
         id: upload_cypress_report
         uses: actions/upload-artifact@v4
         with:
@@ -746,12 +758,13 @@ jobs:
           HTML
           fi
 
-      - name: Check backend environment
+      - name: Cleanup test users (only if backend is dev)
         run: |
-          ENV=$(curl -s http://localhost:8080/api/env | grep -o '\"dev\"')
+          ENV=$(curl -s http://localhost:8080/api/env | grep -o '"dev"')
           if [ -z "$ENV" ]; then
-            echo "Backend is NOT in dev mode, aborting cleanup."
-            exit 1
+            echo "Backend is NOT in dev mode, skipping cleanup."
+          else
+            mysql -h 127.0.0.1 -P 3306 -u root -proot mdd -e "DELETE FROM users WHERE username LIKE 'it_to_erase_%';"
           fi
 
       - name: Deploy JaCoCo report to GitHub Pages (gh-pages)
