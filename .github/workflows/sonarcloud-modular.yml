@@ -297,14 +297,198 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Summary
+      - name: Download artifacts
         if: always()
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Summary (consolidated)
+        if: always()
+        shell: bash
         run: |
-          echo "## Artifacts" >> "${GITHUB_STEP_SUMMARY}"
-          echo "- backend-jar" >> "${GITHUB_STEP_SUMMARY}"
-          echo "- jacoco-report" >> "${GITHUB_STEP_SUMMARY}"
-          echo "- jest-report" >> "${GITHUB_STEP_SUMMARY}"
-          echo "- cypress-report" >> "${GITHUB_STEP_SUMMARY}"
+          python3 - <<'PY'
+          import json
+          import os
+          import glob
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          summary_path = os.environ.get('GITHUB_STEP_SUMMARY')
+          if not summary_path:
+            raise SystemExit('GITHUB_STEP_SUMMARY is not set')
+
+          def write(lines):
+            Path(summary_path).write_text('\n'.join(lines) + '\n', encoding='utf-8')
+
+          def append(lines):
+            p = Path(summary_path)
+            existing = p.read_text(encoding='utf-8') if p.exists() else ''
+            p.write_text(existing + ('\n' if existing and not existing.endswith('\n') else '') + '\n'.join(lines) + '\n', encoding='utf-8')
+
+          def find_first(patterns):
+            for pat in patterns:
+              hits = glob.glob(pat, recursive=True)
+              if hits:
+                return Path(hits[0])
+            return None
+
+          def fmt_int(n: int) -> str:
+            return f"{n:,}".replace(',', ' ')
+
+          write([
+            '# CI Reports summary',
+            '',
+            'This summary is generated in the `report` job by downloading artifacts produced in previous jobs.',
+            '',
+          ])
+
+          # ----------------------
+          # JaCoCo
+          # ----------------------
+          jacoco_xml = find_first([
+            'artifacts/**/jacoco.xml',
+            'artifacts/**/target/site/jacoco/jacoco.xml',
+            'artifacts/**/jacoco/jacoco.xml',
+          ])
+          if jacoco_xml and jacoco_xml.exists():
+            tree = ET.parse(jacoco_xml)
+            root = tree.getroot()
+            counters = {c.attrib['type']: (int(c.attrib['covered']), int(c.attrib['missed'])) for c in root.findall('counter')}
+
+            def pct(covered, missed):
+              total = covered + missed
+              return 0.0 if total == 0 else (covered / total) * 100.0
+
+            def row(counter_type: str):
+              covered, missed = counters.get(counter_type, (0, 0))
+              total = covered + missed
+              return (counter_type, pct(covered, missed), covered, missed, total)
+
+            rows = [row('LINE'), row('BRANCH'), row('INSTRUCTION')]
+            table = [
+              '## Backend coverage (JaCoCo)',
+              '',
+              '| Metric | Coverage | Covered | Missed | Total |',
+              '|---|---:|---:|---:|---:|',
+            ]
+            for t, p, c, m, total in rows:
+              table.append(f'| {t.title()} | {p:.2f}% | {fmt_int(c)} | {fmt_int(m)} | {fmt_int(total)} |')
+            table.append('')
+            table.append(f'- Source: `{jacoco_xml.as_posix()}`')
+            table.append('')
+            append(table)
+          else:
+            append([
+              '## Backend coverage (JaCoCo)',
+              '',
+              '- No `jacoco.xml` found in downloaded artifacts.',
+              '',
+            ])
+
+          # ----------------------
+          # Jest
+          # ----------------------
+          jest_results = find_first([
+            'artifacts/**/jest-results.json',
+            'artifacts/**/front/jest-results.json',
+          ])
+          jest_cov = find_first([
+            'artifacts/**/coverage-summary.json',
+            'artifacts/**/coverage/coverage-summary.json',
+            'artifacts/**/front/coverage/coverage-summary.json',
+          ])
+
+          tests = passed = failed = pending = 0
+          if jest_results and jest_results.exists():
+            try:
+              data = json.loads(jest_results.read_text(encoding='utf-8'))
+              tests = int(data.get('numTotalTests', 0) or 0)
+              passed = int(data.get('numPassedTests', 0) or 0)
+              failed = int(data.get('numFailedTests', 0) or 0)
+              pending = int(data.get('numPendingTests', 0) or 0)
+            except Exception:
+              pass
+
+          cov = None
+          if jest_cov and jest_cov.exists():
+            try:
+              cov = json.loads(jest_cov.read_text(encoding='utf-8')).get('total')
+            except Exception:
+              cov = None
+
+          lines = [
+            '## Frontend unit tests (Jest)',
+            '',
+            f'- Tests: {fmt_int(tests)} (passed {fmt_int(passed)}, failed {fmt_int(failed)}, pending {fmt_int(pending)})',
+          ]
+          if cov:
+            def cov_row(label, key):
+              c = cov.get(key) or {}
+              return f"| {label} | {c.get('pct', 0):.2f}% | {fmt_int(int(c.get('covered', 0) or 0))} | {fmt_int(int(c.get('skipped', 0) or 0))} | {fmt_int(int(c.get('total', 0) or 0))} |"
+
+            lines += [
+              '',
+              '| Metric | Coverage | Covered | Skipped | Total |',
+              '|---|---:|---:|---:|---:|',
+              cov_row('Lines', 'lines'),
+              cov_row('Statements', 'statements'),
+              cov_row('Functions', 'functions'),
+              cov_row('Branches', 'branches'),
+              '',
+            ]
+          else:
+            lines += ['', '- No `coverage-summary.json` found in downloaded artifacts.', '']
+
+          if jest_results:
+            lines.append(f'- Source: `{jest_results.as_posix()}`')
+          if jest_cov:
+            lines.append(f'- Source: `{jest_cov.as_posix()}`')
+          lines.append('')
+          append(lines)
+
+          # ----------------------
+          # Cypress (best-effort)
+          # ----------------------
+          junit_xml = find_first([
+            'artifacts/**/cypress/results/**/*.xml',
+            'artifacts/**/cypress/results/*.xml',
+            'artifacts/**/cypress/results/**/*.junit',
+          ])
+          total = failures = skipped = 0
+          if junit_xml and junit_xml.exists():
+            try:
+              root = ET.parse(junit_xml).getroot()
+              # supports <testsuites> or <testsuite>
+              suites = [root] if root.tag == 'testsuite' else list(root.findall('testsuite'))
+              for s in suites:
+                total += int(s.attrib.get('tests', 0) or 0)
+                failures += int(s.attrib.get('failures', 0) or 0)
+                skipped += int(s.attrib.get('skipped', 0) or 0)
+            except Exception:
+              pass
+
+          cyp = [
+            '## E2E tests (Cypress)',
+            '',
+            f'- Tests: {fmt_int(total)} (failures {fmt_int(failures)}, skipped {fmt_int(skipped)})' if junit_xml else '- JUnit report not found in artifacts (summary is best-effort).',
+            '',
+          ]
+          if junit_xml:
+            cyp.append(f'- Source: `{junit_xml.as_posix()}`')
+            cyp.append('')
+          append(cyp)
+
+          append([
+            '## Artifacts',
+            '',
+            '- backend-jar',
+            '- jacoco-report',
+            '- jest-report',
+            '- cypress-report',
+            '',
+          ])
+          PY
 
   close:
     runs-on: ubuntu-latest
