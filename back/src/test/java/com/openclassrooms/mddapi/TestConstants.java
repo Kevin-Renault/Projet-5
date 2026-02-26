@@ -10,7 +10,7 @@ public final class TestConstants {
     }
 
     // Préfixe pour les utilisateurs de test
-    public static final String TEST_USER_PREFIX = "it_";
+    public static final String TEST_USER_PREFIX = "it_to_erase_";
     // Domaine email pour les tests
     public static final String TEST_EMAIL_DOMAIN = "@example.com";
     // Mot de passe de test valide

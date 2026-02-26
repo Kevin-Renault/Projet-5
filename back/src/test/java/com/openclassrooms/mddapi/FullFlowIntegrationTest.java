@@ -107,9 +107,9 @@ class FullFlowIntegrationTest {
     @Test
     void fullIntegrationFlow_login_list_pick_comment_list_logout() throws Exception {
         String unique = uniqueSuffix();
-        String username = "it_" + unique;
-        String email = "it_" + unique + "@example.com";
-        String password = "TestP@ssw0rd1";
+        String username = TestConstants.TEST_USER_PREFIX + unique;
+        String email = TestConstants.TEST_USER_PREFIX + unique + TestConstants.TEST_EMAIL_DOMAIN;
+        String password = TestConstants.TEST_PASSWORD;
 
         createdTestUsername = username;
         createdTestEmail = email;
@@ -198,9 +198,9 @@ class FullFlowIntegrationTest {
     @Test
     void fullIntegrationFlow_update_profile_and_relogin() {
         String unique = uniqueSuffix();
-        String username = "it_" + unique;
-        String email = "it_" + unique + "@example.com";
-        String password = "TestP@ssw0rd1";
+        String username = TestConstants.TEST_USER_PREFIX + unique;
+        String email = TestConstants.TEST_USER_PREFIX + unique + TestConstants.TEST_EMAIL_DOMAIN;
+        String password = TestConstants.TEST_PASSWORD;
 
         createdTestUsername = username;
         createdTestEmail = email;
@@ -245,9 +245,9 @@ class FullFlowIntegrationTest {
     @Test
     void fullIntegrationFlow_subscribe_topics_visit_articles_comment_logout() throws Exception {
         String unique = uniqueSuffix();
-        String username = "it_" + unique;
-        String email = "it_" + unique + "@example.com";
-        String password = "TestP@ssw0rd1";
+        String username = TestConstants.TEST_USER_PREFIX + unique;
+        String email = TestConstants.TEST_USER_PREFIX + unique + TestConstants.TEST_EMAIL_DOMAIN;
+        String password = TestConstants.TEST_PASSWORD;
 
         createdTestUsername = username;
         createdTestEmail = email;

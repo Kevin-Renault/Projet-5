@@ -1,10 +1,11 @@
 /// <reference types="cypress" />
 // Test d'intégration complet : inscription, login, navigation, commentaire, logout
+import { USER_PREFIX } from '../support/commands';
 
 describe('Full integration flow', () => {
     const unique = () => `${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
-    const username = `it_${unique()}`;
-    const email = `it_${unique()}@example.com`;
+    const username = `${USER_PREFIX}${unique()}`;
+    const email = `${USER_PREFIX}${unique()}@example.com`;
     const password = 'TestP@ssw0rd1';
 
     it('register, login, comment, logout', () => {

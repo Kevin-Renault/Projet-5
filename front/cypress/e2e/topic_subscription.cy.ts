@@ -1,9 +1,10 @@
 // Test d'intégration : souscription à des topics et interaction avec articles
+import { USER_PREFIX } from '../support/commands';
 
 describe('Topic subscription and article interaction', () => {
     const unique = () => Math.random().toString(36).substring(2, 10);
-    const username = `it_${unique()}`;
-    const email = `it_${unique()}@example.com`;
+    const username = `${USER_PREFIX}${unique()}`;
+    const email = `${USER_PREFIX}${unique()}@example.com`;
     const password = 'TestP@ssw0rd1';
 
     it('subscribe to topics, comment on articles', () => {

@@ -1,3 +1,4 @@
+export const USER_PREFIX = 'it_to_erase_';
 /// <reference types="cypress" />
 
 Cypress.Commands.add('register', (username: string, email: string, password: string) => {
