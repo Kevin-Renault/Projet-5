@@ -1,4 +1,6 @@
+// ...existing code...
 // Test d'intégration : modification de profil et re-login
+
 
 describe('Profile update and re-login', () => {
     const unique = () => Math.random().toString(36).substring(2, 10);
@@ -46,5 +48,9 @@ describe('Profile update and re-login', () => {
         cy.wait('@csrf');
         cy.wait('@login').its('response.statusCode').should('eq', 200);
         cy.url({ timeout: 20000 }).should('include', '/articles');
+
+
+        // Logout
+        cy.logout();
     });
 });

@@ -1,37 +1,41 @@
 /// <reference types="cypress" />
-// ***********************************************
-// This example commands.ts shows you how to
-// create various custom commands and overwrite
-// existing commands.
-//
-// For more comprehensive examples of custom
-// commands please read more here:
-// https://on.cypress.io/custom-commands
-// ***********************************************
-//
-//
-// -- This is a parent command --
-// Cypress.Commands.add('login', (email, password) => { ... })
-//
-//
-// -- This is a child command --
-// Cypress.Commands.add('drag', { prevSubject: 'element'}, (subject, options) => { ... })
-//
-//
-// -- This is a dual command --
-// Cypress.Commands.add('dismiss', { prevSubject: 'optional'}, (subject, options) => { ... })
-//
-//
-// -- This will overwrite an existing command --
-// Cypress.Commands.overwrite('visit', (originalFn, url, options) => { ... })
-//
-// declare global {
-//   namespace Cypress {
-//     interface Chainable {
-//       login(email: string, password: string): Chainable<void>
-//       drag(subject: string, options?: Partial<TypeOptions>): Chainable<Element>
-//       dismiss(subject: string, options?: Partial<TypeOptions>): Chainable<Element>
-//       visit(originalFn: CommandOriginalFn, url: string, options: Partial<VisitOptions>): Chainable<Element>
-//     }
-//   }
-// }
+
+Cypress.Commands.add('register', (username: string, email: string, password: string) => {
+    cy.visit('/user/register');
+    cy.get('#username').type(username);
+    cy.get('#email').type(email);
+    cy.get('#password').type(password);
+    cy.get('button[type="submit"]').click();
+});
+
+Cypress.Commands.add('login', (email: string, password: string) => {
+    cy.visit('/user/login');
+    cy.get('#login').type(email);
+    cy.get('#password').type(password);
+    cy.get('button[type="submit"]').click();
+});
+
+Cypress.Commands.add('subscribeToFirstTopic', () => {
+    cy.visit('/topics');
+    cy.get('.topics-list .topic-card', { timeout: 10000 }).should('exist');
+    cy.get('.topics-list .topic-card').first().within(() => {
+        cy.contains("s'abonner").click({ force: true });
+        cy.contains('se désabonner', { timeout: 5000 }).should('exist');
+    });
+});
+
+Cypress.Commands.add('postCommentOnFirstArticle', (comment: string) => {
+    cy.visit('/articles');
+    cy.get('.list-grid .card').first().click();
+    cy.get('textarea#content').type(comment);
+    cy.contains('button[type="submit"]', 'Sauvegarder').click();
+    cy.contains('.comment-content', comment).should('exist');
+});
+
+Cypress.Commands.add('logout', () => {
+    cy.contains('button', 'Se déconnecter').click();
+    cy.location('pathname', { timeout: 10000 }).should('be.oneOf', ['/', '/user/login']);
+    cy.wait(300); // Laisse le temps à la redirection de s'effectuer
+    cy.visit('/user/profile');
+    cy.location('pathname', { timeout: 10000 }).should('be.oneOf', ['/', '/user/login']);
+});
