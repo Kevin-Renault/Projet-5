@@ -255,7 +255,7 @@ jobs:
 
       - name: Cleanup test users (MySQL)
         if: always()
-        run: mysql -h 127.0.0.1 -P 3306 -u root -proot mdd -e "DELETE FROM users WHERE username LIKE 'it_to_erase_%';"
+        run: mysql -h 127.0.0.1 -P 3306 -u root -proot mdd -e "DELETE FROM mdd_user WHERE username LIKE 'it_to_erase_%';"
 
       - name: Upload Cypress report
         if: always()
