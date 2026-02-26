@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GlobalExceptionHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mdd-api</a> &gt; <a href="index.source.html" class="el_package">com.openclassrooms.mddapi.exception</a> &gt; <span class="el_source">GlobalExceptionHandler.java</span></div><h1>GlobalExceptionHandler.java</h1><pre class="source lang-java linenums">package com.openclassrooms.mddapi.exception;
+
+import jakarta.servlet.http.HttpServletRequest;
+import java.time.Instant;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.server.ResponseStatusException;
+
+@RestControllerAdvice
+<span class="fc" id="L24">public class GlobalExceptionHandler {</span>
+<span class="fc" id="L25">    private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);</span>
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity&lt;ApiErrorResponse&gt; handleResponseStatusException(
+            ResponseStatusException ex,
+            HttpServletRequest request) {
+<span class="fc" id="L31">        HttpStatusCode statusCode = ex.getStatusCode();</span>
+<span class="pc bpc" id="L32" title="1 of 4 branches missed.">        String message = (ex.getReason() != null &amp;&amp; !ex.getReason().isBlank()) ? ex.getReason() : &quot;Request failed&quot;;</span>
+<span class="fc" id="L33">        return build(statusCode, message, request, null);</span>
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity&lt;ApiErrorResponse&gt; handleMethodArgumentNotValid(
+            MethodArgumentNotValidException ex,
+            HttpServletRequest request) {
+<span class="fc" id="L40">        Map&lt;String, String&gt; fieldErrors = ex.getBindingResult()</span>
+<span class="fc" id="L41">                .getFieldErrors()</span>
+<span class="fc" id="L42">                .stream()</span>
+<span class="fc" id="L43">                .collect(Collectors.toMap(</span>
+                        FieldError::getField,
+<span class="pc bpc" id="L45" title="1 of 2 branches missed.">                        err -&gt; err.getDefaultMessage() != null ? err.getDefaultMessage() : &quot;Invalid value&quot;,</span>
+<span class="nc" id="L46">                        (a, b) -&gt; a,</span>
+                        LinkedHashMap::new));
+
+<span class="fc" id="L49">        return build(HttpStatus.BAD_REQUEST, &quot;Validation failed&quot;, request, fieldErrors);</span>
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity&lt;ApiErrorResponse&gt; handleTypeMismatch(
+            MethodArgumentTypeMismatchException ex,
+            HttpServletRequest request) {
+<span class="fc" id="L56">        String name = ex.getName();</span>
+<span class="fc" id="L57">        String message = &quot;Invalid value for parameter '&quot; + name + &quot;'&quot;;</span>
+<span class="fc" id="L58">        return build(HttpStatus.BAD_REQUEST, message, request, null);</span>
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity&lt;ApiErrorResponse&gt; handleNotReadable(
+            HttpMessageNotReadableException ex,
+            HttpServletRequest request) {
+<span class="fc" id="L65">        return build(HttpStatus.BAD_REQUEST, &quot;Malformed JSON request&quot;, request, null);</span>
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity&lt;ApiErrorResponse&gt; handleIllegalArgument(
+            IllegalArgumentException ex,
+            HttpServletRequest request) {
+<span class="pc bpc" id="L72" title="1 of 4 branches missed.">        String message = (ex.getMessage() != null &amp;&amp; !ex.getMessage().isBlank()) ? ex.getMessage() : &quot;Invalid request&quot;;</span>
+<span class="fc" id="L73">        return build(HttpStatus.BAD_REQUEST, message, request, null);</span>
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity&lt;ApiErrorResponse&gt; handleDataIntegrityViolation(
+            DataIntegrityViolationException ex,
+            HttpServletRequest request) {
+<span class="fc" id="L80">        logger.warn(&quot;Data integrity violation on {}: {}&quot;, request.getRequestURI(),</span>
+<span class="fc" id="L81">                ex.getMostSpecificCause().getMessage());</span>
+<span class="fc" id="L82">        return build(HttpStatus.CONFLICT, &quot;Conflict&quot;, request, null);</span>
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity&lt;ApiErrorResponse&gt; handleAccessDenied(
+            AccessDeniedException ex,
+            HttpServletRequest request) {
+<span class="fc" id="L89">        return build(HttpStatus.FORBIDDEN, &quot;Forbidden&quot;, request, null);</span>
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity&lt;ApiErrorResponse&gt; handleUnhandled(
+            Exception ex,
+            HttpServletRequest request) {
+<span class="fc" id="L96">        logger.error(&quot;Unhandled exception on {}&quot;, request.getRequestURI(), ex);</span>
+<span class="fc" id="L97">        return build(HttpStatus.INTERNAL_SERVER_ERROR, &quot;Internal server error&quot;, request, null);</span>
+    }
+
+    private ResponseEntity&lt;ApiErrorResponse&gt; build(
+            HttpStatusCode status,
+            String message,
+            HttpServletRequest request,
+            Map&lt;String, String&gt; fieldErrors) {
+<span class="pc bpc" id="L105" title="1 of 2 branches missed.">        String reasonPhrase = (status instanceof HttpStatus httpStatus)</span>
+<span class="fc" id="L106">                ? httpStatus.getReasonPhrase()</span>
+<span class="pc" id="L107">                : &quot;Error&quot;;</span>
+
+<span class="fc" id="L109">        ApiErrorResponse body = new ApiErrorResponse(</span>
+<span class="fc" id="L110">                Instant.now(),</span>
+<span class="fc" id="L111">                status.value(),</span>
+                reasonPhrase,
+                message,
+<span class="fc" id="L114">                request.getRequestURI(),</span>
+                fieldErrors);
+
+<span class="fc" id="L117">        return ResponseEntity.status(status).body(body);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

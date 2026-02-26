@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="Mocha Tests" time="5.461" tests="1" failures="0">
+  <testsuite name="Root Suite" timestamp="2026-02-20T12:19:30" tests="0" file="cypress/e2e/profile_update.cy.js" time="0.000" failures="0">
+  </testsuite>
+  <testsuite name="Profile update and re-login" timestamp="2026-02-20T12:19:30" tests="1" time="5.458" failures="0">
+    <testcase name="Profile update and re-login register, update profile, logout, re-login" time="5.411" classname="register, update profile, logout, re-login">
+    </testcase>
+  </testsuite>
+</testsuites>

@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MddUserService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mdd-api</a> &gt; <a href="index.source.html" class="el_package">com.openclassrooms.mddapi.service</a> &gt; <span class="el_source">MddUserService.java</span></div><h1>MddUserService.java</h1><pre class="source lang-java linenums">package com.openclassrooms.mddapi.service;
+
+import com.openclassrooms.mddapi.dto.UserDto;
+import com.openclassrooms.mddapi.entity.MddUserEntity;
+import com.openclassrooms.mddapi.mapper.UserMapper;
+import com.openclassrooms.mddapi.repository.MddUserRepository;
+import java.util.List;
+import java.util.regex.Pattern;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
+@Service
+public class MddUserService {
+
+<span class="fc" id="L18">    private static final Pattern PASSWORD_PATTERN = Pattern.compile(</span>
+            &quot;^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[#?!@$%^&amp;*-]).{8,}$&quot;);
+
+    private final MddUserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final UserMapper userMapper;
+
+<span class="fc" id="L25">    public MddUserService(MddUserRepository userRepository, PasswordEncoder passwordEncoder, UserMapper userMapper) {</span>
+<span class="fc" id="L26">        this.userRepository = userRepository;</span>
+<span class="fc" id="L27">        this.passwordEncoder = passwordEncoder;</span>
+<span class="fc" id="L28">        this.userMapper = userMapper;</span>
+<span class="fc" id="L29">    }</span>
+
+    @Transactional(readOnly = true)
+    public List&lt;UserDto&gt; getAll() {
+<span class="fc" id="L33">        return userRepository.findAll().stream().map(userMapper::toDto).toList();</span>
+    }
+
+    @Transactional(readOnly = true)
+    public UserDto getById(Long id) {
+<span class="fc" id="L38">        MddUserEntity user = userRepository.findById(id)</span>
+<span class="fc" id="L39">                .orElseThrow(() -&gt; new ResponseStatusException(HttpStatus.NOT_FOUND, &quot;User not found&quot;));</span>
+<span class="fc" id="L40">        return userMapper.toDto(user);</span>
+    }
+
+    @Transactional
+    public UserDto update(MddUserEntity principal, UserDto request) {
+<span class="fc bfc" id="L45" title="All 2 branches covered.">        if (request == null) {</span>
+<span class="fc" id="L46">            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, &quot;Invalid payload&quot;);</span>
+        }
+<span class="fc" id="L48">        Long principalId = requireAuthenticatedUserId(principal);</span>
+<span class="fc" id="L49">        MddUserEntity user = userRepository.findById(principalId)</span>
+<span class="fc" id="L50">                .orElseThrow(() -&gt; new ResponseStatusException(HttpStatus.NOT_FOUND, &quot;User not found&quot;));</span>
+
+<span class="fc" id="L52">        String newUsername = trimToNull(request.username());</span>
+<span class="fc" id="L53">        String newEmail = trimToNull(request.email());</span>
+<span class="fc" id="L54">        String newPassword = trimToNull(request.password());</span>
+
+<span class="fc bfc" id="L56" title="All 4 branches covered.">        if (newUsername != null &amp;&amp; !newUsername.equals(user.getUsername())) {</span>
+<span class="fc" id="L57">            userRepository.findByUsername(newUsername)</span>
+<span class="pc bpc" id="L58" title="1 of 2 branches missed.">                    .filter(u -&gt; !u.getId().equals(user.getId()))</span>
+<span class="fc" id="L59">                    .ifPresent(u -&gt; {</span>
+<span class="fc" id="L60">                        throw new ResponseStatusException(HttpStatus.CONFLICT, &quot;Username already used&quot;);</span>
+                    });
+<span class="fc" id="L62">            user.setUsername(newUsername);</span>
+        }
+
+<span class="pc bpc" id="L65" title="1 of 4 branches missed.">        if (newEmail != null &amp;&amp; !newEmail.equals(user.getEmail())) {</span>
+<span class="fc" id="L66">            userRepository.findByEmail(newEmail)</span>
+<span class="pc bpc" id="L67" title="1 of 2 branches missed.">                    .filter(u -&gt; !u.getId().equals(user.getId()))</span>
+<span class="fc" id="L68">                    .ifPresent(u -&gt; {</span>
+<span class="fc" id="L69">                        throw new ResponseStatusException(HttpStatus.CONFLICT, &quot;Email already used&quot;);</span>
+                    });
+<span class="fc" id="L71">            user.setEmail(newEmail);</span>
+        }
+
+<span class="fc bfc" id="L74" title="All 2 branches covered.">        if (newPassword != null) {</span>
+<span class="fc" id="L75">            requireValidPassword(newPassword);</span>
+<span class="fc" id="L76">            user.setPassword(passwordEncoder.encode(newPassword));</span>
+        }
+
+<span class="fc" id="L79">        MddUserEntity saved = userRepository.save(user);</span>
+<span class="fc" id="L80">        return userMapper.toDto(saved);</span>
+    }
+
+    private static Long requireAuthenticatedUserId(MddUserEntity principal) {
+<span class="pc bpc" id="L84" title="1 of 4 branches missed.">        if (principal == null || principal.getId() == null) {</span>
+<span class="fc" id="L85">            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, &quot;Unauthorized&quot;);</span>
+        }
+<span class="fc" id="L87">        return principal.getId();</span>
+    }
+
+    private static void requireValidPassword(String password) {
+<span class="pc bpc" id="L91" title="1 of 4 branches missed.">        if (password == null || !PASSWORD_PATTERN.matcher(password).matches()) {</span>
+<span class="fc" id="L92">            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, &quot;Password does not meet requirements&quot;);</span>
+        }
+<span class="fc" id="L94">    }</span>
+
+    private static String trimToNull(String value) {
+<span class="fc bfc" id="L97" title="All 2 branches covered.">        if (value == null) {</span>
+<span class="fc" id="L98">            return null;</span>
+        }
+<span class="fc" id="L100">        String trimmed = value.trim();</span>
+<span class="pc bpc" id="L101" title="1 of 2 branches missed.">        return trimmed.isEmpty() ? null : trimmed;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

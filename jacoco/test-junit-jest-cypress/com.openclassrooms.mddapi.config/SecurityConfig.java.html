@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SecurityConfig.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mdd-api</a> &gt; <a href="index.source.html" class="el_package">com.openclassrooms.mddapi.config</a> &gt; <span class="el_source">SecurityConfig.java</span></div><h1>SecurityConfig.java</h1><pre class="source lang-java linenums">package com.openclassrooms.mddapi.config;
+
+import com.openclassrooms.mddapi.security.JwtAuthenticationFilter;
+import com.openclassrooms.mddapi.security.RestAuthenticationEntryPoint;
+import com.openclassrooms.mddapi.ApiEndpoints;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.security.web.session.SessionManagementFilter;
+
+@Configuration
+@EnableWebSecurity
+<span class="fc" id="L21">public class SecurityConfig {</span>
+        @Bean
+        public CookieCsrfTokenRepository csrfTokenRepository() {
+<span class="fc" id="L24">                CookieCsrfTokenRepository repository = new CookieCsrfTokenRepository();</span>
+<span class="fc" id="L25">                repository.setCookiePath(&quot;/&quot;);</span>
+<span class="fc" id="L26">                return repository;</span>
+        }
+
+        @Bean
+        public SecurityFilterChain securityFilterChain(
+                        HttpSecurity http,
+                        JwtAuthenticationFilter jwtAuthenticationFilter,
+                        RestAuthenticationEntryPoint authenticationEntryPoint) throws Exception {
+
+<span class="fc" id="L35">                http</span>
+<span class="fc" id="L36">                                .cors(cors -&gt; {</span>
+<span class="fc" id="L37">                                })</span>
+<span class="fc" id="L38">                                .csrf(csrf -&gt; csrf</span>
+<span class="fc" id="L39">                                                .csrfTokenRepository(csrfTokenRepository())</span>
+<span class="fc" id="L40">                                                .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))</span>
+<span class="fc" id="L41">                                .sessionManagement(sm -&gt; sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))</span>
+<span class="fc" id="L42">                                .exceptionHandling(ex -&gt; ex.authenticationEntryPoint(authenticationEntryPoint))</span>
+<span class="fc" id="L43">                                .authorizeHttpRequests(auth -&gt; auth</span>
+                                                // CORS preflight
+<span class="fc" id="L45">                                                .requestMatchers(HttpMethod.OPTIONS, &quot;/**&quot;).permitAll()</span>
+
+                                                // Swagger / OpenAPI
+<span class="fc" id="L48">                                                .requestMatchers(&quot;/v3/api-docs/**&quot;).permitAll()</span>
+<span class="fc" id="L49">                                                .requestMatchers(&quot;/swagger-ui.html&quot;).permitAll()</span>
+<span class="fc" id="L50">                                                .requestMatchers(&quot;/swagger-ui/**&quot;).permitAll()</span>
+
+                                                // Auth endpoints (accept trailing slash too)
+<span class="fc" id="L53">                                                .requestMatchers(HttpMethod.GET, ApiEndpoints.AUTH_CSRF,</span>
+                                                                ApiEndpoints.AUTH_CSRF + &quot;/&quot;)
+<span class="fc" id="L55">                                                .permitAll()</span>
+<span class="fc" id="L56">                                                .requestMatchers(HttpMethod.POST, ApiEndpoints.AUTH_LOGIN,</span>
+                                                                ApiEndpoints.AUTH_LOGIN + &quot;/&quot;)
+<span class="fc" id="L58">                                                .permitAll()</span>
+<span class="fc" id="L59">                                                .requestMatchers(HttpMethod.POST, ApiEndpoints.AUTH_REGISTER,</span>
+                                                                ApiEndpoints.AUTH_REGISTER + &quot;/&quot;)
+<span class="fc" id="L61">                                                .permitAll()</span>
+<span class="fc" id="L62">                                                .requestMatchers(HttpMethod.POST, ApiEndpoints.AUTH_REFRESH,</span>
+                                                                ApiEndpoints.AUTH_REFRESH + &quot;/&quot;)
+<span class="fc" id="L64">                                                .permitAll()</span>
+<span class="fc" id="L65">                                                .requestMatchers(HttpMethod.POST, ApiEndpoints.AUTH_LOGOUT,</span>
+                                                                ApiEndpoints.AUTH_LOGOUT + &quot;/&quot;)
+<span class="fc" id="L67">                                                .permitAll()</span>
+<span class="fc" id="L68">                                                .anyRequest().authenticated())</span>
+                                // Place JWT auth AFTER SessionManagementFilter to avoid triggering
+                                // session authentication strategies (incl. CSRF token clearing) on
+                                // every stateless request.
+<span class="fc" id="L72">                                .addFilterAfter(jwtAuthenticationFilter, SessionManagementFilter.class);</span>
+
+<span class="fc" id="L74">                return http.build();</span>
+        }
+
+        @Bean
+        public PasswordEncoder passwordEncoder() {
+<span class="fc" id="L79">                return new BCryptPasswordEncoder();</span>
+        }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

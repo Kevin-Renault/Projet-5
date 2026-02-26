@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="Mocha Tests" time="6.583" tests="1" failures="0">
+  <testsuite name="Root Suite" timestamp="2026-02-20T13:16:44" tests="0" file="cypress/e2e/topic_subscription.cy.js" time="0.000" failures="0">
+  </testsuite>
+  <testsuite name="Topic subscription and article interaction" timestamp="2026-02-20T13:16:44" tests="1" time="6.579" failures="0">
+    <testcase name="Topic subscription and article interaction subscribe to topics, comment on articles" time="6.446" classname="subscribe to topics, comment on articles">
+    </testcase>
+  </testsuite>
+</testsuites>
