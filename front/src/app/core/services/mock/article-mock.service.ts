@@ -1,12 +1,11 @@
-import { inject, Injectable } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { Article } from '../../models/article.model';
 import { ArticleDataSource } from '../article-datasource.interface';
-import { TopicSubscriptionMockService } from './topic-subscription-mock.service';
 
 @Injectable({ providedIn: 'root' })
 export class ArticleMockService implements ArticleDataSource {
-    private articles: Article[] = [
+    private readonly articles: Article[] = [
         {
             id: 1,
             title: 'Introduction à Java',
@@ -82,13 +81,11 @@ export class ArticleMockService implements ArticleDataSource {
     ];
 
 
-    private subscribedTopicIds: number[] = [1, 2]; // Simule les topics auxquels l'utilisateur est abonné
-    private readonly subscriptionDataSource = inject(TopicSubscriptionMockService);
+    private readonly subscribedTopicIds: number[] = [1, 2]; // Simule les topics auxquels l'utilisateur est abonné
+
     getAll(): Observable<Article[]> {
-        this.subscriptionDataSource.getUserTopicSubscriptions().subscribe(subs => {
-            this.subscribedTopicIds = subs.map(s => s.topicId);
-            // Utilise subscribedTopicIds pour filtrer les articles
-        });
+        // Pour le mock, on retourne directement les articles filtrés
+        // (dans un vrai service, il faudrait gérer l'asynchronicité)
         return of(this.articles.filter(article => this.subscribedTopicIds.includes(article.topicId)));
     }
 
