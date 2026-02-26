@@ -61,6 +61,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Make Maven wrapper executable
+        working-directory: back
+        run: chmod +x mvnw
       - name: Build and test (backend)
         working-directory: back
         env:
