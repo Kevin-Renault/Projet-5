@@ -746,6 +746,14 @@ jobs:
           HTML
           fi
 
+      - name: Check backend environment
+        run: |
+          ENV=$(curl -s http://localhost:8080/api/env | grep -o '\"dev\"')
+          if [ -z "$ENV" ]; then
+            echo "Backend is NOT in dev mode, aborting cleanup."
+            exit 1
+          fi
+
       - name: Deploy JaCoCo report to GitHub Pages (gh-pages)
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/test/junit-jest-cypress'
         uses: JamesIves/github-pages-deploy-action@v4

@@ -17,6 +17,17 @@ import '@cypress/code-coverage/support'
 // Import commands.js using ES2015 syntax:
 import './commands'
 
+
+// Blocage global : refuse d'exécuter les tests si le backend n'est pas en mode dev
+before(() => {
+    cy.request('/api/env').then((resp) => {
+        if (!resp.body || resp.body.env !== 'dev') {
+            throw new Error('Cypress tests are only allowed on DEV environment!');
+        }
+    });
+});
+
+
 beforeEach(() => {
     // Stabilise les layouts responsives en CI/headless.
     cy.viewport(1920, 1080)

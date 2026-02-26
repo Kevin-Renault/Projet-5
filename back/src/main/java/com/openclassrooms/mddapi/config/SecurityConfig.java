@@ -49,6 +49,9 @@ public class SecurityConfig {
                                                 .requestMatchers("/swagger-ui.html").permitAll()
                                                 .requestMatchers("/swagger-ui/**").permitAll()
 
+                                                // Public env endpoint
+                                                .requestMatchers(HttpMethod.GET, "/api/env").permitAll()
+
                                                 // Auth endpoints (accept trailing slash too)
                                                 .requestMatchers(HttpMethod.GET, ApiEndpoints.AUTH_CSRF,
                                                                 ApiEndpoints.AUTH_CSRF + "/")
