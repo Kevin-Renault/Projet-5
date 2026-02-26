@@ -22,14 +22,6 @@ export class ArticleService implements ArticleDataSource {
         return this.http.post<Article>(this.apiUrl, article);
     }
 
-    update(id: number, article: Partial<Article>): Observable<Article> {
-        return this.http.put<Article>(`${this.apiUrl}/${id}`, article);
-    }
-
-    delete(id: number): Observable<void> {
-        return this.http.delete<void>(`${this.apiUrl}/${id}`);
-    }
-
     /**
      * Retourne les articles triés par date de création (du plus récent au plus ancien)
      */

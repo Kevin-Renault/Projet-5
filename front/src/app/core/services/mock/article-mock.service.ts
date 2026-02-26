@@ -1,7 +1,8 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { Article } from '../../models/article.model';
 import { ArticleDataSource } from '../article-datasource.interface';
+import { TopicSubscriptionMockService } from './topic-subscription-mock.service';
 
 @Injectable({ providedIn: 'root' })
 export class ArticleMockService implements ArticleDataSource {
@@ -80,32 +81,26 @@ export class ArticleMockService implements ArticleDataSource {
         }
     ];
 
+
+    private subscribedTopicIds: number[] = [1, 2]; // Simule les topics auxquels l'utilisateur est abonné
+    private readonly subscriptionDataSource = inject(TopicSubscriptionMockService);
     getAll(): Observable<Article[]> {
-        return of(this.articles);
+        this.subscriptionDataSource.getUserTopicSubscriptions().subscribe(subs => {
+            this.subscribedTopicIds = subs.map(s => s.topicId);
+            // Utilise subscribedTopicIds pour filtrer les articles
+        });
+        return of(this.articles.filter(article => this.subscribedTopicIds.includes(article.topicId)));
     }
 
     getById(id: number): Observable<Article> {
         return of(this.articles.find(a => a.id === id)!);
     }
 
+
     create(article: Article): Observable<Article> {
         const newArticle = { ...article, id: Date.now() };
         this.articles.push(newArticle);
         return of(newArticle);
-    }
-
-    update(id: number, article: Partial<Article>): Observable<Article> {
-        const idx = this.articles.findIndex(a => a.id === id);
-        if (idx !== -1) {
-            this.articles[idx] = { ...this.articles[idx], ...article };
-            return of(this.articles[idx]);
-        }
-        return of(null as any);
-    }
-
-    delete(id: number): Observable<void> {
-        this.articles = this.articles.filter(a => a.id !== id);
-        return of(void 0);
     }
 
     sortByDateDesc(articles: Article[]): Article[] {
