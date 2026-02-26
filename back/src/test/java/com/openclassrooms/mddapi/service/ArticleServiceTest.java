@@ -9,6 +9,8 @@ import com.openclassrooms.mddapi.mapper.ArticleMapper;
 import com.openclassrooms.mddapi.repository.ArticleRepository;
 import com.openclassrooms.mddapi.repository.MddUserRepository;
 import com.openclassrooms.mddapi.repository.TopicRepository;
+import com.openclassrooms.mddapi.repository.UserTopicSubscriptionRepository;
+
 import java.util.List;
 import java.util.Optional;
 import org.assertj.core.api.Assertions;
@@ -25,138 +27,152 @@ import org.springframework.web.server.ResponseStatusException;
 @ExtendWith(MockitoExtension.class)
 class ArticleServiceTest {
 
-    @Mock
-    private ArticleRepository articleRepository;
+        @Mock
+        private ArticleRepository articleRepository;
 
-    @Mock
-    private TopicRepository topicRepository;
+        @Mock
+        private TopicRepository topicRepository;
 
-    @Mock
-    private MddUserRepository userRepository;
+        @Mock
+        private MddUserRepository userRepository;
 
-    @Mock
-    private ArticleMapper mapper;
+        @Mock
+        private UserTopicSubscriptionRepository subscriptionRepository;
 
-    @InjectMocks
-    private ArticleService service;
+        @Mock
+        private ArticleMapper mapper;
 
-    @Test
-    void getAll_sorts_and_maps() {
-        ArticleEntity entity = new ArticleEntity();
-        entity.setId(1L);
+        @InjectMocks
+        private ArticleService service;
 
-        Mockito.when(articleRepository.findAll(Mockito.any(Sort.class))).thenReturn(List.of(entity));
+        @Test
+        void getAll_sorts_and_maps() {
+                ArticleEntity entity = new ArticleEntity();
+                entity.setId(1L);
 
-        ArticleDto dto = new ArticleDto(1L, "t", "c", null, null, null);
-        Mockito.when(mapper.toDto(entity)).thenReturn(dto);
+                Mockito.when(articleRepository.findAll(Mockito.any(Sort.class))).thenReturn(List.of(entity));
 
-        List<ArticleDto> out = service.getAll();
-        Assertions.assertThat(out).containsExactly(dto);
+                ArticleDto dto = new ArticleDto(1L, "t", "c", null, null, null);
+                Mockito.when(mapper.toDto(entity)).thenReturn(dto);
 
-        ArgumentCaptor<Sort> sortCaptor = ArgumentCaptor.forClass(Sort.class);
-        Mockito.verify(articleRepository).findAll(sortCaptor.capture());
-        Assertions.assertThat(sortCaptor.getValue()).isNotNull();
-    }
+                MddUserEntity principal = new MddUserEntity();
+                principal.setId(2L);
 
-    @Test
-    void getById_not_found_throws_404() {
-        Mockito.when(articleRepository.findById(9L)).thenReturn(Optional.empty());
+                // Mock a subscription to a topic for the user
+                TopicEntity topic = new TopicEntity();
+                topic.setId(100L);
+                entity.setTopic(topic);
+                var mockSubscription = Mockito.mock(com.openclassrooms.mddapi.entity.UserTopicSubscriptionEntity.class);
+                Mockito.when(mockSubscription.getTopic()).thenReturn(topic);
+                Mockito.when(subscriptionRepository.findAllByUser_Id(2L)).thenReturn(List.of(mockSubscription));
 
-        Assertions.assertThatThrownBy(() -> service.getById(9L))
-                .isInstanceOf(ResponseStatusException.class)
-                .hasMessageContaining("404");
-    }
+                List<ArticleDto> out = service.getAll(principal);
+                Assertions.assertThat(out).containsExactly(dto);
 
-    @Test
-    void create_requires_auth_and_valid_payload() {
-        CreateArticleRequest unauthRequest = new CreateArticleRequest("t", "c", 1L);
-        Assertions.assertThatThrownBy(() -> service.create(null, unauthRequest))
-                .isInstanceOf(ResponseStatusException.class)
-                .hasMessageContaining("401");
+                ArgumentCaptor<Sort> sortCaptor = ArgumentCaptor.forClass(Sort.class);
+                Mockito.verify(articleRepository).findAll(sortCaptor.capture());
+                Assertions.assertThat(sortCaptor.getValue()).isNotNull();
+        }
 
-        MddUserEntity principal = new MddUserEntity();
-        principal.setId(1L);
+        @Test
+        void getById_not_found_throws_404() {
+                Mockito.when(articleRepository.findById(9L)).thenReturn(Optional.empty());
 
-        Assertions.assertThatThrownBy(() -> service.create(principal, null))
-                .isInstanceOf(ResponseStatusException.class)
-                .hasMessageContaining("400");
-    }
+                Assertions.assertThatThrownBy(() -> service.getById(9L))
+                                .isInstanceOf(ResponseStatusException.class)
+                                .hasMessageContaining("404");
+        }
 
-    @Test
-    void create_rejects_blank_title_or_content() {
-        MddUserEntity principal = new MddUserEntity();
-        principal.setId(1L);
+        @Test
+        void create_requires_auth_and_valid_payload() {
+                CreateArticleRequest unauthRequest = new CreateArticleRequest("t", "c", 1L);
+                Assertions.assertThatThrownBy(() -> service.create(null, unauthRequest))
+                                .isInstanceOf(ResponseStatusException.class)
+                                .hasMessageContaining("401");
 
-        CreateArticleRequest invalidTitleRequest1 = new CreateArticleRequest("", "c", 1L);
-        Assertions.assertThatThrownBy(() -> service.create(principal, invalidTitleRequest1))
-                .isInstanceOf(ResponseStatusException.class)
-                .hasMessageContaining("400");
+                MddUserEntity principal = new MddUserEntity();
+                principal.setId(1L);
 
-        CreateArticleRequest invalidTitleRequest2 = new CreateArticleRequest(null, "c", 1L);
-        Assertions.assertThatThrownBy(() -> service.create(principal, invalidTitleRequest2))
-                .isInstanceOf(ResponseStatusException.class)
-                .hasMessageContaining("400");
-        CreateArticleRequest invalidTitleRequest3 = new CreateArticleRequest("    ", "c", 1L);
-        Assertions.assertThatThrownBy(() -> service.create(principal, invalidTitleRequest3))
-                .isInstanceOf(ResponseStatusException.class)
-                .hasMessageContaining("400");
+                Assertions.assertThatThrownBy(() -> service.create(principal, null))
+                                .isInstanceOf(ResponseStatusException.class)
+                                .hasMessageContaining("400");
+        }
 
-        CreateArticleRequest invalidContentRequest1 = new CreateArticleRequest("t", "", 1L);
-        Assertions.assertThatThrownBy(() -> service.create(principal, invalidContentRequest1))
-                .isInstanceOf(ResponseStatusException.class)
-                .hasMessageContaining("400");
+        @Test
+        void create_rejects_blank_title_or_content() {
+                MddUserEntity principal = new MddUserEntity();
+                principal.setId(1L);
 
-        CreateArticleRequest invalidContentRequest2 = new CreateArticleRequest("t", null, 1L);
-        Assertions.assertThatThrownBy(() -> service.create(principal, invalidContentRequest2))
-                .isInstanceOf(ResponseStatusException.class)
-                .hasMessageContaining("400");
-        CreateArticleRequest invalidContentRequest3 = new CreateArticleRequest("t", "    ", 1L);
-        Assertions.assertThatThrownBy(() -> service.create(principal, invalidContentRequest3))
-                .isInstanceOf(ResponseStatusException.class)
-                .hasMessageContaining("400");
-    }
+                CreateArticleRequest invalidTitleRequest1 = new CreateArticleRequest("", "c", 1L);
+                Assertions.assertThatThrownBy(() -> service.create(principal, invalidTitleRequest1))
+                                .isInstanceOf(ResponseStatusException.class)
+                                .hasMessageContaining("400");
 
-    @Test
-    void create_happy_path_trims_and_maps() {
-        MddUserEntity principal = new MddUserEntity();
-        principal.setId(1L);
+                CreateArticleRequest invalidTitleRequest2 = new CreateArticleRequest(null, "c", 1L);
+                Assertions.assertThatThrownBy(() -> service.create(principal, invalidTitleRequest2))
+                                .isInstanceOf(ResponseStatusException.class)
+                                .hasMessageContaining("400");
+                CreateArticleRequest invalidTitleRequest3 = new CreateArticleRequest("    ", "c", 1L);
+                Assertions.assertThatThrownBy(() -> service.create(principal, invalidTitleRequest3))
+                                .isInstanceOf(ResponseStatusException.class)
+                                .hasMessageContaining("400");
 
-        TopicEntity topic = new TopicEntity();
-        topic.setId(2L);
-        Mockito.when(topicRepository.findById(2L)).thenReturn(Optional.of(topic));
+                CreateArticleRequest invalidContentRequest1 = new CreateArticleRequest("t", "", 1L);
+                Assertions.assertThatThrownBy(() -> service.create(principal, invalidContentRequest1))
+                                .isInstanceOf(ResponseStatusException.class)
+                                .hasMessageContaining("400");
 
-        MddUserEntity authorRef = new MddUserEntity();
-        authorRef.setId(1L);
-        Mockito.when(userRepository.getReferenceById(1L)).thenReturn(authorRef);
+                CreateArticleRequest invalidContentRequest2 = new CreateArticleRequest("t", null, 1L);
+                Assertions.assertThatThrownBy(() -> service.create(principal, invalidContentRequest2))
+                                .isInstanceOf(ResponseStatusException.class)
+                                .hasMessageContaining("400");
+                CreateArticleRequest invalidContentRequest3 = new CreateArticleRequest("t", "    ", 1L);
+                Assertions.assertThatThrownBy(() -> service.create(principal, invalidContentRequest3))
+                                .isInstanceOf(ResponseStatusException.class)
+                                .hasMessageContaining("400");
+        }
 
-        ArticleEntity saved = new ArticleEntity();
-        saved.setId(10L);
+        @Test
+        void create_happy_path_trims_and_maps() {
+                MddUserEntity principal = new MddUserEntity();
+                principal.setId(1L);
 
-        ArgumentCaptor<ArticleEntity> entityCaptor = ArgumentCaptor.forClass(ArticleEntity.class);
-        Mockito.when(articleRepository.save(entityCaptor.capture())).thenReturn(saved);
+                TopicEntity topic = new TopicEntity();
+                topic.setId(2L);
+                Mockito.when(topicRepository.findById(2L)).thenReturn(Optional.of(topic));
 
-        ArticleDto dto = new ArticleDto(10L, "T", "C", null, 1L, 2L);
-        Mockito.when(mapper.toDto(saved)).thenReturn(dto);
+                MddUserEntity authorRef = new MddUserEntity();
+                authorRef.setId(1L);
+                Mockito.when(userRepository.getReferenceById(1L)).thenReturn(authorRef);
 
-        ArticleDto out = service.create(principal, new CreateArticleRequest("  T  ", "  C  ", 2L));
-        Assertions.assertThat(out).isSameAs(dto);
+                ArticleEntity saved = new ArticleEntity();
+                saved.setId(10L);
 
-        ArticleEntity toSave = entityCaptor.getValue();
-        Assertions.assertThat(toSave.getTitle()).isEqualTo("T");
-        Assertions.assertThat(toSave.getContent()).isEqualTo("C");
-        Assertions.assertThat(toSave.getAuthor()).isSameAs(authorRef);
-        Assertions.assertThat(toSave.getTopic()).isSameAs(topic);
-    }
+                ArgumentCaptor<ArticleEntity> entityCaptor = ArgumentCaptor.forClass(ArticleEntity.class);
+                Mockito.when(articleRepository.save(entityCaptor.capture())).thenReturn(saved);
 
-    @Test
-    void create_unknown_topic_throws_404() {
-        MddUserEntity principal = new MddUserEntity();
-        principal.setId(1L);
+                ArticleDto dto = new ArticleDto(10L, "T", "C", null, 1L, 2L);
+                Mockito.when(mapper.toDto(saved)).thenReturn(dto);
 
-        Mockito.when(topicRepository.findById(99L)).thenReturn(Optional.empty());
-        CreateArticleRequest request = new CreateArticleRequest("t", "c", 99L);
-        Assertions.assertThatThrownBy(() -> service.create(principal, request))
-                .isInstanceOf(ResponseStatusException.class)
-                .hasMessageContaining("404");
-    }
+                ArticleDto out = service.create(principal, new CreateArticleRequest("  T  ", "  C  ", 2L));
+                Assertions.assertThat(out).isSameAs(dto);
+
+                ArticleEntity toSave = entityCaptor.getValue();
+                Assertions.assertThat(toSave.getTitle()).isEqualTo("T");
+                Assertions.assertThat(toSave.getContent()).isEqualTo("C");
+                Assertions.assertThat(toSave.getAuthor()).isSameAs(authorRef);
+                Assertions.assertThat(toSave.getTopic()).isSameAs(topic);
+        }
+
+        @Test
+        void create_unknown_topic_throws_404() {
+                MddUserEntity principal = new MddUserEntity();
+                principal.setId(1L);
+
+                Mockito.when(topicRepository.findById(99L)).thenReturn(Optional.empty());
+                CreateArticleRequest request = new CreateArticleRequest("t", "c", 99L);
+                Assertions.assertThatThrownBy(() -> service.create(principal, request))
+                                .isInstanceOf(ResponseStatusException.class)
+                                .hasMessageContaining("404");
+        }
 }

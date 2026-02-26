@@ -57,15 +57,16 @@ class ThinControllersTest {
         ArticleService articleService = Mockito.mock(ArticleService.class);
         ArticleController controller = new ArticleController(articleService);
 
-        Mockito.when(articleService.getAll()).thenReturn(List.of());
-        Assertions.assertThat(controller.getAll()).isEmpty();
+        MddUserEntity principal = new MddUserEntity();
+        principal.setId(2L);
+
+        Mockito.when(articleService.getAll(principal)).thenReturn(List.of());
+        Assertions.assertThat(controller.getAll(principal)).isEmpty();
 
         ArticleDto dto = new ArticleDto(1L, "t", "c", Instant.now(), 2L, 3L);
         Mockito.when(articleService.getById(1L)).thenReturn(dto);
         Assertions.assertThat(controller.getById(1L)).isSameAs(dto);
 
-        MddUserEntity principal = new MddUserEntity();
-        principal.setId(2L);
         CreateArticleRequest req = new CreateArticleRequest("t", "c", 3L);
         Mockito.when(articleService.create(principal, req)).thenReturn(dto);
         ResponseEntity<ArticleDto> created = controller.create(principal, req);

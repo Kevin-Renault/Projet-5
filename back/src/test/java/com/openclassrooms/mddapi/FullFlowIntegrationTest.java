@@ -134,6 +134,9 @@ class FullFlowIntegrationTest {
         Assertions.assertThat(topics)
                 .isNotNull()
                 .isNotEmpty();
+        // Subscribe to the first topic to ensure articles are visible
+        List<UserTopicSubscriptionDto> subscriptions = subscribeToTopic(cookie, topics.get(0).id());
+        Assertions.assertThat(subscriptions).isNotNull().anyMatch(s -> s.topicId().equals(topics.get(0).id()));
         // 3) Get articles
         List<ArticleDto> articles = getArticles(cookie);
 
