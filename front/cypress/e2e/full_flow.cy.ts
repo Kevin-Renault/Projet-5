@@ -8,6 +8,10 @@ describe('Full integration flow', () => {
     const email = `${USER_PREFIX}${unique()}@example.com`;
     const password = 'TestP@ssw0rd1';
 
+    // Log username and email for GitHub Actions visibility
+    console.log('Cypress test user:', username);
+    console.log('Cypress test email:', email);
+
     it('register, login, comment, logout', () => {
         cy.intercept('GET', '/api/auth/csrf').as('csrf');
         cy.intercept('POST', '/api/auth/register').as('register');
