@@ -46,8 +46,9 @@ public class ArticleController {
             @ApiResponse(responseCode = "403", description = "Forbidden", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
             @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     })
-    public List<ArticleDto> getAll() {
-        return articleService.getAll();
+    public List<ArticleDto> getAll(
+            @Parameter(hidden = true) @AuthenticationPrincipal MddUserEntity principal) {
+        return articleService.getAll(principal);
     }
 
     @GetMapping("/{id}")
