@@ -21,6 +21,13 @@ permissions:
 jobs:
   setup:
     runs-on: ubuntu-latest
+    steps:
+      - name: Setup (meta)
+        run: echo "Setup job completed. Each job installs its own toolchain."
+
+  build-test-backend:
+    runs-on: ubuntu-latest
+    needs: setup
     services:
       mysql:
         image: mysql:8.0
@@ -39,28 +46,14 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: npm
-          cache-dependency-path: front/package-lock.json
+
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
           cache: maven
-      - name: Make Maven wrapper executable
-        working-directory: back
-        run: chmod +x mvnw
 
-  build-test-backend:
-    runs-on: ubuntu-latest
-    needs: setup
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
       - name: Make Maven wrapper executable
         working-directory: back
         run: chmod +x mvnw
@@ -75,6 +68,24 @@ jobs:
           DB_USER: root
           DB_PASSWORD: root
         run: ./mvnw -B verify
+
+      - name: Upload backend JAR
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-jar
+          path: back/target/mdd-api-0.0.1-SNAPSHOT.jar
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload JaCoCo HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: back/target/site/jacoco
+          if-no-files-found: error
+          retention-days: 14
       - name: Coverage summary (JaCoCo)
         working-directory: back
         run: |
@@ -92,12 +103,31 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: front/package-lock.json
+
       - name: Install dependencies (frontend)
         working-directory: front
         run: npm ci
       - name: Run unit tests (Jest)
         working-directory: front
         run: npm run test:unit:ci
+
+      - name: Upload Jest coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jest-report
+          path: |
+            front/coverage
+            front/jest-results.json
+          if-no-files-found: warn
+          retention-days: 14
       - name: Unit coverage summary (Jest)
         if: always()
         run: |
@@ -111,9 +141,46 @@ jobs:
   cypress:
     runs-on: ubuntu-latest
     needs: [build-test-backend, build-test-frontend]
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: mdd
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: front/package-lock.json
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install dependencies (frontend)
+        working-directory: front
+        run: npm ci
+
+      - name: Download backend JAR
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-jar
+          path: .
+
       - name: Start backend (for Cypress)
         shell: bash
         env:
@@ -123,7 +190,19 @@ jobs:
         run: |
           set -euo pipefail
           java -version
-          nohup java -jar back/target/mdd-api-0.0.1-SNAPSHOT.jar > back.log 2>&1 &
+          JAR_PATH=""
+          if [ -f "back/target/mdd-api-0.0.1-SNAPSHOT.jar" ]; then
+            JAR_PATH="back/target/mdd-api-0.0.1-SNAPSHOT.jar"
+          else
+            JAR_PATH="$(find back/target -maxdepth 4 -name 'mdd-api-0.0.1-SNAPSHOT.jar' -print -quit || true)"
+          fi
+          if [ -z "${JAR_PATH}" ]; then
+            echo "Backend JAR not found after download. Listing back/target:";
+            ls -la back/target || true
+            find back/target -maxdepth 4 -type f -print || true
+            exit 1
+          fi
+          nohup java -jar "${JAR_PATH}" > back.log 2>&1 &
           echo "Waiting for backend to be ready..."
           for i in {1..60}; do
             if curl -fsS "http://localhost:8080/api/auth/csrf" >/dev/null; then
@@ -154,10 +233,10 @@ jobs:
         run: |
           ENV=$(curl -s http://localhost:8080/api/env | grep -o '"dev"')
           if [ -z "$ENV" ]; then
-            echo "::set-output name=should_run_cypress::false"
+            echo "should_run_cypress=false" >> "$GITHUB_OUTPUT"
             echo "Backend is NOT in dev mode, skipping Cypress tests."
           else
-            echo "::set-output name=should_run_cypress::true"
+            echo "should_run_cypress=true" >> "$GITHUB_OUTPUT"
           fi
       - name: Run Cypress E2E (JUnit)
         if: steps.check_backend_env.outputs.should_run_cypress == 'true'
@@ -165,6 +244,24 @@ jobs:
         env:
           CYPRESS_CACHE_FOLDER: ~/.cache/Cypress
         run: npm run cypress:run
+
+      - name: Cleanup test users (MySQL)
+        if: always()
+        run: mysql -h 127.0.0.1 -P 3306 -u root -proot mdd -e "DELETE FROM users WHERE username LIKE 'it_to_erase_%';"
+
+      - name: Upload Cypress report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-report
+          path: |
+            front/cypress/results
+            front/cypress/screenshots
+            front/cypress/videos
+            front/coverage-e2e
+            front/.nyc_output
+          if-no-files-found: warn
+          retention-days: 14
       - name: E2E summary (Cypress)
         if: always()
         run: |
@@ -183,14 +280,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Cleanup test users (only if backend is dev)
-        run: |
-          ENV=$(curl -s http://localhost:8080/api/env | grep -o '"dev"')
-          if [ -z "$ENV" ]; then
-            echo "Backend is NOT in dev mode, skipping cleanup."
-          else
-            mysql -h 127.0.0.1 -P 3306 -u root -proot mdd -e "DELETE FROM users WHERE username LIKE 'it_to_erase_%';"
-          fi
+      - name: Cleanup handled in Cypress job
+        run: echo "Cleanup runs in the cypress job (same MySQL service)."
 
   report:
     runs-on: ubuntu-latest
@@ -198,49 +289,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Upload JaCoCo HTML report
-        uses: actions/upload-artifact@v4
-        with:
-          name: jacoco-report
-          path: back/target/site/jacoco
-          if-no-files-found: error
-          retention-days: 14
-      - name: Upload Jest coverage report
+      - name: Summary
         if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: jest-report
-          path: |
-            front/coverage
-            front/jest-results.json
-          if-no-files-found: warn
-          retention-days: 14
-      - name: Upload Cypress report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: cypress-report
-          path: |
-            front/cypress/results
-            front/cypress/screenshots
-            front/cypress/videos
-            front/coverage-e2e
-            front/.nyc_output
-          if-no-files-found: warn
-          retention-days: 14
-      - name: Add artifact download link
-        if: always()
-        shell: bash
         run: |
-          echo "" >> "${GITHUB_STEP_SUMMARY}"
-          echo "### Downloads" >> "${GITHUB_STEP_SUMMARY}"
-          echo "- JaCoCo artifact (this run): ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts/${{ steps.upload_jacoco_report.outputs.artifact-id }}" >> "${GITHUB_STEP_SUMMARY}"
-          if [ -n "${{ steps.upload_jest_report.outputs.artifact-id }}" ]; then
-            echo "- Jest artifact (this run): ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts/${{ steps.upload_jest_report.outputs.artifact-id }}" >> "${GITHUB_STEP_SUMMARY}"
-          fi
-          if [ -n "${{ steps.upload_cypress_report.outputs.artifact-id }}" ]; then
-            echo "- Cypress artifact (this run): ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts/${{ steps.upload_cypress_report.outputs.artifact-id }}" >> "${GITHUB_STEP_SUMMARY}"
-          fi
+          echo "## Artifacts" >> "${GITHUB_STEP_SUMMARY}"
+          echo "- backend-jar" >> "${GITHUB_STEP_SUMMARY}"
+          echo "- jacoco-report" >> "${GITHUB_STEP_SUMMARY}"
+          echo "- jest-report" >> "${GITHUB_STEP_SUMMARY}"
+          echo "- cypress-report" >> "${GITHUB_STEP_SUMMARY}"
 
   close:
     runs-on: ubuntu-latest
