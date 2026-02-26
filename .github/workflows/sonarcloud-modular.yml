@@ -175,11 +175,14 @@ jobs:
         working-directory: front
         run: npm ci
 
+      - name: Prepare backend target folder
+        run: mkdir -p back/target
+
       - name: Download backend JAR
         uses: actions/download-artifact@v4
         with:
           name: backend-jar
-          path: .
+          path: back/target
 
       - name: Start backend (for Cypress)
         shell: bash
@@ -194,12 +197,17 @@ jobs:
           if [ -f "back/target/mdd-api-0.0.1-SNAPSHOT.jar" ]; then
             JAR_PATH="back/target/mdd-api-0.0.1-SNAPSHOT.jar"
           else
-            JAR_PATH="$(find back/target -maxdepth 4 -name 'mdd-api-0.0.1-SNAPSHOT.jar' -print -quit || true)"
+            JAR_PATH="$(find back/target -maxdepth 6 -name 'mdd-api-0.0.1-SNAPSHOT.jar' -print -quit || true)"
+          fi
+          if [ -z "${JAR_PATH}" ]; then
+            JAR_PATH="$(find . -maxdepth 8 -name 'mdd-api-0.0.1-SNAPSHOT.jar' -print -quit || true)"
           fi
           if [ -z "${JAR_PATH}" ]; then
             echo "Backend JAR not found after download. Listing back/target:";
             ls -la back/target || true
-            find back/target -maxdepth 4 -type f -print || true
+            find back/target -maxdepth 6 -type f -print || true
+            echo "Searching workspace for jar:";
+            find . -maxdepth 8 -name 'mdd-api-0.0.1-SNAPSHOT.jar' -print || true
             exit 1
           fi
           nohup java -jar "${JAR_PATH}" > back.log 2>&1 &
