@@ -1,14 +1,16 @@
 <header class="header">
-    <div class="header__logo">
+    <figure class="header__logo">
         <img src="/assets/logo_p6.png" alt="Logo" />
-    </div>
+    </figure>
 </header>
 
 <main class="container">
-    <button mat-icon-button (click)="back()" class="back-button">
-        <mat-icon>arrow_back</mat-icon>
-    </button>
-    <div class="logo_mobile"></div>
+    <nav>
+        <button mat-icon-button (click)="back()" class="back-button">
+            <mat-icon>arrow_back</mat-icon>
+        </button>
+    </nav>
+    <aside class="logo_mobile"></aside>
     <section class="form-wrapper">
         <app-dynamic-form [title]="'Inscription'" [formElements]="inscriptionFormElements"
             [submitLabel]="INSCRIPTION_LABEL" (formSubmit)="onFormSubmit($event)">
@@ -17,6 +19,5 @@
 </main>
 
 @if (errorMessage) {
-<app-error [errorMessage]="errorMessage" [attemptedAction]="'connexion'">
-</app-error>
+<app-error [errorMessage]="errorMessage" [attemptedAction]="'connexion'"></app-error>
 }

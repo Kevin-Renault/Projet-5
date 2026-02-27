@@ -1,7 +1,7 @@
 <header class="header">
-    <div class="header__logo">
+    <figure class="header__logo">
         <img src="/assets/logo_p6.png" alt="Logo" />
-    </div>
+    </figure>
     <nav class="header__nav">
         <app-header-buttons [buttons]="buttons" [onButtonClick]="onButtonClick.bind(this)">
         </app-header-buttons>
@@ -10,11 +10,11 @@
         <span></span><span></span><span></span>
     </button>
     @if (menuOpen) {
-    <div class="header__drawer-overlay">
-        <div class="header__drawer-content">
+    <aside class="header__drawer-overlay">
+        <section class="header__drawer-content">
             <app-header-buttons [buttons]="buttons" [onButtonClick]="onButtonClick.bind(this)">
             </app-header-buttons>
-        </div>
-    </div>
+        </section>
+    </aside>
     }
 </header>
