@@ -48,7 +48,7 @@ export class HeaderComponent {
     }
 
     get buttons(): HeaderButton[] {
-        const currentUrl = this.router.url;
+        const currentUrl = this.router?.url ?? '';
         return [
             {
                 label: 'Se déconnecter',
