@@ -1,0 +1,500 @@
+name: SonarCloud Modular
+
+on:
+  push:
+    branches:
+      - '**'
+    paths:
+      - 'back/**'
+      - 'front/**'
+      - '.github/workflows/sonarcloud-modular.yml'
+  pull_request:
+    paths:
+      - 'back/**'
+      - 'front/**'
+      - '.github/workflows/sonarcloud-modular.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup (meta)
+        run: echo "Setup job completed. Each job installs its own toolchain."
+
+  build-test-backend:
+    runs-on: ubuntu-latest
+    needs: setup
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: mdd
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Make Maven wrapper executable
+        working-directory: back
+        run: chmod +x mvnw
+      - name: Verify Java version
+        run: java -version
+      - name: Verify JAVA_HOME
+        run: echo $JAVA_HOME
+      - name: Build and test (backend)
+        working-directory: back
+        env:
+          DB_MDD_NAME: mdd
+          DB_USER: root
+          DB_PASSWORD: root
+        run: ./mvnw -B verify
+
+      - name: Upload backend JAR
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-jar
+          path: back/target/mdd-api-0.0.1-SNAPSHOT.jar
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload JaCoCo HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: back/target/site/jacoco
+          if-no-files-found: error
+          retention-days: 14
+      - name: Coverage summary (JaCoCo)
+        working-directory: back
+        run: |
+          python3 - <<'PY'
+          import os
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+          report_path = Path('target/site/jacoco/jacoco.xml')
+          # ...existing code for JaCoCo summary...
+          PY
+
+  build-test-frontend:
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: front/package-lock.json
+
+      - name: Install dependencies (frontend)
+        working-directory: front
+        run: npm ci
+      - name: Run unit tests (Jest)
+        working-directory: front
+        run: npm run test:unit:ci
+
+      - name: Upload Jest coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jest-report
+          path: |
+            front/coverage
+            front/jest-results.json
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Unit coverage summary (Jest)
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          # ...existing code for Jest summary...
+          PY
+
+  cypress:
+    runs-on: ubuntu-latest
+    needs: [build-test-backend, build-test-frontend]
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: mdd
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: front/package-lock.json
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install dependencies (frontend)
+        working-directory: front
+        run: npm ci
+
+      - name: Prepare backend target folder
+        run: mkdir -p back/target
+
+      - name: Download backend JAR
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-jar
+          path: back/target
+
+      - name: Start backend (for Cypress)
+        shell: bash
+        env:
+          DB_MDD_NAME: mdd
+          DB_USER: root
+          DB_PASSWORD: root
+        run: |
+          set -euo pipefail
+          java -version
+          JAR_PATH=""
+          if [ -f "back/target/mdd-api-0.0.1-SNAPSHOT.jar" ]; then
+            JAR_PATH="back/target/mdd-api-0.0.1-SNAPSHOT.jar"
+          else
+            JAR_PATH="$(find back/target -maxdepth 6 -name 'mdd-api-0.0.1-SNAPSHOT.jar' -print -quit || true)"
+          fi
+          if [ -z "${JAR_PATH}" ]; then
+            JAR_PATH="$(find . -maxdepth 8 -name 'mdd-api-0.0.1-SNAPSHOT.jar' -print -quit || true)"
+          fi
+          if [ -z "${JAR_PATH}" ]; then
+            echo "Backend JAR not found after download. Listing back/target:";
+            ls -la back/target || true
+            find back/target -maxdepth 6 -type f -print || true
+            echo "Searching workspace for jar:";
+            find . -maxdepth 8 -name 'mdd-api-0.0.1-SNAPSHOT.jar' -print || true
+            exit 1
+          fi
+          nohup java -jar "${JAR_PATH}" > back.log 2>&1 &
+          echo "Waiting for backend to be ready..."
+          for i in {1..60}; do
+            if curl -fsS "http://localhost:8080/api/auth/csrf" >/dev/null; then
+              echo "Backend is ready."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Backend did not become ready in time."
+          tail -n 200 back.log || true
+          exit 1
+      - name: Start frontend (Angular)
+        working-directory: front
+        run: npm run start -- --port 4200 &
+      - name: Wait for frontend to be ready
+        run: |
+          for i in {1..30}; do
+            if curl -fsS "http://localhost:4200" >/dev/null; then
+              echo "Frontend is ready."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Frontend did not become ready in time."
+          exit 1
+      - name: Check backend environment (dev)
+        id: check_backend_env
+        run: |
+          ENV=$(curl -s http://localhost:8080/api/env | grep -o '"dev"')
+          if [ -z "$ENV" ]; then
+            echo "should_run_cypress=false" >> "$GITHUB_OUTPUT"
+            echo "Backend is NOT in dev mode, skipping Cypress tests."
+          else
+            echo "should_run_cypress=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Run Cypress E2E (JUnit)
+        if: steps.check_backend_env.outputs.should_run_cypress == 'true'
+        working-directory: front
+        env:
+          CYPRESS_CACHE_FOLDER: ~/.cache/Cypress
+        run: npm run cypress:run
+
+      - name: Cleanup test users (MySQL)
+        if: always()
+        run: mysql -h 127.0.0.1 -P 3306 -u root -proot mdd -e "DELETE FROM mdd_user WHERE username LIKE 'it_to_erase_%';"
+
+      - name: Upload Cypress report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-report
+          path: |
+            front/cypress/results
+            front/cypress/screenshots
+            front/cypress/videos
+            front/coverage-e2e
+            front/.nyc_output
+          if-no-files-found: warn
+          retention-days: 14
+      - name: E2E summary (Cypress)
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import glob
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+          # ...existing code for Cypress summary...
+          PY
+
+  cleanup:
+    runs-on: ubuntu-latest
+    needs: cypress
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Cleanup handled in Cypress job
+        run: echo "Cleanup runs in the cypress job (same MySQL service)."
+
+  report:
+    runs-on: ubuntu-latest
+    needs: [build-test-backend, build-test-frontend, cypress]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Download artifacts
+        if: always()
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Summary (consolidated)
+        if: always()
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import glob
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          summary_path = os.environ.get('GITHUB_STEP_SUMMARY')
+          if not summary_path:
+            raise SystemExit('GITHUB_STEP_SUMMARY is not set')
+
+          def write(lines):
+            Path(summary_path).write_text('\n'.join(lines) + '\n', encoding='utf-8')
+
+          def append(lines):
+            p = Path(summary_path)
+            existing = p.read_text(encoding='utf-8') if p.exists() else ''
+            p.write_text(existing + ('\n' if existing and not existing.endswith('\n') else '') + '\n'.join(lines) + '\n', encoding='utf-8')
+
+          def find_first(patterns):
+            for pat in patterns:
+              hits = glob.glob(pat, recursive=True)
+              if hits:
+                return Path(hits[0])
+            return None
+
+          def fmt_int(n: int) -> str:
+            return f"{n:,}".replace(',', ' ')
+
+          write([
+            '# CI Reports summary',
+            '',
+            'This summary is generated in the `report` job by downloading artifacts produced in previous jobs.',
+            '',
+          ])
+
+          # ----------------------
+          # JaCoCo
+          # ----------------------
+          jacoco_xml = find_first([
+            'artifacts/**/jacoco.xml',
+            'artifacts/**/target/site/jacoco/jacoco.xml',
+            'artifacts/**/jacoco/jacoco.xml',
+          ])
+          if jacoco_xml and jacoco_xml.exists():
+            tree = ET.parse(jacoco_xml)
+            root = tree.getroot()
+            counters = {c.attrib['type']: (int(c.attrib['covered']), int(c.attrib['missed'])) for c in root.findall('counter')}
+
+            def pct(covered, missed):
+              total = covered + missed
+              return 0.0 if total == 0 else (covered / total) * 100.0
+
+            def row(counter_type: str):
+              covered, missed = counters.get(counter_type, (0, 0))
+              total = covered + missed
+              return (counter_type, pct(covered, missed), covered, missed, total)
+
+            rows = [row('LINE'), row('BRANCH'), row('INSTRUCTION')]
+            table = [
+              '## Backend coverage (JaCoCo)',
+              '',
+              '| Metric | Coverage | Covered | Missed | Total |',
+              '|---|---:|---:|---:|---:|',
+            ]
+            for t, p, c, m, total in rows:
+              table.append(f'| {t.title()} | {p:.2f}% | {fmt_int(c)} | {fmt_int(m)} | {fmt_int(total)} |')
+            table.append('')
+            table.append(f'- Source: `{jacoco_xml.as_posix()}`')
+            table.append('')
+            append(table)
+          else:
+            append([
+              '## Backend coverage (JaCoCo)',
+              '',
+              '- No `jacoco.xml` found in downloaded artifacts.',
+              '',
+            ])
+
+          # ----------------------
+          # Jest
+          # ----------------------
+          jest_results = find_first([
+            'artifacts/**/jest-results.json',
+            'artifacts/**/front/jest-results.json',
+          ])
+          jest_cov = find_first([
+            'artifacts/**/coverage-summary.json',
+            'artifacts/**/coverage/coverage-summary.json',
+            'artifacts/**/front/coverage/coverage-summary.json',
+          ])
+
+          tests = passed = failed = pending = 0
+          if jest_results and jest_results.exists():
+            try:
+              data = json.loads(jest_results.read_text(encoding='utf-8'))
+              tests = int(data.get('numTotalTests', 0) or 0)
+              passed = int(data.get('numPassedTests', 0) or 0)
+              failed = int(data.get('numFailedTests', 0) or 0)
+              pending = int(data.get('numPendingTests', 0) or 0)
+            except Exception:
+              pass
+
+          cov = None
+          if jest_cov and jest_cov.exists():
+            try:
+              cov = json.loads(jest_cov.read_text(encoding='utf-8')).get('total')
+            except Exception:
+              cov = None
+
+          lines = [
+            '## Frontend unit tests (Jest)',
+            '',
+            f'- Tests: {fmt_int(tests)} (passed {fmt_int(passed)}, failed {fmt_int(failed)}, pending {fmt_int(pending)})',
+          ]
+          if cov:
+            def cov_row(label, key):
+              c = cov.get(key) or {}
+              return f"| {label} | {c.get('pct', 0):.2f}% | {fmt_int(int(c.get('covered', 0) or 0))} | {fmt_int(int(c.get('skipped', 0) or 0))} | {fmt_int(int(c.get('total', 0) or 0))} |"
+
+            lines += [
+              '',
+              '| Metric | Coverage | Covered | Skipped | Total |',
+              '|---|---:|---:|---:|---:|',
+              cov_row('Lines', 'lines'),
+              cov_row('Statements', 'statements'),
+              cov_row('Functions', 'functions'),
+              cov_row('Branches', 'branches'),
+              '',
+            ]
+          else:
+            lines += ['', '- No `coverage-summary.json` found in downloaded artifacts.', '']
+
+          if jest_results:
+            lines.append(f'- Source: `{jest_results.as_posix()}`')
+          if jest_cov:
+            lines.append(f'- Source: `{jest_cov.as_posix()}`')
+          lines.append('')
+          append(lines)
+
+          # ----------------------
+          # Cypress (best-effort)
+          # ----------------------
+          junit_xml = find_first([
+            'artifacts/**/cypress/results/**/*.xml',
+            'artifacts/**/cypress/results/*.xml',
+            'artifacts/**/cypress/results/**/*.junit',
+          ])
+          total = failures = skipped = 0
+          if junit_xml and junit_xml.exists():
+            try:
+              root = ET.parse(junit_xml).getroot()
+              # supports <testsuites> or <testsuite>
+              suites = [root] if root.tag == 'testsuite' else list(root.findall('testsuite'))
+              for s in suites:
+                total += int(s.attrib.get('tests', 0) or 0)
+                failures += int(s.attrib.get('failures', 0) or 0)
+                skipped += int(s.attrib.get('skipped', 0) or 0)
+            except Exception:
+              pass
+
+          cyp = [
+            '## E2E tests (Cypress)',
+            '',
+            f'- Tests: {fmt_int(total)} (failures {fmt_int(failures)}, skipped {fmt_int(skipped)})' if junit_xml else '- JUnit report not found in artifacts (summary is best-effort).',
+            '',
+          ]
+          if junit_xml:
+            cyp.append(f'- Source: `{junit_xml.as_posix()}`')
+            cyp.append('')
+          append(cyp)
+
+          append([
+            '## Artifacts',
+            '',
+            '- backend-jar',
+            '- jacoco-report',
+            '- jest-report',
+            '- cypress-report',
+            '',
+          ])
+          PY
+
+  close:
+    runs-on: ubuntu-latest
+    needs: [report, cleanup]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: CI finished
+        run: echo "CI pipeline completed."

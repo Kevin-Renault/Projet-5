@@ -43,9 +43,9 @@ class SubscriptionIdempotenceIntegrationTest extends AbstractIntegrationTest {
     @Test
     void subscribe_is_idempotent_for_same_topic() throws Exception {
         String unique = uniqueSuffix();
-        String username = "it_" + unique;
-        String email = "it_" + unique + "@example.com";
-        String password = "TestP@ssw0rd1";
+        String username = TestConstants.TEST_USER_PREFIX + unique;
+        String email = TestConstants.TEST_USER_PREFIX + unique + TestConstants.TEST_EMAIL_DOMAIN;
+        String password = TestConstants.TEST_PASSWORD;
 
         AuthSession session = registerAndGetSession(username, email, password);
         createdUserId = session.userId();
@@ -74,7 +74,7 @@ class SubscriptionIdempotenceIntegrationTest extends AbstractIntegrationTest {
 
     private List<TopicDto> getTopics(String cookie) throws Exception {
         ResponseEntity<String> topicsResponse = rest.exchange(
-                "/api/topics",
+                ApiEndpoints.TOPICS,
                 HttpMethod.GET,
                 new HttpEntity<>(null, headersWithCookie(cookie)),
                 String.class);
@@ -86,7 +86,7 @@ class SubscriptionIdempotenceIntegrationTest extends AbstractIntegrationTest {
 
     private List<UserTopicSubscriptionDto> subscribe(String cookie, Long topicId) throws Exception {
         ResponseEntity<String> response = rest.exchange(
-                "/api/subscriptions",
+                ApiEndpoints.SUBSCRIPTIONS,
                 HttpMethod.POST,
                 new HttpEntity<>(new UserTopicSubscriptionDto(topicId), headersWithCookie(cookie)),
                 String.class);

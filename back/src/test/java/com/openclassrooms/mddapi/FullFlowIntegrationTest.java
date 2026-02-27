@@ -107,9 +107,9 @@ class FullFlowIntegrationTest {
     @Test
     void fullIntegrationFlow_login_list_pick_comment_list_logout() throws Exception {
         String unique = uniqueSuffix();
-        String username = "it_" + unique;
-        String email = "it_" + unique + "@example.com";
-        String password = "TestP@ssw0rd1";
+        String username = TestConstants.TEST_USER_PREFIX + unique;
+        String email = TestConstants.TEST_USER_PREFIX + unique + TestConstants.TEST_EMAIL_DOMAIN;
+        String password = TestConstants.TEST_PASSWORD;
 
         createdTestUsername = username;
         createdTestEmail = email;
@@ -124,7 +124,7 @@ class FullFlowIntegrationTest {
 
         // 2) Get topics (needed to create article when there are no seeded articles)
         ResponseEntity<String> topicsResponse = rest.exchange(
-                "/api/topics",
+                ApiEndpoints.TOPICS,
                 HttpMethod.GET,
                 new HttpEntity<>(null, headersWithCookie(cookie)),
                 String.class);
@@ -134,6 +134,9 @@ class FullFlowIntegrationTest {
         Assertions.assertThat(topics)
                 .isNotNull()
                 .isNotEmpty();
+        // Subscribe to the first topic to ensure articles are visible
+        List<UserTopicSubscriptionDto> subscriptions = subscribeToTopic(cookie, topics.get(0).id());
+        Assertions.assertThat(subscriptions).isNotNull().anyMatch(s -> s.topicId().equals(topics.get(0).id()));
         // 3) Get articles
         List<ArticleDto> articles = getArticles(cookie);
 
@@ -146,7 +149,7 @@ class FullFlowIntegrationTest {
                     topic.id());
 
             ResponseEntity<ArticleDto> createArticleResponse = rest.exchange(
-                    "/api/articles",
+                    ApiEndpoints.ARTICLES,
                     HttpMethod.POST,
                     new HttpEntity<>(createArticleRequest, headersWithCookie(cookie)),
                     ArticleDto.class);
@@ -172,7 +175,7 @@ class FullFlowIntegrationTest {
                 null,
                 chosen.id());
         ResponseEntity<CommentDto> createCommentResponse = rest.exchange(
-                "/api/comments",
+                ApiEndpoints.COMMENTS,
                 HttpMethod.POST,
                 new HttpEntity<>(createCommentPayload, headersWithCookie(cookie)),
                 CommentDto.class);
@@ -182,7 +185,7 @@ class FullFlowIntegrationTest {
 
         // 6) Back to articles
         ResponseEntity<String> articlesAgainResponse = rest.exchange(
-                "/api/articles",
+                ApiEndpoints.ARTICLES,
                 HttpMethod.GET,
                 new HttpEntity<>(null, headersWithCookie(cookie)),
                 String.class);
@@ -195,9 +198,9 @@ class FullFlowIntegrationTest {
     @Test
     void fullIntegrationFlow_update_profile_and_relogin() {
         String unique = uniqueSuffix();
-        String username = "it_" + unique;
-        String email = "it_" + unique + "@example.com";
-        String password = "TestP@ssw0rd1";
+        String username = TestConstants.TEST_USER_PREFIX + unique;
+        String email = TestConstants.TEST_USER_PREFIX + unique + TestConstants.TEST_EMAIL_DOMAIN;
+        String password = TestConstants.TEST_PASSWORD;
 
         createdTestUsername = username;
         createdTestEmail = email;
@@ -242,9 +245,9 @@ class FullFlowIntegrationTest {
     @Test
     void fullIntegrationFlow_subscribe_topics_visit_articles_comment_logout() throws Exception {
         String unique = uniqueSuffix();
-        String username = "it_" + unique;
-        String email = "it_" + unique + "@example.com";
-        String password = "TestP@ssw0rd1";
+        String username = TestConstants.TEST_USER_PREFIX + unique;
+        String email = TestConstants.TEST_USER_PREFIX + unique + TestConstants.TEST_EMAIL_DOMAIN;
+        String password = TestConstants.TEST_PASSWORD;
 
         createdTestUsername = username;
         createdTestEmail = email;
@@ -297,7 +300,7 @@ class FullFlowIntegrationTest {
                             "This article was created by an integration test for subscriptions.",
                             topicId);
                     ResponseEntity<ArticleDto> createArticleResponse = rest.exchange(
-                            "/api/articles",
+                            ApiEndpoints.ARTICLES,
                             HttpMethod.POST,
                             new HttpEntity<>(req, headersWithCookie(cookie)),
                             ArticleDto.class);
@@ -337,7 +340,7 @@ class FullFlowIntegrationTest {
                     null,
                     target.id());
             ResponseEntity<CommentDto> createCommentResponse = rest.exchange(
-                    "/api/comments",
+                    ApiEndpoints.COMMENTS,
                     HttpMethod.POST,
                     new HttpEntity<>(createCommentPayload, headersWithCookie(cookie)),
                     CommentDto.class);
@@ -358,7 +361,7 @@ class FullFlowIntegrationTest {
         ensureCsrf();
         RegisterRequest registerRequest = new RegisterRequest(username, email, password);
         ResponseEntity<AuthResponseDto> registerResponse = rest.exchange(
-                "/api/auth/register",
+                ApiEndpoints.AUTH_REGISTER,
                 HttpMethod.POST,
                 new HttpEntity<>(registerRequest, headersWithCookie(null)),
                 AuthResponseDto.class);
@@ -380,7 +383,7 @@ class FullFlowIntegrationTest {
     private String loginAndGetCookie(String email, String password) {
         ensureCsrf();
         ResponseEntity<AuthResponseDto> loginResponse = rest.exchange(
-                "/api/auth/login",
+                ApiEndpoints.AUTH_LOGIN,
                 HttpMethod.POST,
                 new HttpEntity<>(new LoginRequest(email, password), headersWithCookie(null)),
                 AuthResponseDto.class);
@@ -399,7 +402,7 @@ class FullFlowIntegrationTest {
         }
 
         ResponseEntity<Void> out = rest.exchange(
-                "/api/auth/csrf",
+                ApiEndpoints.AUTH_CSRF,
                 HttpMethod.GET,
                 new HttpEntity<>(null, headersNoCookie()),
                 Void.class);
@@ -433,7 +436,7 @@ class FullFlowIntegrationTest {
 
     private void logout(String cookie) {
         ResponseEntity<Void> logoutResponse = rest.exchange(
-                "/api/auth/logout",
+                ApiEndpoints.AUTH_LOGOUT,
                 HttpMethod.POST,
                 new HttpEntity<>(null, headersWithCookie(cookie)),
                 Void.class);
@@ -471,7 +474,7 @@ class FullFlowIntegrationTest {
 
     private List<ArticleDto> getArticles(String cookie) throws Exception {
         ResponseEntity<String> articlesResponse = rest.exchange(
-                "/api/articles",
+                ApiEndpoints.ARTICLES,
                 HttpMethod.GET,
                 new HttpEntity<>(null, headersWithCookie(cookie)),
                 String.class);
@@ -483,7 +486,7 @@ class FullFlowIntegrationTest {
 
     private List<TopicDto> getTopics(String cookie) throws Exception {
         ResponseEntity<String> topicsResponse = rest.exchange(
-                "/api/topics",
+                ApiEndpoints.TOPICS,
                 HttpMethod.GET,
                 new HttpEntity<>(null, headersWithCookie(cookie)),
                 String.class);
@@ -495,7 +498,7 @@ class FullFlowIntegrationTest {
 
     private List<UserTopicSubscriptionDto> getSubscriptions(String cookie) throws Exception {
         ResponseEntity<String> response = rest.exchange(
-                "/api/subscriptions",
+                ApiEndpoints.SUBSCRIPTIONS,
                 HttpMethod.GET,
                 new HttpEntity<>(null, headersWithCookie(cookie)),
                 String.class);
@@ -508,7 +511,7 @@ class FullFlowIntegrationTest {
 
     private List<UserTopicSubscriptionDto> subscribeToTopic(String cookie, Long topicId) throws Exception {
         ResponseEntity<String> response = rest.exchange(
-                "/api/subscriptions",
+                ApiEndpoints.SUBSCRIPTIONS,
                 HttpMethod.POST,
                 new HttpEntity<>(new UserTopicSubscriptionDto(topicId), headersWithCookie(cookie)),
                 String.class);

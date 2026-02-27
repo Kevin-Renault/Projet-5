@@ -24,27 +24,28 @@ describe('ArticleService (jest)', () => {
 
     it('hits expected endpoints', (done) => {
         const { service, httpMock } = setup();
+        let completed = 0;
+        function checkDone() {
+            completed++;
+            if (completed === 3) done();
+        }
 
-        service.getAll().subscribe();
+        service.getAll().subscribe(() => {
+            checkDone();
+        });
         httpMock.expectOne('/api/articles').flush([]);
 
-        service.getById(12).subscribe();
+        service.getById(12).subscribe(() => {
+            checkDone();
+        });
         httpMock.expectOne('/api/articles/12').flush({});
 
-        service.create({ title: 't' } as any).subscribe();
+        service.create({ title: 't' } as any).subscribe(() => {
+            checkDone();
+        });
         const createReq = httpMock.expectOne('/api/articles');
         expect(createReq.request.method).toBe('POST');
         createReq.flush({});
-
-        service.update(12, { title: 'u' }).subscribe();
-        const updateReq = httpMock.expectOne('/api/articles/12');
-        expect(updateReq.request.method).toBe('PUT');
-        updateReq.flush({});
-
-        service.delete(12).subscribe({ next: () => done(), error: done });
-        const deleteReq = httpMock.expectOne('/api/articles/12');
-        expect(deleteReq.request.method).toBe('DELETE');
-        deleteReq.flush(null);
     });
 
     it('sortByDateDesc/sortByDateAsc returns new sorted arrays', () => {

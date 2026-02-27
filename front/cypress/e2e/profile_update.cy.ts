@@ -1,9 +1,11 @@
-// Test d'intégration : modification de profil et re-login
+
+import { USER_PREFIX } from '../support/commands';
+
 
 describe('Profile update and re-login', () => {
     const unique = () => Math.random().toString(36).substring(2, 10);
-    const username = `it_${unique()}`;
-    const email = `it_${unique()}@example.com`;
+    const username = `${USER_PREFIX}${unique()}`;
+    const email = `${USER_PREFIX}${unique()}@example.com`;
     const password = 'TestP@ssw0rd1';
 
     it('register, update profile, logout, re-login', () => {
@@ -24,8 +26,8 @@ describe('Profile update and re-login', () => {
 
         // Go to profile
         cy.visit('/user/profile');
-        const newUsername = `it2_${unique()}`;
-        const newEmail = `it2_${unique()}@example.com`;
+        const newUsername = `${USER_PREFIX}2${unique()}`;
+        const newEmail = `${USER_PREFIX}2${unique()}@example.com`;
         cy.get('#username').clear().type(newUsername);
         cy.get('#email').clear().type(newEmail);
         cy.get('#password').clear().type(password);
@@ -46,5 +48,9 @@ describe('Profile update and re-login', () => {
         cy.wait('@csrf');
         cy.wait('@login').its('response.statusCode').should('eq', 200);
         cy.url({ timeout: 20000 }).should('include', '/articles');
+
+
+        // Logout
+        cy.logout();
     });
 });

@@ -26,10 +26,11 @@ class AuthControllerTest {
     private static final String REFRESH_TOKEN_COOKIE_NAME = "refresh_token";
 
     private static final String USERNAME = "u";
-    private static final String EMAIL = "e";
+    private static final String VALID_EMAIL = "e@e.com";
     private static final String ROLE = "user";
     private static final String ACCESS_TOKEN = "access";
     private static final String REFRESH_TOKEN = "refresh";
+    private static final String STRONG_PASSWORD = "StrongP@ssw0rd";
 
     @Test
     void registerSetsAccessAndRefreshCookies() {
@@ -38,18 +39,22 @@ class AuthControllerTest {
         RefreshTokenService refreshTokenService = Mockito.mock(RefreshTokenService.class);
         AuthController controller = new AuthController(authService, cookieService, refreshTokenService);
 
-        UserDto user = new UserDto(1L, USERNAME, EMAIL, "", ROLE, Instant.now());
+        UserDto user = new UserDto(1L, USERNAME, VALID_EMAIL, "", ROLE, Instant.now());
         AuthResponseDto response = new AuthResponseDto(ACCESS_TOKEN, user);
+
         Mockito.when(authService.register(Mockito.any())).thenReturn(response);
+
         Mockito.when(refreshTokenService.issueAndReplaceForUser(1L)).thenReturn(REFRESH_TOKEN);
         Mockito.when(cookieService.createAccessTokenCookie(ACCESS_TOKEN))
-            .thenReturn(ResponseCookie.from(ACCESS_COOKIE_NAME, COOKIE_VALUE).build());
+                .thenReturn(ResponseCookie.from(ACCESS_COOKIE_NAME, COOKIE_VALUE).build());
         Mockito.when(cookieService.createRefreshTokenCookie(REFRESH_TOKEN))
-            .thenReturn(ResponseCookie.from(REFRESH_COOKIE_NAME, COOKIE_VALUE).build());
+                .thenReturn(ResponseCookie.from(REFRESH_COOKIE_NAME, COOKIE_VALUE).build());
 
+        MockHttpServletRequest req = new MockHttpServletRequest();
         ResponseEntity<AuthResponseDto> out = controller
-                .register(new RegisterRequest("u", "e@e.com", "StrongP@ssw0rd"));
+                .register(new RegisterRequest(USERNAME, VALID_EMAIL, STRONG_PASSWORD), req);
         Assertions.assertThat(out.getHeaders().get(HttpHeaders.SET_COOKIE)).hasSize(3);
+
         Mockito.verify(refreshTokenService).issueAndReplaceForUser(1L);
     }
 
@@ -64,13 +69,13 @@ class AuthControllerTest {
         Mockito.when(refreshTokenService.rotate("old_refresh"))
                 .thenReturn(new RefreshTokenService.RefreshRotationResult(5L, "new_refresh"));
 
-        UserDto user = new UserDto(5L, USERNAME, EMAIL, "", ROLE, Instant.now());
+        UserDto user = new UserDto(5L, USERNAME, VALID_EMAIL, "", ROLE, Instant.now());
         AuthResponseDto response = new AuthResponseDto("new_access", user);
         Mockito.when(authService.refreshAccessToken(5L)).thenReturn(response);
         Mockito.when(cookieService.createAccessTokenCookie("new_access"))
-            .thenReturn(ResponseCookie.from(ACCESS_COOKIE_NAME, COOKIE_VALUE).build());
+                .thenReturn(ResponseCookie.from(ACCESS_COOKIE_NAME, COOKIE_VALUE).build());
         Mockito.when(cookieService.createRefreshTokenCookie("new_refresh"))
-            .thenReturn(ResponseCookie.from(REFRESH_COOKIE_NAME, COOKIE_VALUE).build());
+                .thenReturn(ResponseCookie.from(REFRESH_COOKIE_NAME, COOKIE_VALUE).build());
 
         MockHttpServletRequest req = new MockHttpServletRequest();
         req.setCookies(new jakarta.servlet.http.Cookie(REFRESH_TOKEN_COOKIE_NAME, "old_refresh"));
@@ -87,8 +92,10 @@ class AuthControllerTest {
         RefreshTokenService refreshTokenService = Mockito.mock(RefreshTokenService.class);
         AuthController controller = new AuthController(authService, cookieService, refreshTokenService);
 
-        Mockito.when(cookieService.clearAccessTokenCookie()).thenReturn(ResponseCookie.from(ACCESS_COOKIE_NAME, "").build());
-        Mockito.when(cookieService.clearRefreshTokenCookie()).thenReturn(ResponseCookie.from(REFRESH_COOKIE_NAME, "").build());
+        Mockito.when(cookieService.clearAccessTokenCookie())
+                .thenReturn(ResponseCookie.from(ACCESS_COOKIE_NAME, "").build());
+        Mockito.when(cookieService.clearRefreshTokenCookie())
+                .thenReturn(ResponseCookie.from(REFRESH_COOKIE_NAME, "").build());
 
         MddUserEntity principal = new MddUserEntity();
         principal.setId(99L);
@@ -107,8 +114,10 @@ class AuthControllerTest {
         AuthController controller = new AuthController(authService, cookieService, refreshTokenService);
 
         Mockito.when(cookieService.getRefreshCookieName()).thenReturn(REFRESH_TOKEN_COOKIE_NAME);
-        Mockito.when(cookieService.clearAccessTokenCookie()).thenReturn(ResponseCookie.from(ACCESS_COOKIE_NAME, "").build());
-        Mockito.when(cookieService.clearRefreshTokenCookie()).thenReturn(ResponseCookie.from(REFRESH_COOKIE_NAME, "").build());
+        Mockito.when(cookieService.clearAccessTokenCookie())
+                .thenReturn(ResponseCookie.from(ACCESS_COOKIE_NAME, "").build());
+        Mockito.when(cookieService.clearRefreshTokenCookie())
+                .thenReturn(ResponseCookie.from(REFRESH_COOKIE_NAME, "").build());
 
         MockHttpServletRequest req = new MockHttpServletRequest();
         req.setCookies(new jakarta.servlet.http.Cookie(REFRESH_TOKEN_COOKIE_NAME, "rt"));
@@ -125,14 +134,14 @@ class AuthControllerTest {
         RefreshTokenService refreshTokenService = Mockito.mock(RefreshTokenService.class);
         AuthController controller = new AuthController(authService, cookieService, refreshTokenService);
 
-        UserDto user = new UserDto(2L, USERNAME, EMAIL, "", ROLE, Instant.now());
+        UserDto user = new UserDto(2L, USERNAME, VALID_EMAIL, "", ROLE, Instant.now());
         AuthResponseDto response = new AuthResponseDto(ACCESS_TOKEN, user);
         Mockito.when(authService.login(Mockito.any())).thenReturn(response);
         Mockito.when(refreshTokenService.issueAndReplaceForUser(2L)).thenReturn(REFRESH_TOKEN);
         Mockito.when(cookieService.createAccessTokenCookie(ACCESS_TOKEN))
-            .thenReturn(ResponseCookie.from(ACCESS_COOKIE_NAME, COOKIE_VALUE).build());
+                .thenReturn(ResponseCookie.from(ACCESS_COOKIE_NAME, COOKIE_VALUE).build());
         Mockito.when(cookieService.createRefreshTokenCookie(REFRESH_TOKEN))
-            .thenReturn(ResponseCookie.from(REFRESH_COOKIE_NAME, COOKIE_VALUE).build());
+                .thenReturn(ResponseCookie.from(REFRESH_COOKIE_NAME, COOKIE_VALUE).build());
 
         ResponseEntity<AuthResponseDto> out = controller.login(new LoginRequest("e", "p"));
         Assertions.assertThat(out.getHeaders().get(HttpHeaders.SET_COOKIE)).hasSize(3);

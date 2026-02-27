@@ -5,7 +5,7 @@ import { ArticleDataSource } from '../article-datasource.interface';
 
 @Injectable({ providedIn: 'root' })
 export class ArticleMockService implements ArticleDataSource {
-    private articles: Article[] = [
+    private readonly articles: Article[] = [
         {
             id: 1,
             title: 'Introduction à Java',
@@ -80,32 +80,24 @@ export class ArticleMockService implements ArticleDataSource {
         }
     ];
 
+
+    private readonly subscribedTopicIds: number[] = [1, 2]; // Simule les topics auxquels l'utilisateur est abonné
+
     getAll(): Observable<Article[]> {
-        return of(this.articles);
+        // Pour le mock, on retourne directement les articles filtrés
+        // (dans un vrai service, il faudrait gérer l'asynchronicité)
+        return of(this.articles.filter(article => this.subscribedTopicIds.includes(article.topicId)));
     }
 
     getById(id: number): Observable<Article> {
         return of(this.articles.find(a => a.id === id)!);
     }
 
+
     create(article: Article): Observable<Article> {
         const newArticle = { ...article, id: Date.now() };
         this.articles.push(newArticle);
         return of(newArticle);
-    }
-
-    update(id: number, article: Partial<Article>): Observable<Article> {
-        const idx = this.articles.findIndex(a => a.id === id);
-        if (idx !== -1) {
-            this.articles[idx] = { ...this.articles[idx], ...article };
-            return of(this.articles[idx]);
-        }
-        return of(null as any);
-    }
-
-    delete(id: number): Observable<void> {
-        this.articles = this.articles.filter(a => a.id !== id);
-        return of(void 0);
     }
 
     sortByDateDesc(articles: Article[]): Article[] {

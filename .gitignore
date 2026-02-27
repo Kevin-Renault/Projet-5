@@ -1,1 +1,7 @@
 .vscode/
+
+# Copilot agent documentation (not for version control)
+agent.md
+rules.md
+historique.md
+historique.git.md

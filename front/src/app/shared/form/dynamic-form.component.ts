@@ -44,6 +44,7 @@ export type DynamicFormValues = Record<string, DynamicFormValue>;
                 [placeholder]="formElement.placeholder || ''"
                 [ngClass]="getErrorClass(formElement.name)"
                 [attr.aria-describedby]="formElement.name + '-error'"
+                [attr.data-cy]="formElement.name"
               ></textarea>
             }
             @case ('select') {
@@ -53,6 +54,7 @@ export type DynamicFormValues = Record<string, DynamicFormValue>;
                 [attr.required]="formElement.required ? true : null"
                 [ngClass]="getErrorClass(formElement.name)"
                 [attr.aria-describedby]="formElement.name + '-error'"
+                [attr.data-cy]="formElement.name"
               >
                 <option value="" disabled selected hidden *ngIf="formElement.placeholder">{{ formElement.placeholder }}</option>
                 @for (opt of formElement.options ?? []; track $index) {
@@ -67,6 +69,7 @@ export type DynamicFormValues = Record<string, DynamicFormValue>;
                 [formControlName]="formElement.name"
                 [ngClass]="getErrorClass(formElement.name)"
                 [attr.aria-describedby]="formElement.name + '-error'"
+                [attr.data-cy]="formElement.name"
               />
             }
             @default {
@@ -76,7 +79,8 @@ export type DynamicFormValues = Record<string, DynamicFormValue>;
                 [formControlName]="formElement.name"
                 [placeholder]="formElement.placeholder || ''"
                 [ngClass]="getErrorClass(formElement.name)"
-                 [attr.aria-describedby]="formElement.name + '-error'"
+                [attr.aria-describedby]="formElement.name + '-error'"
+                [attr.data-cy]="formElement.name"
               />
             }
           }
@@ -88,9 +92,8 @@ export type DynamicFormValues = Record<string, DynamicFormValue>;
           }
         </fieldset>
       }
-      <button type="submit" [disabled]="form.invalid">
+      <button type="submit" [disabled]="form.invalid" data-cy="submit">
         {{ submitLabel || 'Submit' }}
-
       </button>
       <output for="form-submit">
         <br><br>

@@ -58,7 +58,7 @@ abstract class AbstractIntegrationTest {
     protected AuthSession registerAndGetSession(String username, String email, String password) {
         ensureCsrf();
         ResponseEntity<AuthResponseDto> registerResponse = rest.postForEntity(
-                "/api/auth/register",
+                ApiEndpoints.AUTH_REGISTER,
                 new HttpEntity<>(new RegisterRequest(username, email, password), headersWithCookie(null)),
                 AuthResponseDto.class);
 
@@ -80,7 +80,7 @@ abstract class AbstractIntegrationTest {
     protected String loginAndGetCookie(String email, String password) {
         ensureCsrf();
         ResponseEntity<AuthResponseDto> loginResponse = rest.postForEntity(
-                "/api/auth/login",
+                ApiEndpoints.AUTH_LOGIN,
                 new HttpEntity<>(new LoginRequest(email, password), headersWithCookie(null)),
                 AuthResponseDto.class);
 
@@ -98,7 +98,7 @@ abstract class AbstractIntegrationTest {
         }
 
         ResponseEntity<Void> out = rest.exchange(
-                "/api/auth/csrf",
+                ApiEndpoints.AUTH_CSRF,
                 org.springframework.http.HttpMethod.GET,
                 new HttpEntity<>(null, jsonHeaders()),
                 Void.class);
@@ -125,7 +125,7 @@ abstract class AbstractIntegrationTest {
 
     protected ResponseEntity<Void> logout(String cookie) {
         return rest.postForEntity(
-                "/api/auth/logout",
+                ApiEndpoints.AUTH_LOGOUT,
                 new HttpEntity<>(null, headersWithCookie(cookie)),
                 Void.class);
     }

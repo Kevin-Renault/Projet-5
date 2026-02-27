@@ -9,6 +9,8 @@ import com.openclassrooms.mddapi.mapper.ArticleMapper;
 import com.openclassrooms.mddapi.repository.ArticleRepository;
 import com.openclassrooms.mddapi.repository.MddUserRepository;
 import com.openclassrooms.mddapi.repository.TopicRepository;
+import com.openclassrooms.mddapi.repository.UserTopicSubscriptionRepository;
+
 import java.util.List;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -22,23 +24,36 @@ public class ArticleService {
     private final ArticleRepository articleRepository;
     private final TopicRepository topicRepository;
     private final MddUserRepository userRepository;
+    private final UserTopicSubscriptionRepository subscriptionRepository;
     private final ArticleMapper articleMapper;
 
     public ArticleService(
             ArticleRepository articleRepository,
             TopicRepository topicRepository,
             MddUserRepository userRepository,
+            UserTopicSubscriptionRepository subscriptionRepository,
             ArticleMapper articleMapper) {
         this.articleRepository = articleRepository;
         this.topicRepository = topicRepository;
         this.userRepository = userRepository;
+        this.subscriptionRepository = subscriptionRepository;
         this.articleMapper = articleMapper;
     }
 
     @Transactional(readOnly = true)
-    public List<ArticleDto> getAll() {
+    public List<ArticleDto> getAll(MddUserEntity principal) {
+
+        Long principalId = requireAuthenticatedUserId(principal);
+        // Récupère les IDs des topics auxquels l'utilisateur est abonné
+        List<Long> topicIds = subscriptionRepository.findAllByUser_Id(principalId)
+                .stream()
+                .map(sub -> sub.getTopic().getId())
+                .toList();
+
+        // Filtre les articles par ces topicIds
         return articleRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"))
                 .stream()
+                .filter(article -> topicIds.contains(article.getTopic().getId()))
                 .map(articleMapper::toDto)
                 .toList();
     }
