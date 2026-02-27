@@ -35,9 +35,77 @@ Projet OpenClassrooms : API et Frontend pour un réseau social de développeurs.
 	 - Placez-vous dans `back/`.
 	 - Lancez `./mvnw.cmd clean package` (Windows) ou `./mvnw clean package` (Linux/Mac).
 	 - Fichier de config : `src/main/resources/application.properties`.
+
 3. **Frontend** :
 	 - Placez-vous dans `front/`.
 	 - Lancez `npm install` puis `npm run start` (ou `npm run start:e2e` pour le port 4201 avec proxy).
+
+---
+
+## Tester le front Angular minifié en local (production) avec Lighthouse
+
+1. **Build production Angular**
+	- Placez-vous dans `front/`.
+	- Lancez :
+		```
+		ng build --configuration production
+		```
+	- Le front minifié sera généré dans `front/dist/front/browser`.
+	- ⚠️ À chaque modification du front (HTML, CSS, Angular), il faut relancer cette commande pour mettre à jour la version minifiée avant de tester en production ou avec Lighthouse.
+
+2. **Lancer le backend Spring Boot**
+	 - Placez-vous dans `back/`.
+	 - Lancez :
+		 ```
+		 mvn spring-boot:run
+		 ```
+	 - Le backend écoute sur le port 8080.
+
+3. **Installer et lancer le serveur Express avec proxy (solution recommandée)**
+	- Placez-vous dans `front/`.
+	- Installez les dépendances :
+		```
+		npm install express http-proxy-middleware
+		```
+	- Vérifiez que le fichier `server.js` existe (voir ci-dessous).
+	- Lancez le serveur :
+		```
+		node server.js
+		```
+	- Le front sera accessible sur http://localhost:8081/
+	- Toutes les requêtes `/api` seront automatiquement proxy vers le backend sur 8080.
+
+Exemple de fichier `server.js` :
+```js
+const express = require('express');
+const { createProxyMiddleware } = require('http-proxy-middleware');
+const path = require('path');
+
+const app = express();
+
+// Proxy /api vers le backend
+app.use('/api', createProxyMiddleware({ target: 'http://localhost:8080', changeOrigin: true }));
+
+// Servir les fichiers statiques Angular
+app.use(express.static(path.join(__dirname, 'dist/front/browser')));
+
+// Fallback Angular pour toutes les routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'dist/front/browser/index.html'));
+});
+
+const PORT = 8081;
+app.listen(PORT, () => {
+  console.log(`Front prod avec proxy sur http://localhost:${PORT}`);
+});
+```
+
+4. **Tester avec Lighthouse**
+	 - Ouvrez http://localhost:8081/user/login ou une page publique.
+	 - Lancez Lighthouse depuis Chrome DevTools.
+	 - Vous obtiendrez le score réel de la version minifiée, avec backend accessible.
+
+---
 
 ## Lancement
 
