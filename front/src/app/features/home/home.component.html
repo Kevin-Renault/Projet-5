@@ -1,12 +1,10 @@
-<div class="rectangle">
-
-    <div class="logo"> </div>
-
-    <div class="button-group">
+<main class="rectangle">
+    <figure class="logo"></figure>
+    <nav class="button-group">
         <button mat-raised-button color="primary" (click)="goToLogin()">Se connecter</button>
         <button mat-raised-button color="primary" (click)="goToRegister()">S'inscrire</button>
-    </div>
-</div>
+    </nav>
+</main>
 
 @if (errorMessage) {
 <app-error [errorMessage]="errorMessage" [attemptedAction]="'Restauration de la session'">

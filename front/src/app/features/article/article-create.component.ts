@@ -8,10 +8,12 @@ import { TOPIC_DATASOURCE } from 'src/app/core/services/topic-datasource.interfa
 import { CommonComponent } from 'src/app/shared/common-component';
 import { FormElement, DynamicFormComponent, DynamicFormValues } from 'src/app/shared/form/dynamic-form.component';
 import { HeaderComponent } from "src/app/shared/header/header.component";
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'app-article-create',
-  imports: [DynamicFormComponent, HeaderComponent],
+  imports: [DynamicFormComponent, HeaderComponent, MatButtonModule, MatIconModule],
   templateUrl: './article-create.component.html',
   styleUrls: ['./article-create.component.scss']
 })
@@ -96,5 +98,9 @@ export class ArticleCreateComponent extends CommonComponent {
         this.router.navigate(['/articles']);
       }
     });
+  }
+
+  back() {
+    this.router.navigate(['/articles']);
   }
 }

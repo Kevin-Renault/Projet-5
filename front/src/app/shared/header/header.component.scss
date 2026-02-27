@@ -46,12 +46,23 @@
     padding: 0;
     border-radius: 0;
     cursor: pointer;
-    transition: color 0.2s;
+    transition: color 0.2s, border 0.2s;
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    border-bottom: none;
 }
 
+.header__btn--active {
+    color: violet !important;
+    border-bottom: 2px solid violet;
+}
+
+.header__btn.profile.header__btn--active {
+    border-bottom: none;
+    border: 2px solid violet;
+    border-radius: 50%;
+}
 
 
 .header__btn.profile img {

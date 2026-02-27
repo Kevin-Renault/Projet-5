@@ -12,7 +12,7 @@ import { HeaderButton } from '../header/header.component';
        type="button" [style.color]="button.color">
         @if (button.icon) {
           <ng-container>
-            <img [src]="button.icon" [alt]="button.alt" />
+            <img [src]="button.icon" [alt]="button.alt" loading="lazy" />
           </ng-container>
         }
         @if (button.label) {

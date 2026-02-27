@@ -1,6 +1,24 @@
-<app-dynamic-form [title]="'Se connecter'" [formElements]="connnectionFormElements" [submitLabel]="'Se connecter'"
-    (formSubmit)="onFormSubmit($event)">
-</app-dynamic-form>
+<header class="header">
+    <figure class="header__logo">
+        <img src="/assets/logo_p6.png" alt="Logo" loading="lazy" />
+    </figure>
+</header>
+
+
+
+<main class="container">
+    <button mat-icon-button (click)="back()" class="back-button" aria-label="Retour">
+        <mat-icon>arrow_back</mat-icon>
+    </button>
+    <figure class="logo_mobile"></figure>
+    <section class="form-wrapper">
+        <app-dynamic-form [title]="'Se connecter'" [formElements]="connnectionFormElements"
+            [submitLabel]="'Se connecter'" (formSubmit)="onFormSubmit($event)">
+        </app-dynamic-form>
+    </section>
+</main>
+
+
 @if (errorMessage) {
 <app-error [errorMessage]="errorMessage" [attemptedAction]="'connexion'">
 </app-error>

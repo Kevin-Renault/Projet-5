@@ -1,22 +1,50 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <title>MDD</title>
-    <base href="/" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="icon" type="image/x-icon" href="favicon.png" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      href="https://fonts.googleapis.com/icon?family=Material+Icons"
-      rel="stylesheet"
-    />
-  </head>
-  <body class="mat-typography">
+
+<head>
+  <meta charset="utf-8" />
+  <title>MDD</title>
+  <meta name="description"
+    content="MDD - Réseau social pour développeurs. Inscrivez-vous, partagez des articles, commentez et échangez sur des sujets tech." />
+  <base href="/" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/x-icon" href="/assets/favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet"
+    media="print" onload="this.media='all'" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" media="print"
+    onload="this.media='all'" />
+
+  <!-- CSS critique inliné pour le contenu au-dessus de la ligne de flottaison -->
+  <style>
+    html,
+    body {
+      height: 100%;
+    }
+
+    body {
+      margin: 0;
+      font-family: Roboto, "Helvetica Neue", sans-serif;
+      background: #fff;
+    }
+
+    .mat-typography {
+      font-size: 16px;
+      line-height: 1.5;
+    }
+
+    /* Ajoutez ici d'autres styles critiques nécessaires à l'affichage initial */
+  </style>
+
+  <!-- Non-blocking load for global styles -->
+  <link href="styles.css" rel="stylesheet" media="print" onload="this.media='all'">
+</head>
+
+<body class="mat-typography">
+  <main>
     <app-root></app-root>
-  </body>
+  </main>
+</body>
+
 </html>

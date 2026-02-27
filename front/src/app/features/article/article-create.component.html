@@ -1,4 +1,7 @@
 <app-header></app-header>
+<button mat-icon-button (click)="back()" class="back-button" aria-label="Retour">
+    <mat-icon>arrow_back</mat-icon>
+</button>
 @if (isPageLoading()) {
 <output class="spinner-container" aria-live="polite" aria-busy="true">
     <span class="page-spinner" aria-hidden="true"></span>

@@ -4,21 +4,21 @@
     [error]="error()" [isLoading]="isLoading()" [message]="message()" (formSubmit)="onFormSubmit($event)">
 </app-dynamic-form>
 
-<div class="topics-list">
+<section class="topics-list">
     @if (myTopics() ; as topics) {
     @for (topic of topics; track topic.id) {
-    <div class="topic-card">
-        <div class="topic-title">{{ topic.name }}</div>
-        <div class="topic-content">
+    <article class="topic-card">
+        <header class="topic-title">{{ topic.name }}</header>
+        <section class="topic-content">
             {{ topic.description | slice:0:220 }}
             @if (topic.description && topic.description.length > 220) {
             <span>...</span>
             }
-        </div>
+        </section>
         <button mat-raised-button color="primary" (click)="toggleTopicSubscription(topic.id)">
             <span>se désabonner</span>
         </button>
-    </div>
+    </article>
     }
     }
-</div>
+</section>

@@ -47,38 +47,42 @@ export class HeaderComponent {
         this.authDataSource.logout();
     }
 
-    buttons: HeaderButton[] = [
-        {
-            label: 'Se déconnecter',
-            icon: '',
-            color: 'red',
-            alt: 'Icône Déconnexion',
-            cssClass: 'header__btn logout',
-            action: () => this.logout(),
-        },
-        {
-            label: 'Articles',
-            link: '/articles',
-            color: 'violet',
-            icon: '',
-            alt: 'Icône Articles',
-            cssClass: 'header__btn articles',
-        },
-        {
-            label: 'Thèmes',
-            link: '/topics',
-            icon: '',
-            alt: 'Icône Thèmes',
-            cssClass: 'header__btn themes',
-        },
-        {
-            label: '',
-            link: '/user/profile',
-            icon: '/assets/profil.svg',
-            alt: 'Icône Profil',
-            cssClass: 'header__btn profile',
-        }
-    ];
+    get buttons(): HeaderButton[] {
+        const currentUrl = this.router?.url ?? '';
+        return [
+            {
+                label: 'Se déconnecter',
+                icon: '',
+                color: 'red',
+                alt: 'Icône Déconnexion',
+                cssClass: 'header__btn logout',
+                action: () => this.logout(),
+            },
+            {
+                label: 'Articles',
+                link: '/articles',
+                color: currentUrl.startsWith('/articles') ? 'violet' : 'black',
+                icon: '',
+                alt: 'Icône Articles',
+                cssClass: 'header__btn articles' + (currentUrl.startsWith('/articles') ? ' header__btn--active' : ''),
+            },
+            {
+                label: 'Thèmes',
+                link: '/topics',
+                color: currentUrl.startsWith('/topics') ? 'violet' : 'black',
+                icon: '',
+                alt: 'Icône Thèmes',
+                cssClass: 'header__btn themes' + (currentUrl.startsWith('/topics') ? ' header__btn--active' : ''),
+            },
+            {
+                label: '',
+                link: '/user/profile',
+                icon: '/assets/profil.svg',
+                alt: 'Icône Profil',
+                cssClass: 'header__btn profile' + (currentUrl.startsWith('/user/profile') ? ' header__btn--active' : ''),
+            }
+        ];
+    }
 }
 
 export interface HeaderButton {

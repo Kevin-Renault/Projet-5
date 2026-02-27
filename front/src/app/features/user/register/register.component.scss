@@ -1,0 +1,70 @@
+.container {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+.header {
+    display: none;
+    /* caché sur mobile */
+}
+
+.back-button {
+    font-size: 2em;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    margin-right: 75%;
+}
+
+.back-button mat-icon {
+    font-size: 1.1em;
+}
+
+.logo_mobile {
+    background: url('/assets/logo_p6.png') no-repeat center;
+    background-size: contain;
+    width: 200px;
+    height: 200px;
+    margin-top: -60px;
+    margin-bottom: -80px;
+    display: block;
+}
+
+.form-wrapper {
+    width: 100%;
+    max-width: 400px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+@media (min-width: 768px) {
+    .logo_mobile {
+        display: none;
+        /* caché sur desktop */
+    }
+
+    .header {
+        width: 100%;
+        min-height: 70px;
+        max-height: 120px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #fff;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        padding: 0 2rem;
+        position: relative;
+        box-sizing: border-box;
+        overflow-x: hidden;
+    }
+
+    .header__logo img {
+        height: 48px;
+        width: auto;
+    }
+}
