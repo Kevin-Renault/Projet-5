@@ -29,12 +29,12 @@ export type DynamicFormValues = Record<string, DynamicFormValue>;
       }
       @for (formElement of formElements; track formElement.name) {
         <fieldset class="form-group">
-          <label [for]="formElement.name">
-            {{ formElement.label }}
-            @if (formElement.required && formElement.label) {
-              <span aria-hidden="true">*</span>
-            }
-          </label>
+            <label [for]="formElement.name" *ngIf="formElement.label || formElement.type === 'select' || formElement.type === 'text' || formElement.type === 'textarea' || formElement.type === 'email' || formElement.type === 'password' || formElement.type === 'checkbox'">
+              {{ formElement.label || formElement.name }}
+              @if (formElement.required && (formElement.label || formElement.type === 'select' || formElement.type === 'text' || formElement.type === 'textarea' || formElement.type === 'email' || formElement.type === 'password' || formElement.type === 'checkbox')) {
+                <span aria-hidden="true">*</span>
+              }
+            </label>
 
           @switch (formElement.type) {
             @case ('textarea') {
@@ -92,7 +92,7 @@ export type DynamicFormValues = Record<string, DynamicFormValue>;
           }
         </fieldset>
       }
-      <button type="submit" [disabled]="form.invalid" data-cy="submit">
+      <button type="submit" [disabled]="form.invalid" data-cy="submit" [attr.aria-label]="submitLabel || 'Submit'">
         {{ submitLabel || 'Submit' }}
       </button>
       <output for="form-submit">

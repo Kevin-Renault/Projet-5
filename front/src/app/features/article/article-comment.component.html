@@ -6,7 +6,7 @@
 }
 @else {
 <article class="article-card">
-    <button mat-icon-button (click)="back()" class="back-button">
+    <button mat-icon-button (click)="back()" class="back-button" aria-label="Retour">
         <mat-icon>arrow_back</mat-icon>
     </button>
     @if (article(); as article) {
