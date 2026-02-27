@@ -3,10 +3,12 @@ import { Router } from '@angular/router';
 import { AUTH_DATASOURCE } from 'src/app/core/auth/auth-datasource.interface';
 import { FormElement, DynamicFormComponent, DynamicFormValues } from 'src/app/shared/form/dynamic-form.component';
 import { ErrorComponent } from "src/app/shared/error/error.component";
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'app-login',
-  imports: [DynamicFormComponent, ErrorComponent],
+  imports: [DynamicFormComponent, ErrorComponent, MatButtonModule, MatIconModule],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss']
 })
@@ -44,5 +46,9 @@ export class LoginComponent {
         this.errorMessage = 'Authentication failed: invalid credentials';
       }
     });
+  }
+
+  back() {
+    this.router.navigate(['/']);
   }
 }

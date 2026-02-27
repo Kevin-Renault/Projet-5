@@ -4,10 +4,12 @@ import { AUTH_DATASOURCE } from 'src/app/core/auth/auth-datasource.interface';
 import { User } from 'src/app/core/models/user.model';
 import { FormElement, DynamicFormComponent, DynamicFormValues } from 'src/app/shared/form/dynamic-form.component';
 import { ErrorComponent } from "src/app/shared/error/error.component";
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'app-register',
-  imports: [DynamicFormComponent, ErrorComponent],
+  imports: [DynamicFormComponent, ErrorComponent, MatButtonModule, MatIconModule],
   templateUrl: './register.component.html',
   styleUrls: ['./register.component.scss']
 })
@@ -57,6 +59,10 @@ export class RegisterComponent {
         this.errorMessage = 'Authentication failed: invalid credentials';
       }
     });
+  }
+
+  back() {
+    this.router.navigate(['/']);
   }
 }
 

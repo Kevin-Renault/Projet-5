@@ -1,6 +1,20 @@
-<app-dynamic-form [title]="'Inscription'" [formElements]="inscriptionFormElements" [submitLabel]="INSCRIPTION_LABEL"
-    (formSubmit)="onFormSubmit($event)">
-</app-dynamic-form>
+<header class="header">
+    <div class="header__logo">
+        <img src="/assets/logo_p6.png" alt="Logo" />
+    </div>
+</header>
+
+<main class="container">
+    <button mat-icon-button (click)="back()" class="back-button">
+        <mat-icon>arrow_back</mat-icon>
+    </button>
+    <div class="logo_mobile"></div>
+    <section class="form-wrapper">
+        <app-dynamic-form [title]="'Inscription'" [formElements]="inscriptionFormElements"
+            [submitLabel]="INSCRIPTION_LABEL" (formSubmit)="onFormSubmit($event)">
+        </app-dynamic-form>
+    </section>
+</main>
 
 @if (errorMessage) {
 <app-error [errorMessage]="errorMessage" [attemptedAction]="'connexion'">
