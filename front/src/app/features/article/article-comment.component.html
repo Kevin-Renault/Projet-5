@@ -5,31 +5,35 @@
 </output>
 }
 @else {
-<div class="article-card">
+<article class="article-card">
+    <button mat-icon-button (click)="back()" class="back-button">
+        <mat-icon>arrow_back</mat-icon>
+    </button>
     @if (article(); as article) {
-    <div class="article-title">{{ article.title }}</div>
-    <div class="article-meta">
+    <header class="article-title">{{ article.title }}</header>
+    <section class="article-meta">
         <span class="article-date">{{ article.createdAt | date:'dd/MM/yyyy' }}</span>
         <span class="article-author">{{ authorById(article.authorId) | async }}</span>
         <span class="article-topic">{{ topicById(article.topicId) | async }}</span>
-    </div>
-    <div class="article-content">
+    </section>
+    <section class="article-content">
         {{ article.content }}
-    </div>
+    </section>
     }
-</div>
+</article>
 <hr>
-<div>Commentaires :</div><br><br>
-<div class="comments-list">
-    @for (comment of articleComments(); track comment.id) {
-    <div class="comment-title">{{ authorById(comment.authorId) | async }}</div>
-    <div class="comment-card">
-        <div class="comment-content">{{ comment.content }}</div>
-    </div>
-    }
-</div>
-
-<app-dynamic-form [title]="'Commentaires'" [formElements]="commentFormElements" [submitLabel]="'Sauvegarder'"
-    [error]="error()" [isLoading]="isLoading()" [message]="message()" (formSubmit)="onFormSubmit($event)">
+<section aria-label="Commentaires">
+    <h2>Commentaires :</h2>
+    <section class="comments-list">
+        @for (comment of articleComments(); track comment.id) {
+        <header class="comment-author">{{ authorById(comment.authorId) | async }}</header>
+        <article class="comment-card">
+            <section class="comment-content">{{ comment.content }}</section>
+        </article>
+        }
+    </section>
+</section>
+<app-dynamic-form [formElements]="commentFormElements" [submitLabel]="'Sauvegarder'" [error]="error()"
+    [isLoading]="isLoading()" [message]="message()" (formSubmit)="onFormSubmit($event)">
 </app-dynamic-form>
 }

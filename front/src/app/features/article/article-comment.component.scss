@@ -100,11 +100,14 @@
     flex-direction: column;
 }
 
-.comment-title {
+.comment-author {
     font-weight: bold;
     font-size: 1.2rem;
-    margin-bottom: 0.5rem;
-    text-align: left;
+    text-align: right;
+
+    @media (min-width: 800px) {
+        text-align: left;
+    }
 }
 
 .comment-meta {

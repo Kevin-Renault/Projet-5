@@ -5,16 +5,20 @@ import { TOPIC_DATASOURCE } from 'src/app/core/services/topic-datasource.interfa
 import { USER_DATASOURCE } from 'src/app/core/services/user-datasource.interface';
 import { ARTICLE_DATASOURCE } from 'src/app/core/services/article-datasource.interface';
 import { COMMENT_DATASOURCE } from 'src/app/core/services/article-comment-datasource.interface';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ArticleComment } from 'src/app/core/models/article-comment.model';
 import { DynamicFormComponent, DynamicFormValues, FormElement } from "src/app/shared/form/dynamic-form.component";
 import { HeaderComponent } from "src/app/shared/header/header.component";
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { CommonComponent } from 'src/app/shared/common-component';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+
+
 
 @Component({
   selector: 'app-comment',
-  imports: [DatePipe, AsyncPipe, DynamicFormComponent, HeaderComponent],
+  imports: [DatePipe, AsyncPipe, DynamicFormComponent, HeaderComponent, MatButtonModule, MatIconModule],
   templateUrl: './article-comment.component.html',
   styleUrls: ['./article-comment.component.scss']
 })
@@ -26,6 +30,8 @@ export class ArticleCommentComponent extends CommonComponent implements OnDestro
   private readonly commentDataSource = inject(COMMENT_DATASOURCE);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly router = inject(Router);
+
 
 
   commentFormElements: FormElement[] = [
@@ -135,5 +141,8 @@ export class ArticleCommentComponent extends CommonComponent implements OnDestro
         if (form) form.reset();
       }
     });
+  }
+  back() {
+    this.router.navigate(['/articles']);
   }
 }
