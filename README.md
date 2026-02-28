@@ -10,49 +10,74 @@ Projet OpenClassrooms : API et Frontend pour un réseau social de développeurs.
 - `postman/` : Collection Postman pour tester l’API
 - Fichiers de documentation : `agent.md`, `rules.md`, `historique.md`, `historique.git.md`
 
+
 ## Architecture globale de l’application
 
 Ce schéma donne une vue d’ensemble des interactions entre l’utilisateur, le frontend Angular, le backend Spring Boot et la base de données :
 
-```mermaid
-flowchart TD
-  subgraph Utilisateur
-    U[Utilisateur Web]
-  end
-  subgraph Frontend [Angular]
-    F1[App Angular]
-    F2[AuthGuard, Interceptors]
-    F3[Services/API]
-    F4[Environnements]
-  end
-  subgraph Backend [Spring Boot]
-    B1[API REST]
-    B2[Contrôleurs]
-    B3[Services Métier]
-    B4[Repositories]
-    B5[Entities/JPA]
-    B6[Sécurité JWT/CSRF]
-  end
-  subgraph DB [MySQL]
-    DB[(Base de données)]
-  end
-  U-->|HTTP(S)|F1
-  F1-->|Appels API|F3
-  F3-->|/api/*|B1
-  B1-->|Appelle|B2
-  B2-->|Appelle|B3
-  B3-->|Appelle|B4
-  B4-->|Lit/écrit|B5
-  B4-->|SQL|DB
-  B1-->|Sécurité|B6
-  F1-->|Gestion session|F2
-  F2-->|Token/Cookie|B6
-  F1-->|Assets statiques|F4
-```
+<p>
+  <img src="specs/architecture-global.svg" alt="Full Stack Architecture Diagram" width="700"/>
+</p>
 
-**Méthode d’intégration :**
-- Ce bloc Mermaid peut être copié tel quel dans un README, un fichier Markdown ou un outil compatible (VS Code, GitHub, HackMD…).
-- Si tu veux une image (SVG/PNG), demande-le et je peux te la générer.
+## Modèle de données
+
+Le schéma suivant présente la structure du modèle de données relationnel utilisé par l’application (tables, relations, clés primaires/étrangères) :
+
+<p>
+  <img src="specs/model.db.svg" alt="Modèle de données (ERD)" width="700"/>
+</p>
+
+## Sécurité : séquence d’authentification/session
+
+Le diagramme ci-dessous détaille les étapes de gestion de session et d’authentification, incluant la protection CSRF, le login, le refresh automatique et le logout :
+
+<p>
+  <img src="specs/security-session-sequence.svg" alt="Séquence sécurité/session" width="900"/>
+</p>
+
+### Explication détaillée de chaque étape et justification des choix pour la production
+
+
+**0. Obtention du token CSRF**
+
+*Définition :*
+Le CSRF (Cross-Site Request Forgery, ou falsification de requête inter-sites) est une attaque où un site malveillant amène un utilisateur authentifié à exécuter à son insu des actions sur une application où il est connecté. Cela permettrait, par exemple, de modifier des données ou d’effectuer des transactions sans le consentement de l’utilisateur.
+
+*But :* Empêcher les attaques CSRF sur toutes les requêtes mutatives (POST, PUT, DELETE).
+
+*Pourquoi ce choix :*
+  - Le backend génère un token CSRF unique par session et le transmet via un cookie sécurisé (HttpOnly=false, SameSite=Strict).
+  - Le frontend doit systématiquement inclure ce token dans l’en-tête de chaque requête mutative.
+  - Cette protection est indispensable en production pour toute API exposée à un navigateur.
+
+**1. Connexion par login**
+
+*But :* Authentifier l’utilisateur et initialiser la session.
+
+*Pourquoi ce choix :* 
+  - Les identifiants sont transmis via HTTPS, le backend vérifie l’utilisateur et génère deux tokens : access_token (court) et refresh_token (long).
+  - Les tokens sont stockés en cookies sécurisés (HttpOnly, SameSite=Strict) pour éviter le vol par XSS.
+  - Cette méthode est la plus robuste pour la production, car elle limite l’exposition des tokens côté client.
+
+**2. Connexion automatique (refresh)**
+
+*But :* Permettre à l’utilisateur de rester connecté sans ressaisir ses identifiants, tout en gardant un haut niveau de sécurité.
+
+*Pourquoi ce choix :* 
+  - À chaque rechargement de page, le frontend tente d’obtenir un nouvel access_token via le refresh_token.
+  - Le refresh_token n’est jamais transmis au frontend, il reste en cookie HttpOnly.
+  - Si le refresh échoue, l’utilisateur est déconnecté (sécurité renforcée).
+  - Ce mécanisme est recommandé en production pour l’UX et la sécurité.
+
+**3. Déconnexion (logout)**
+
+*But :* Invalider la session et supprimer tous les tokens côté client et serveur.
+
+*Pourquoi ce choix :* 
+  - Le backend supprime les cookies (access_token, refresh_token) et invalide le refresh côté serveur.
+  - Cela garantit qu’aucun token ne subsiste après la déconnexion, même en cas de vol de cookie.
+  - Cette étape est essentielle pour la conformité RGPD et la sécurité en production.
+
 
 ## Prérequis
 
