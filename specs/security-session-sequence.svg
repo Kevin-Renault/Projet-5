@@ -1,0 +1,87 @@
+<!--
+Diagramme de séquence : Connexion par login, connexion automatique (refresh), logout
+-->
+<svg width="1100" height="800" viewBox="0 0 1100 800" xmlns="http://www.w3.org/2000/svg" font-family="Arial, sans-serif">
+  <rect x="0" y="0" width="1100" height="800" fill="#fff"/>
+  <!-- Lignes de vie -->
+
+  <line x1="120" y1="40" x2="120" y2="740" stroke="#bbb" stroke-dasharray="6,6"/>
+  <line x1="350" y1="40" x2="350" y2="740" stroke="#bbb" stroke-dasharray="6,6"/>
+  <line x1="650" y1="40" x2="650" y2="740" stroke="#bbb" stroke-dasharray="6,6"/>
+  <line x1="900" y1="40" x2="900" y2="740" stroke="#bbb" stroke-dasharray="6,6"/>
+
+  <!-- Acteurs (décalés vers le haut) -->
+  <rect x="40" y="10" width="160" height="40" fill="#e3f2fd" stroke="#1976d2" stroke-width="2" rx="10"/>
+  <text x="120" y="35" text-anchor="middle" font-size="15" fill="#1976d2">Utilisateur</text>
+
+  <rect x="270" y="10" width="160" height="40" fill="#fffde7" stroke="#fbc02d" stroke-width="2" rx="10"/>
+  <text x="350" y="35" text-anchor="middle" font-size="15" fill="#fbc02d">Frontend Angular</text>
+
+  <rect x="570" y="10" width="160" height="40" fill="#e8f5e9" stroke="#388e3c" stroke-width="2" rx="10"/>
+  <text x="650" y="35" text-anchor="middle" font-size="15" fill="#388e3c">Backend Spring Boot</text>
+
+  <rect x="850" y="10" width="100" height="40" fill="#ede7f6" stroke="#7b1fa2" stroke-width="2" rx="10"/>
+  <text x="900" y="35" text-anchor="middle" font-size="13" fill="#7b1fa2">DB</text>
+
+  <!-- Séquence CSRF (avant login ou requête mutative) -->
+  <text x="40" y="80" font-size="14" fill="#0288d1" font-weight="bold">0. Obtention du token CSRF</text>
+  <polyline points="120,110 350,110" fill="none" stroke="#0288d1" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="235" y="105" font-size="12" fill="#0288d1">Page chargée / requête mutative</text>
+  <polyline points="350,130 650,130" fill="none" stroke="#0288d1" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="500" y="125" font-size="12" fill="#0288d1">GET /api/auth/csrf</text>
+  <polyline points="650,150 350,150" fill="none" stroke="#0288d1" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="500" y="145" font-size="12" fill="#0288d1">Set-Cookie: XSRF-TOKEN</text>
+  <text x="40" y="190" font-size="14" fill="#1976d2" font-weight="bold">1. Connexion par login</text>
+  <polyline points="120,220 350,220" fill="none" stroke="#1976d2" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="235" y="215" font-size="12" fill="#1976d2">Entrer identifiants</text>
+  <polyline points="350,240 650,240" fill="none" stroke="#fbc02d" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="500" y="235" font-size="12" fill="#fbc02d">POST /api/auth/login</text>
+  <polyline points="650,260 900,260" fill="none" stroke="#388e3c" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="775" y="255" font-size="12" fill="#388e3c">Vérif user, refresh_token</text>
+  <polyline points="900,280 650,280" fill="none" stroke="#388e3c" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="775" y="275" font-size="12" fill="#388e3c">OK user</text>
+  <polyline points="650,300 350,300" fill="none" stroke="#388e3c" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="500" y="295" font-size="12" fill="#388e3c">Set-Cookie: access_token, refresh_token</text>
+  <polyline points="350,320 120,320" fill="none" stroke="#388e3c" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="235" y="315" font-size="12" fill="#388e3c">Session ouverte</text>
+
+  <!-- Connexion automatique (refresh) -->
+  <text x="40" y="395" font-size="14" fill="#7b1fa2" font-weight="bold">2. Connexion automatique (refresh)</text>
+  <polyline points="120,425 350,425" fill="none" stroke="#7b1fa2" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="235" y="420" font-size="12" fill="#7b1fa2">Page rechargée</text>
+  <polyline points="350,445 650,445" fill="none" stroke="#7b1fa2" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="500" y="440" font-size="12" fill="#7b1fa2">POST /api/auth/refresh</text>
+  <polyline points="650,465 900,465" fill="none" stroke="#7b1fa2" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="775" y="460" font-size="12" fill="#7b1fa2">Vérif refresh_token</text>
+  <polyline points="900,485 650,485" fill="none" stroke="#7b1fa2" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="775" y="480" font-size="12" fill="#7b1fa2">OK refresh</text>
+  <polyline points="650,505 350,505" fill="none" stroke="#7b1fa2" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="500" y="500" font-size="12" fill="#7b1fa2">Set-Cookie: access_token</text>
+  <polyline points="350,525 120,525" fill="none" stroke="#7b1fa2" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="235" y="520" font-size="12" fill="#7b1fa2">Session restaurée</text>
+
+  <!-- Logout -->
+  <text x="40" y="600" font-size="14" fill="#d32f2f" font-weight="bold">3. Déconnexion (logout)</text>
+  <polyline points="120,620 350,620" fill="none" stroke="#d32f2f" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="235" y="615" font-size="12" fill="#d32f2f">Cliquer "Déconnexion"</text>
+  <polyline points="350,640 650,640" fill="none" stroke="#d32f2f" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="500" y="635" font-size="12" fill="#d32f2f">POST /api/auth/logout</text>
+  <polyline points="650,660 350,660" fill="none" stroke="#d32f2f" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="500" y="655" font-size="12" fill="#d32f2f">Clear cookies</text>
+  <polyline points="350,680 120,680" fill="none" stroke="#d32f2f" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="235" y="675" font-size="12" fill="#d32f2f">Session fermée</text>
+
+  <!-- Définitions des flèches -->
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,5 L0,10 L2,5 Z" fill="#333" />
+    </marker>
+  </defs>
+
+  <!-- Légende -->
+  <rect x="40" y="740" width="1020" height="50" fill="#fafafa" stroke="#bbb" stroke-width="1" rx="10"/>
+  <text x="60" y="765" font-size="13" fill="#333">Légende :</text>
+  <text x="180" y="765" font-size="12" fill="#1976d2">Connexion par login</text>
+  <text x="380" y="765" font-size="12" fill="#7b1fa2">Connexion automatique (refresh)</text>
+  <text x="700" y="765" font-size="12" fill="#d32f2f">Déconnexion (logout)</text>
+</svg>

@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="700" viewBox="0 0 1200 700"
+	xmlns="http://www.w3.org/2000/svg">
+	<style>
+    .node { font: bold 14px sans-serif; fill: #222; }
+    .table { fill: #e3eaff; stroke: #4a90e2; stroke-width: 2; rx: 10; }
+    .db { fill: #fffbe3; stroke: #e2b84a; stroke-width: 2; rx: 20; }
+    .arrow { stroke: #222; stroke-width: 2; marker-end: url(#arrowhead); }
+    .label { font: italic 12px sans-serif; fill: #444; }
+    .pk { font: bold 12px sans-serif; fill: #e24a4a; }
+    .fk { font: italic 12px sans-serif; fill: #4a90e2; }
+  </style>
+	<defs>
+		<marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+			<polygon points="0 0, 10 3.5, 0 7" fill="#222" />
+		</marker>
+	</defs>
+	<!-- Background -->
+	<rect x="0" y="0" width="1200" height="700" fill="#f7f7fa"/>
+	<!-- Table: mdd_user (middle, aligned) -->
+	<rect x="100" y="220" width="260" height="140" class="table"/>
+	<text x="230" y="240" text-anchor="middle" class="node">mdd_user</text>
+	<text x="120" y="265" class="pk">id (PK)</text>
+	<text x="120" y="285">username</text>
+	<text x="120" y="305">email</text>
+	<text x="120" y="325">password</text>
+	<text x="120" y="345">created_at</text>
+	<!-- Table: topic (top, center) -->
+	<rect x="500" y="60" width="180" height="100" class="table"/>
+	<text x="590" y="80" text-anchor="middle" class="node">topic</text>
+	<text x="520" y="105" class="pk">id (PK)</text>
+	<text x="520" y="125">name</text>
+	<text x="520" y="145">description</text>
+	<!-- Table: user_topic_subscription (top, aligned) -->
+	<rect x="100" y="60" width="260" height="90" class="table"/>
+	<text x="230" y="80" text-anchor="middle" class="node">user_topic_subscription</text>
+	<text x="120" y="100" class="pk">user_id (PK, FK)</text>
+	<text x="120" y="120" class="pk">topic_id (PK, FK)</text>
+	<text x="120" y="140">subscribed_at</text>
+	<!-- Table: article (right, aligned horizontally with mdd_user) -->
+	<rect x="900" y="220" width="200" height="150" class="table"/>
+	<text x="1000" y="240" text-anchor="middle" class="node">article</text>
+	<text x="920" y="265" class="pk">id (PK)</text>
+	<text x="920" y="285">title</text>
+	<text x="920" y="305">content</text>
+	<text x="920" y="325">created_at</text>
+	<text x="920" y="345" class="fk">author_id (FK)</text>
+	<text x="920" y="365" class="fk">topic_id (FK)</text>
+
+	<!-- Table: article_comment (right, below article, moved up) -->
+	<rect x="900" y="390" width="200" height="140" class="table"/>
+	<text x="1000" y="410" text-anchor="middle" class="node">article_comment</text>
+	<text x="920" y="435" class="pk">id (PK)</text>
+	<text x="920" y="455">content</text>
+	<text x="920" y="475">created_at</text>
+	<text x="920" y="495" class="fk">author_id (FK)</text>
+	<text x="920" y="515" class="fk">article_id (FK)</text>
+	<!-- Table: refresh_token (bottom, aligned) -->
+	<rect x="100" y="390" width="260" height="130" class="table"/>
+	<text x="230" y="410" text-anchor="middle" class="node">refresh_token</text>
+	<text x="120" y="435" class="pk">id (PK)</text>
+	<text x="120" y="455" class="fk">user_id (FK)</text>
+	<text x="120" y="475">token_hash</text>
+	<text x="120" y="495">expires_at</text>
+	<text x="120" y="515">created_at</text>
+	<!-- Relationships (direct, clear, updated) -->
+	<!-- mdd_user to user_topic_subscription (vertical up) -->
+	<line x1="230" y1="220" x2="230" y2="150" class="arrow"/>
+	<text x="240" y="180" class="label">1:N</text>
+	<!-- topic to user_topic_subscription (horizontal left) -->
+	<line x1="500" y1="110" x2="360" y2="110" class="arrow"/>
+	<text x="420" y="100" class="label">1:N</text>
+	<!-- mdd_user to article (horizontal) -->
+	<line x1="360" y1="290" x2="900" y2="290" class="arrow"/>
+	<text x="600" y="280" class="label">1:N</text>
+
+	<!-- topic to article -->
+	<polyline points="680,110 1000,110 1000,220" class="arrow" fill="none"/>
+	<text x="850" y="100" class="label">1:N</text>
+	
+	<!-- article to article_comment (vertical down, ajustée) -->
+	<line x1="1000" y1="370" x2="1000" y2="390" class="arrow"/>
+	<text x="1020" y="380" class="label">1:N</text>
+	<!-- mdd_user to article_comment -->
+	<line x1="360" y1="290" x2="900" y2="465" class="arrow"/>
+	<text x="600" y="420" class="label">1:N</text>
+	<!-- mdd_user to refresh_token (vertical down) -->
+	<line x1="230" y1="360" x2="230" y2="390" class="arrow"/>
+	<text x="240" y="380" class="label">1:1</text>
+	<!-- Database Cylinder -->
+	<ellipse cx="600" cy="620" rx="100" ry="25" fill="#fffbe3" stroke="#e2b84a" stroke-width="2"/>
+	<line x1="500" y1="590" x2="500" y2="640" stroke="#e2b84a" stroke-width="2"/>
+	<line x1="700" y1="590" x2="700" y2="640" stroke="#e2b84a" stroke-width="2"/>
+	<path d="M500,640 A100,25 0 0,0 700,640" fill="none" stroke="#e2b84a" stroke-width="2"/>
+	<path d="M500,590 A100,25 0 0,1 700,590 L700,640 A100,25 0 0,0 500,640 Z" fill="#fffbe3" stroke="none"/>
+	<text x="600" y="610" text-anchor="middle" class="node">mdd_db</text>
+	<text x="600" y="630" text-anchor="middle" class="node">MySQL Database</text>
+</svg>
