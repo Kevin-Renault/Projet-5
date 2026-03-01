@@ -5,6 +5,7 @@ Périmètre : backend (JUnit/Surefire + JaCoCo) + frontend (Jest/Istanbul) + E2E
 Date des chiffres (rapports locaux présents dans le repo) :
 - Backend : 2026-02-27T16:10 (tests + JaCoCo)
 - Frontend : 2026-02-27T20:46 (tests + couverture)
+- E2E Cypress : 2026-03-01T18:43 (tests + couverture)
 
 ---
 
@@ -37,9 +38,16 @@ Couverture (Istanbul) :
 
 ### E2E (Cypress)
 
-- Local : si les E2E sont rejoués, un rapport JUnit XML est attendu dans `front/cypress/results/`.
-- Couverture E2E : après exécution E2E avec frontend instrumenté, le rapport est généré via `npm run e2e:coverage` et se trouve dans `front/coverage-e2e/index.html`.
-- CI : un artefact `cypress-report` est publié (résultats, screenshots, coverage e2e…). Le workflow sert le frontend via `serve-e2e-coverage` pour permettre la couverture E2E.
+Tests (JUnit) :
+- 1 test, 0 échec, 0 erreur (2 suites)
+- Source : `front/cypress/results/junit-f13cbc736982d1920bbc75fa93612ed9.xml`
+
+Couverture E2E (NYC/Istanbul) :
+- Statements : 84,57% (466/551)
+- Branches : 77,04% (188/244)
+- Fonctions : 79,80% (166/208)
+- Lignes : 85,77% (392/457)
+- Source : HTML `front/coverage-e2e/index.html` (généré le 2026-03-01T18:43:47Z)
 
 ---
 
@@ -58,10 +66,10 @@ npm ci
 npm run test:unit:ci
 ```
 
-E2E (depuis `front/`, optionnel) :
+E2E (depuis `front/`) :
 
 ```powershell
-npm run cypress:run
+npm run e2e:run:coverage
 ```
 
 ---
