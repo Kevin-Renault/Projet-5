@@ -47,6 +47,15 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Generate JWT secret (CI)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY' >> "$GITHUB_ENV"
+          import secrets
+          print('JWT_SECRET=' + secrets.token_urlsafe(48))
+          PY
+
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
@@ -158,6 +167,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Generate JWT secret (CI)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY' >> "$GITHUB_ENV"
+          import secrets
+          print('JWT_SECRET=' + secrets.token_urlsafe(48))
+          PY
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -222,20 +240,6 @@ jobs:
           echo "Backend did not become ready in time."
           tail -n 200 back.log || true
           exit 1
-      - name: Start frontend (Angular)
-        working-directory: front
-        run: npm run start -- --port 4200 &
-      - name: Wait for frontend to be ready
-        run: |
-          for i in {1..30}; do
-            if curl -fsS "http://localhost:4200" >/dev/null; then
-              echo "Frontend is ready."
-              exit 0
-            fi
-            sleep 2
-          done
-          echo "Frontend did not become ready in time."
-          exit 1
       - name: Check backend environment (dev)
         id: check_backend_env
         run: |
@@ -246,12 +250,42 @@ jobs:
           else
             echo "should_run_cypress=true" >> "$GITHUB_OUTPUT"
           fi
+      - name: Start frontend (Angular)
+        if: steps.check_backend_env.outputs.should_run_cypress == 'true'
+        working-directory: front
+        run: npm run start -- --port 4200 &
+
+      - name: Wait for frontend to be ready
+        if: steps.check_backend_env.outputs.should_run_cypress == 'true'
+        run: |
+          for i in {1..30}; do
+            if curl -fsS "http://localhost:4200" >/dev/null; then
+              echo "Frontend is ready."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Frontend did not become ready in time."
+          exit 1
+
       - name: Run Cypress E2E (JUnit)
         if: steps.check_backend_env.outputs.should_run_cypress == 'true'
         working-directory: front
         env:
           CYPRESS_CACHE_FOLDER: ~/.cache/Cypress
         run: npm run cypress:run
+
+      - name: Generate E2E coverage report (nyc)
+        if: steps.check_backend_env.outputs.should_run_cypress == 'true'
+        working-directory: front
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -d ".nyc_output" ] && [ "$(ls -A .nyc_output 2>/dev/null || true)" ]; then
+            npm run e2e:coverage
+          else
+            echo "No .nyc_output produced by Cypress; skipping nyc report."
+          fi
 
       - name: Cleanup test users (MySQL)
         if: always()
