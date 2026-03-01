@@ -308,7 +308,7 @@ Pour plus de détails, voir : `src/environments/`, `core/providers/data-sources
 
 ## FAQ utilisateur
 
-La FAQ orientée “utilisation” (non technique) et l’espace pour les captures d’écran sont dans : `docs/captures-ecran-ui.md`.
+La FAQ orientée “utilisation” (non technique) et l’espace pour les captures d’écran sont dans : `docs/FAQ-Utilisateurs.md`.
 
 
 ## FAQ – Problèmes fréquents
@@ -359,8 +359,9 @@ La FAQ orientée “utilisation” (non technique) et l’espace pour les captur
 
 - `agent.md` : rôle et comportement de l’agent assistant
 - `rules.md` : règles de qualité, couverture, documentation
-- `docs/captures-ecran-ui.md` : FAQ utilisateur + espace captures d’écran (images à déposer dans `docs/screenshots/`)
+- `docs/FAQ-Utilisateurs.md` : FAQ utilisateur + espace captures d’écran (images à déposer dans `docs/screenshots/`)
 - `docs/dictionnaire-donnees.md` : dictionnaire de données (champs, contraintes, validations, mapping DTO ↔ tables)
+- `docs/analyse-besoins-frontend.md` : synthèse besoins → écrans → composants → endpoints API
 - `historique.md` : historique synthétique du projet et des actions de l’agent
 - `historique.git.md` : log brut des commits git (générable automatiquement)
 - `specs/` : spécifications fonctionnelles et techniques
