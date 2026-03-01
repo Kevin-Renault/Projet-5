@@ -21,9 +21,9 @@ public class TopicEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "name", nullable = false, unique = true, length = 50)
+    @Column(name = "name", nullable = false, unique = true, length = 100)
     private String name;
 
-    @Column(name = "description", length = 255)
+    @Column(name = "description", length = 1000)
     private String description;
 }
