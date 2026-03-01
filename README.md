@@ -1,6 +1,6 @@
 # Application Full-Stack MDD-API
 
-Projet OpenClassrooms : API et Frontend pour un réseau social de développeurs.
+Projet OpenClassrooms : API et Frontend pour un réseau social de développeurs.  Option B
 
 ## Structure du projet
 
@@ -8,8 +8,14 @@ Projet OpenClassrooms : API et Frontend pour un réseau social de développeurs.
 - `front/` : Application Angular (src/, tests, configuration, package.json)
 - `specs/` : Spécifications fonctionnelles et techniques (PDF/Markdown)
 - `postman/` : Collection Postman pour tester l’API
-- Fichiers de documentation : `agent.md`, `rules.md`, `historique.md`, `historique.git.md`
 
+### Annexes visuelles (SVG)
+
+Ces diagrammes sont inclus dans ce README pour faciliter la lecture :
+
+- Architecture globale : [specs/architecture-global.svg](specs/architecture-global.svg)
+- Modèle de données (ERD) : [specs/model.db.svg](specs/model.db.svg)
+- Sécurité (séquence) : [specs/security-session-sequence.svg](specs/security-session-sequence.svg)
 
 ## Architecture globale de l’application
 
@@ -34,6 +40,7 @@ Le diagramme ci-dessous détaille les étapes de gestion de session et d’authe
 <p>
   <img src="specs/security-session-sequence.svg" alt="Séquence sécurité/session" width="900"/>
 </p>
+
 
 ### Explication détaillée de chaque étape et justification des choix pour la production
 
@@ -92,6 +99,7 @@ Le CSRF (Cross-Site Request Forgery, ou falsification de requête inter-sites) e
      - `DB_USER` : le nom d'utilisateur MySQL (ex : kevin)
      - `DB_PASSWORD` : le mot de passe MySQL choisi (ex : votre_mot_de_passe)
      - `DB_MDD_NAME` : le nom de la base de données (ex : mdd_db)
+     - `JWT_SECRET` : clé de signature JWT (secret backend, **non commité**)
      - Sous Windows :
        - Session courante : `set DB_USER="kevin"` etc.
        - Persistant : `setx DB_USER "kevin"` etc.
@@ -104,12 +112,63 @@ Le CSRF (Cross-Site Request Forgery, ou falsification de requête inter-sites) e
      FLUSH PRIVILEGES;
      ```
    - **Exécutez ensuite ce script** dans MySQL pour créer la base et l’utilisateur avec les droits nécessaires.
-2. **Backend** :
+
+2. **JWT_SECRET (obligatoire)** :
+
+Le backend lit la clé via la variable d’environnement `JWT_SECRET` (aucune valeur en dur n’est committée).
+
+- **Windows (PowerShell) — générer un secret fort (32 octets) et le définir pour la session courante :**
+  - Génération :
+    ```powershell
+    $bytes = New-Object byte[] 32
+    [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
+    $secret = [Convert]::ToBase64String($bytes)
+    $env:JWT_SECRET = $secret
+    $env:JWT_SECRET
+    ```
+  - (Optionnel) Rendre la variable persistante :
+    ```powershell
+    setx JWT_SECRET "$env:JWT_SECRET"
+    ```
+
+  > Important : `setx` n’actualise pas les variables d’environnement dans les terminaux déjà ouverts.
+  > Après `setx`, ouvrez un **nouveau terminal** (et si besoin redémarrez VS Code) avant de relancer Maven.
+  > Alternative sans redémarrer VS Code : rechargez la valeur persistée dans la session courante avec :
+  > ```powershell
+  > $env:JWT_SECRET = [Environment]::GetEnvironmentVariable("JWT_SECRET","User")
+  > ```
+
+- **Linux/Mac — générer et exporter :**
+  ```bash
+  export JWT_SECRET="$(openssl rand -base64 32)"
+  ```
+
+> Note : changer `JWT_SECRET` invalide les tokens existants, ce qui est normal.
+
+### Variables d’environnement Spring et valeurs par défaut
+
+Dans `application.properties`, certaines valeurs utilisent la syntaxe Spring `${NOM_DE_VAR:valeur_par_defaut}`.
+
+- Si la variable d’environnement `NOM_DE_VAR` est définie, Spring l’utilise.
+- Sinon, Spring utilise la `valeur_par_defaut`.
+
+Exemples utilisés par l’API :
+
+- `JWT_EXPIRATION_SECONDS` (défaut `900`) : durée de vie de l’access token.
+- `JWT_REFRESH_EXPIRATION_SECONDS` (défaut `2592000`) : durée de vie du refresh token.
+- `JWT_REFRESH_COOKIE_NAME` (défaut `refresh_token`) : nom du cookie refresh.
+- `JWT_COOKIE_NAME` (défaut `access_token`) : nom du cookie access.
+- `JWT_COOKIE_SECURE` (défaut `false`) : cookie uniquement en HTTPS si `true`.
+- `JWT_COOKIE_SAMESITE` (défaut `Lax`) : politique SameSite.
+
+> `JWT_SECRET` est volontairement **sans valeur par défaut** et doit être fourni.
+
+3. **Backend** :
    - Placez-vous dans `back/`.
    - Lancez `./mvnw.cmd clean package` (Windows) ou `./mvnw clean package` (Linux/Mac).
    - Fichier de config : `src/main/resources/application.properties`.
 
-3. **Frontend** :
+4. **Frontend** :
    - Placez-vous dans `front/`.
    - Lancez `npm install` puis `npm run start` (ou `npm run start:e2e` pour le port 4201 avec proxy).
 
@@ -238,10 +297,6 @@ Pour plus de détails, voir : `src/environments/`, `core/providers/data-sources
 
 ## Documentation et références
 
-- `agent.md` : rôle et comportement de l’agent assistant
-- `rules.md` : règles de qualité, couverture, documentation
-- `historique.md` : historique synthétique du projet et des actions de l’agent
-- `historique.git.md` : log brut des commits git (générable automatiquement)
 - `specs/` : spécifications fonctionnelles et techniques
 - `postman/` : collection Postman pour l’API
 
