@@ -306,6 +306,10 @@ Pour plus de détails, voir : `src/environments/`, `core/providers/data-sources
 - Les variables sensibles (secrets JWT, accès DB) doivent être passées en variables d’environnement.
 - Pour toute question sur les exigences, consulter `specs/`.
 
+## FAQ utilisateur
+
+La FAQ orientée “utilisation” (non technique) et l’espace pour les captures d’écran sont dans : `docs/captures-ecran-ui.md`.
+
 
 ## FAQ – Problèmes fréquents
 
@@ -355,6 +359,8 @@ Pour plus de détails, voir : `src/environments/`, `core/providers/data-sources
 
 - `agent.md` : rôle et comportement de l’agent assistant
 - `rules.md` : règles de qualité, couverture, documentation
+- `docs/captures-ecran-ui.md` : FAQ utilisateur + espace captures d’écran (images à déposer dans `docs/screenshots/`)
+- `docs/dictionnaire-donnees.md` : dictionnaire de données (champs, contraintes, validations, mapping DTO ↔ tables)
 - `historique.md` : historique synthétique du projet et des actions de l’agent
 - `historique.git.md` : log brut des commits git (générable automatiquement)
 - `specs/` : spécifications fonctionnelles et techniques
