@@ -15,6 +15,7 @@ Les chiffres ci-dessous sont extraits des fichiers de rapports présents dans le
 - Backend JaCoCo (`back/target/site/jacoco/jacoco.xml`) : dernière génération constatée `2026-02-27T16:10:28`
 - Backend Surefire (`back/target/surefire-reports/TEST-*.xml`) : dernière génération constatée `2026-02-27T16:10:27`
 - Front Jest + couverture (`front/jest-results.json`, `front/coverage/coverage-summary.json`) : dernière génération constatée `2026-02-27T20:46:23`
+- E2E Cypress + couverture (`front/cypress/results/junit-*.xml`, `front/coverage-e2e/index.html`) : dernière génération constatée `2026-03-01T18:43:47Z`
 
 ### 1.1 Backend — Tests (JUnit/Surefire)
 
@@ -62,14 +63,29 @@ Sources :
 
 ### 1.5 E2E — Cypress
 
-Dans ce workspace, les dossiers suivants sont actuellement vides (donc **pas de chiffres E2E “locaux” à afficher** sans relancer les tests) :
-- `front/cypress/results/`
-- `front/cypress/screenshots/`
-- `front/coverage-e2e/`
+Dernier run Cypress constaté (local) :
+- JUnit : `front/cypress/results/junit-f13cbc736982d1920bbc75fa93612ed9.xml`
+- Suites : 2
+- Tests : 1
+- Échecs (`failures`) : 0
+- Erreurs (`errors`) : 0
+- Ignorés (`skipped`) : 0
 
-Remarque : Cypress est configuré pour générer un rapport JUnit (XML) à chaque run via `mocha-junit-reporter` (attendu dans `front/cypress/results/`).
+Couverture E2E (NYC/Istanbul) — globale :
 
-En CI, le workflow tente d’uploader un artefact `cypress-report` (voir §3) : si les tests ont tourné et produit des résultats, ils y seront.
+| Mesure | Couverture | Couvert | Total |
+|---|---:|---:|---:|
+| Statements | 84,57% | 466 | 551 |
+| Branches | 77,04% | 188 | 244 |
+| Fonctions | 79,80% | 166 | 208 |
+| Lignes | 85,77% | 392 | 457 |
+
+Sources :
+- HTML : `front/coverage-e2e/index.html` (généré le `2026-03-01T18:43:47Z`)
+- LCov : `front/coverage-e2e/lcov.info`
+- Données brutes : `front/.nyc_output/out.json`
+
+Remarque : Cypress est configuré pour générer un rapport JUnit (XML) à chaque run via `mocha-junit-reporter` (dans `front/cypress/results/`).
 
 ---
 
@@ -104,32 +120,29 @@ Sorties attendues :
 - `front/coverage/lcov-report/index.html`
 - `front/coverage/coverage-summary.json`
 
-### 2.3 Frontend — Cypress E2E (optionnel)
+### 2.3 Frontend — Cypress E2E (+ couverture)
 
-Le script existe :
+Périmètre : tests end-to-end du front (parcours utilisateur) avec génération de la couverture E2E.
 
-```powershell
-npm run cypress:run
-```
-
-Pré-requis (selon votre machine) :
-- backend accessible (ex. `http://localhost:8080`)
-- frontend accessible (ex. `http://localhost:4200`)
-
-Important (couverture E2E) :
-- Pour obtenir une **vraie** couverture Cypress, le frontend doit être servi en mode **instrumenté** (sinon `window.__coverage__` est absent / vide).
-- Dans ce projet, l’instrumentation est prévue via la target Angular `serve-e2e-coverage`.
-
-Lancer le frontend instrumenté (depuis `front/`) :
-
-```powershell
-npm run start:e2e-coverage
-```
-
-Option la plus simple (1 commande, depuis `front/`) :
+Commande recommandée (1 commande, depuis `front/`) :
 
 ```powershell
 npm run e2e:run:coverage
+```
+
+Ce script :
+- lance le frontend en mode instrumenté,
+- exécute Cypress en headless,
+- génère le rapport de couverture E2E.
+
+Pré-requis (selon votre machine) :
+- backend accessible (ex. `http://localhost:8080`) si les specs E2E ne mockent pas toutes les routes,
+- port `4200` disponible.
+
+Alternative (sans couverture, si le frontend tourne déjà) :
+
+```powershell
+npm run cypress:run
 ```
 
 Sorties potentielles (selon configuration Cypress/coverage) :
@@ -138,13 +151,7 @@ Sorties potentielles (selon configuration Cypress/coverage) :
 - `front/cypress/results/` (rapport JUnit XML)
 - `front/coverage-e2e/` et/ou `front/.nyc_output/` (si instrumentation + extraction de couverture E2E)
 
-Après un run E2E, si `front/.nyc_output/` contient des données, générer le rapport de couverture E2E :
-
-```powershell
-npm run e2e:coverage
-```
-
-Sorties attendues :
+Rapport de couverture E2E :
 - HTML : `front/coverage-e2e/index.html`
 - LCov : `front/coverage-e2e/lcov.info`
 
