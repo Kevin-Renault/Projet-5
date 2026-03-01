@@ -250,42 +250,12 @@ jobs:
           else
             echo "should_run_cypress=true" >> "$GITHUB_OUTPUT"
           fi
-      - name: Start frontend (Angular)
-        if: steps.check_backend_env.outputs.should_run_cypress == 'true'
-        working-directory: front
-        run: npm run start:e2e-coverage &
-
-      - name: Wait for frontend to be ready
-        if: steps.check_backend_env.outputs.should_run_cypress == 'true'
-        run: |
-          for i in {1..30}; do
-            if curl -fsS "http://localhost:4200" >/dev/null; then
-              echo "Frontend is ready."
-              exit 0
-            fi
-            sleep 2
-          done
-          echo "Frontend did not become ready in time."
-          exit 1
-
-      - name: Run Cypress E2E (JUnit)
+      - name: Run Cypress E2E + coverage (single command)
         if: steps.check_backend_env.outputs.should_run_cypress == 'true'
         working-directory: front
         env:
           CYPRESS_CACHE_FOLDER: ~/.cache/Cypress
-        run: npm run cypress:run
-
-      - name: Generate E2E coverage report (nyc)
-        if: steps.check_backend_env.outputs.should_run_cypress == 'true'
-        working-directory: front
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [ -d ".nyc_output" ] && [ "$(ls -A .nyc_output 2>/dev/null || true)" ]; then
-            npm run e2e:coverage
-          else
-            echo "No .nyc_output produced by Cypress; skipping nyc report."
-          fi
+        run: npm run e2e:run:coverage
 
       - name: Cleanup test users (MySQL)
         if: always()
