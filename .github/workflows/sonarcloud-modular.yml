@@ -253,7 +253,7 @@ jobs:
       - name: Start frontend (Angular)
         if: steps.check_backend_env.outputs.should_run_cypress == 'true'
         working-directory: front
-        run: npm run start -- --port 4200 &
+        run: npm run start:e2e-coverage &
 
       - name: Wait for frontend to be ready
         if: steps.check_backend_env.outputs.should_run_cypress == 'true'
