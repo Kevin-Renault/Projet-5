@@ -4,6 +4,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
+    "start:e2e-coverage": "ng run front:serve-e2e-coverage:development --port 4200",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
@@ -11,7 +12,9 @@
     "test:unit:ci": "jest --config jest.config.js --ci --runInBand --coverage --json --outputFile=jest-results.json",
     "e2e": "ng e2e",
     "e2e:ci": "cypress run",
-    "e2e:coverage": "npx nyc report --reporter=lcov --reporter=text-summary",
+    "e2e:coverage:clean": "node -e \"const fs=require('node:fs'); for (const p of ['.nyc_output','coverage-e2e']) { try { fs.rmSync(p,{recursive:true,force:true}); } catch(e) {} }\"",
+    "e2e:coverage": "npx nyc report --temp-dir .nyc_output --report-dir coverage-e2e --reporter=html --reporter=lcov --reporter=text-summary",
+    "e2e:run:coverage": "npm run e2e:coverage:clean && start-server-and-test start:e2e-coverage http://localhost:4200 cypress:run && npm run e2e:coverage",
     "cypress:open": "cypress open",
     "cypress:run": "cypress run"
   },

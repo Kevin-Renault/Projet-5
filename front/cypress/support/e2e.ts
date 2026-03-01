@@ -47,12 +47,3 @@ Cypress.on('uncaught:exception', (err) => {
     // Laisse Cypress échouer sur les vraies erreurs applicatives.
     return true
 })
-
-afterEach(() => {
-    cy.window({ log: false }).then((win) => {
-        const coverage = (win as any).__coverage__
-        if (coverage) {
-            cy.task('saveCoverage', coverage, { log: false })
-        }
-    })
-})
