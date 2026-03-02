@@ -463,6 +463,12 @@ jobs:
             'artifacts/**/cypress/results/*.xml',
             'artifacts/**/cypress/results/**/*.junit',
           ])
+
+          cypress_cov = find_first([
+            'artifacts/**/coverage-e2e/coverage-summary.json',
+            'artifacts/**/front/coverage-e2e/coverage-summary.json',
+          ])
+
           total = failures = skipped = 0
           if junit_xml and junit_xml.exists():
             try:
@@ -482,8 +488,37 @@ jobs:
             f'- Tests: {fmt_int(total)} (failures {fmt_int(failures)}, skipped {fmt_int(skipped)})' if junit_xml else '- JUnit report not found in artifacts (summary is best-effort).',
             '',
           ]
+
+          if cypress_cov and cypress_cov.exists():
+            try:
+              cov = json.loads(cypress_cov.read_text(encoding='utf-8')).get('total')
+            except Exception:
+              cov = None
+
+            if cov:
+              def cov_row(label, key):
+                c = cov.get(key) or {}
+                return f"| {label} | {c.get('pct', 0):.2f}% | {fmt_int(int(c.get('covered', 0) or 0))} | {fmt_int(int(c.get('skipped', 0) or 0))} | {fmt_int(int(c.get('total', 0) or 0))} |"
+
+              cyp += [
+                '| Metric | Coverage | Covered | Skipped | Total |',
+                '|---|---:|---:|---:|---:|',
+                cov_row('Lines', 'lines'),
+                cov_row('Statements', 'statements'),
+                cov_row('Functions', 'functions'),
+                cov_row('Branches', 'branches'),
+                '',
+              ]
+            else:
+              cyp += ['- No readable `coverage-summary.json` found for Cypress coverage.', '']
+          else:
+            cyp += ['- No `coverage-e2e/coverage-summary.json` found in artifacts (coverage table skipped).', '']
+
           if junit_xml:
             cyp.append(f'- Source: `{junit_xml.as_posix()}`')
+            cyp.append('')
+          if cypress_cov:
+            cyp.append(f'- Source: `{cypress_cov.as_posix()}`')
             cyp.append('')
           append(cyp)
 
