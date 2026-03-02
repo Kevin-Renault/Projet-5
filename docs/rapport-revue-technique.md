@@ -6,10 +6,10 @@ Périmètre : code présent dans ce dépôt (dossiers `back/` et `front/`) + pip
 ## 1) Résumé exécutif
 
 ### Points forts (ce qui est déjà solide)
-- **Sécurité d’authentification orientée “SPA + cookies”** : JWT en cookie **HttpOnly**, refresh token **opaque** persisté en base avec **hash** + **rotation** (suppression de l’ancien token au refresh). Voir `back/src/main/java/.../security/RefreshTokenService.java`, `RefreshTokenEntity.java`, `AuthController.java`.
-- **Protection CSRF côté back + mécanisme côté front** : endpoint `GET /api/auth/csrf` + header `X-XSRF-TOKEN`, et interceptor Angular qui ajoute `X-XSRF-TOKEN` sur méthodes unsafe + `withCredentials=true`. Voir `SecurityConfig.java`, `AuthController.java`, `front/src/app/core/Interceptor/CredentialsInterceptor.ts`, `front/src/app/core/auth/auth.service.ts`.
+- **Sécurité d’authentification orientée “SPA + cookies”** : JWT en cookie **HttpOnly**, refresh token **opaque** persisté en base avec **hash** + **rotation** (suppression de l’ancien token au refresh). Voir `back/src/main/java/com/openclassrooms/mddapi/security/RefreshTokenService.java`, `back/src/main/java/com/openclassrooms/mddapi/entity/RefreshTokenEntity.java`, `back/src/main/java/com/openclassrooms/mddapi/controller/AuthController.java`.
+- **Protection CSRF côté back + mécanisme côté front** : endpoint `GET /api/auth/csrf` + header `X-XSRF-TOKEN`, et interceptor Angular qui ajoute `X-XSRF-TOKEN` sur méthodes unsafe + `withCredentials=true`. Voir `back/src/main/java/com/openclassrooms/mddapi/config/SecurityConfig.java`, `back/src/main/java/com/openclassrooms/mddapi/controller/AuthController.java`, `front/src/app/core/Interceptor/CredentialsInterceptor.ts`, `front/src/app/core/auth/auth.service.ts`.
 - **Qualité “contrôlée” par la CI** : `mvn verify` (tests + JaCoCo), Jest (coverage), Cypress E2E, artifacts des rapports. Voir `.github/workflows/sonarcloud-modular.yml`.
-- **Gestion d’erreurs API homogène** via `GlobalExceptionHandler` (validation, conflits DB, 400/401/403/500). Voir `back/src/main/java/.../exception/GlobalExceptionHandler.java`.
+- **Gestion d’erreurs API homogène** via `GlobalExceptionHandler` (validation, conflits DB, 400/401/403/500). Voir `back/src/main/java/com/openclassrooms/mddapi/exception/GlobalExceptionHandler.java`.
 
 ### Décisions / options & actions associées
 - Les **risques**, **options** (A/B/…) et **actions** liées aux décisions produit/tech (environnements, déploiement/CORS, cookies `Secure`/`SameSite`, auth multi‑clients, validation email OTP, modération/droits, etc.) sont consolidés dans `docs/options-et-actions-techniques.md`.
@@ -32,7 +32,7 @@ Périmètre : code présent dans ce dépôt (dossiers `back/` et `front/`) + pip
 - Requêtes API : interceptor ajoute `withCredentials=true` et header `X-XSRF-TOKEN` sur méthodes unsafe.
 - Expiration access token : `RefreshOn401Interceptor` déclenche `POST /api/auth/refresh` une seule fois, puis rejoue la requête initiale.
 
-Références : `front/src/app/core/auth/auth.service.ts`, `CredentialsInterceptor.ts`, `RefreshOn401Interceptor.ts`, `AuthController.java`.
+Références : `front/src/app/core/auth/auth.service.ts`, `front/src/app/core/Interceptor/CredentialsInterceptor.ts`, `front/src/app/core/Interceptor/RefreshOn401Interceptor.ts`, `back/src/main/java/com/openclassrooms/mddapi/controller/AuthController.java`.
 
 ## 4) Backend — Revue technique
 
@@ -57,7 +57,7 @@ Points positifs :
 Points à surveiller :
 - Absence d’authorities : si des règles d’accès plus fines deviennent nécessaires, il faudra enrichir le principal et/ou les claims.
 
-Référence : `back/src/main/java/.../security/JwtAuthenticationFilter.java`.
+Référence : `back/src/main/java/com/openclassrooms/mddapi/security/JwtAuthenticationFilter.java`.
 
 #### CSRF
 - Activation CSRF + `CookieCsrfTokenRepository` (`cookiePath=/`).
@@ -69,7 +69,7 @@ Points positifs :
 Points à surveiller :
 - En multi‑origines, il faut s’assurer que `X-XSRF-TOKEN` est lisible côté navigateur (CORS `Access-Control-Expose-Headers`), sinon le front ne pourra pas stocker le token.
 
-Références : `SecurityConfig.java`, `AuthController.java`.
+Références : `back/src/main/java/com/openclassrooms/mddapi/config/SecurityConfig.java`, `back/src/main/java/com/openclassrooms/mddapi/controller/AuthController.java`.
 
 #### Cookies JWT / refresh token
 - `JwtCookieService` :
@@ -83,7 +83,7 @@ Points positifs :
 Point critique “prod” :
 - `security.jwt.cookie-secure` par défaut `false` (dev OK, prod non). Prévoir profil prod.
 
-Référence : `JwtCookieService.java`, `application.properties`.
+Référence : `back/src/main/java/com/openclassrooms/mddapi/security/JwtCookieService.java`, `back/src/main/resources/application.properties`.
 
 #### Refresh token persistant + rotation
 - Refresh token opaque : 32 bytes aléatoires, base64url.
@@ -93,7 +93,7 @@ Référence : `JwtCookieService.java`, `application.properties`.
 Points positifs :
 - Bon niveau de sécurité pour un refresh token : hash + rotation + révocation.
 
-Référence : `RefreshTokenService.java`, `RefreshTokenEntity.java`, `schema.sql`.
+Référence : `back/src/main/java/com/openclassrooms/mddapi/security/RefreshTokenService.java`, `back/src/main/java/com/openclassrooms/mddapi/entity/RefreshTokenEntity.java`, `back/src/main/resources/schema.sql`.
 
 ### 4.3 Validation & API contract
 - DTOs `LoginRequest` / `RegisterRequest` annotés `jakarta.validation`.
@@ -105,7 +105,7 @@ Points positifs :
 Point à surveiller :
 - Regex password : ok pour une contrainte “OC”, mais peut être trop stricte en produit (support UX). Documenter côté front.
 
-Référence : `back/src/main/java/.../dto/auth/RegisterRequest.java`.
+Référence : `back/src/main/java/com/openclassrooms/mddapi/dto/auth/RegisterRequest.java`.
 
 ### 4.4 Gestion d’erreurs
 - `GlobalExceptionHandler` centralise les erreurs :
@@ -117,10 +117,10 @@ Référence : `back/src/main/java/.../dto/auth/RegisterRequest.java`.
 Points positifs :
 - Format stable et prédictible pour le front.
 
-Référence : `GlobalExceptionHandler.java`.
+Référence : `back/src/main/java/com/openclassrooms/mddapi/exception/GlobalExceptionHandler.java`.
 
 ### 4.5 Données / persistance
-- Schéma SQL explicite (`schema.sql`) : topics, users, subscriptions, articles, comments, refresh_token.
+- Schéma SQL explicite (`back/src/main/resources/schema.sql`) : topics, users, subscriptions, articles, comments, refresh_token.
 - Table `refresh_token` : contraintes `UNIQUE(user_id)` et `UNIQUE(token_hash)`.
 
 Point positif :

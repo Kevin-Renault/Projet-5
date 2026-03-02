@@ -4,8 +4,8 @@ Projet OpenClassrooms : API et Frontend pour un réseau social de développeurs.
 
 ## Structure du projet
 
-- `back/` : API Java Spring Boot (src/main/java, src/main/resources, tests, pom.xml)
-- `front/` : Application Angular (src/, tests, configuration, package.json)
+- `back/` : API Java Spring Boot (`back/src/main/java`, `back/src/main/resources`, tests, `back/pom.xml`)
+- `front/` : Application Angular (`front/src/`, tests, configuration, `front/package.json`)
 - `specs/` : Spécifications fonctionnelles et techniques (PDF/Markdown)
 - `postman/` : Collection Postman pour tester l’API
 
@@ -103,7 +103,7 @@ Le CSRF (Cross-Site Request Forgery, ou falsification de requête inter-sites) e
      - Sous Windows :
        - Session courante : `set DB_USER="kevin"` etc.
        - Persistant : `setx DB_USER "kevin"` etc.
-   - **Important :** Ces variables doivent être accessibles à Spring Boot (soit dans l'environnement système, soit dans `src/main/resources/application.properties` via `${DB_USER}` etc.).
+     - **Important :** Ces variables doivent être accessibles à Spring Boot (soit dans l'environnement système, soit dans `back/src/main/resources/application.properties` via `${DB_USER}` etc.).
    - **Adaptez le script** `back/src/main/resources/base.sql` en remplaçant les valeurs par vos variables/envies :
      ```sql
      CREATE DATABASE mdd_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -147,7 +147,7 @@ Le backend lit la clé via la variable d’environnement `JWT_SECRET` (aucune va
 
 ### Variables d’environnement Spring et valeurs par défaut
 
-Dans `application.properties`, certaines valeurs utilisent la syntaxe Spring `${NOM_DE_VAR:valeur_par_defaut}`.
+Dans `back/src/main/resources/application.properties`, certaines valeurs utilisent la syntaxe Spring `${NOM_DE_VAR:valeur_par_defaut}`.
 
 - Si la variable d’environnement `NOM_DE_VAR` est définie, Spring l’utilise.
 - Sinon, Spring utilise la `valeur_par_defaut`.
@@ -166,7 +166,7 @@ Exemples utilisés par l’API :
 3. **Backend** :
    - Placez-vous dans `back/`.
    - Lancez `./mvnw.cmd clean package` (Windows) ou `./mvnw clean package` (Linux/Mac).
-   - Fichier de config : `src/main/resources/application.properties`.
+  - Fichier de config : `back/src/main/resources/application.properties`.
 
 4. **Frontend** :
    - Placez-vous dans `front/`.
@@ -186,7 +186,7 @@ Si aucune valeur n'est définie, le profil `dev` sera utilisé par défaut.
 
 - **Backend** :
 	- `cd back`
-	- `./mvnw.cmd spring-boot:run` (Windows) ou `./mvnw spring-boot:run`
+  - `mvn spring-boot:run`
 	- L’API écoute sur `http://localhost:8080/api`
 - **Frontend** :
 	- `cd front`
@@ -279,7 +279,7 @@ app.listen(PORT, () => {
 
 - **Aucun risque de fuite de données de test/mock ou de persistance locale en production** : la configuration et le code garantissent l’isolation stricte.
 
-Pour plus de détails, voir : `src/environments/`, `core/providers/data-sources.providers.ts`, `core/auth/auth.service.ts`, `core/auth/auth-mock.service.ts`.
+Pour plus de détails, voir : `front/src/environments/`, `front/src/app/core/providers/data-sources.providers.ts`, `front/src/app/core/auth/auth.service.ts`, `front/src/app/core/auth/auth-mock.service.ts`.
 
 ---
 
@@ -287,18 +287,13 @@ Pour plus de détails, voir : `src/environments/`, `core/providers/data-sources
 
 - **Backend** :
 	- `./mvnw.cmd test` (generates reports in `target/`)
-	- Jacoco coverage: 70% threshold per package (see `pom.xml` and `rules.md`)
+  - Jacoco coverage: 70% threshold per package (see `back/pom.xml` and `rules.md`)
 - **Frontend** :
 	- `npm run test:unit:ci` (Jest, unit tests + coverage)
 	- `npm run e2e:ci` (Cypress, end-to-end tests + coverage)
 	- **Attention : le backend doit être lancé avant d’exécuter les tests e2e.**
 
 > ⚠️ Only these two commands are currently supported for frontend tests and coverage. Do not use `ng test` or `npm run test:e2e`.
-
-## Documentation et références
-
-- `specs/` : spécifications fonctionnelles et techniques
-- `postman/` : collection Postman pour l’API
 
 ## Notes
 
@@ -347,34 +342,19 @@ La FAQ orientée “utilisation” (non technique) et l’espace pour les captur
 
 **Solution :**
 - Vérifiez que le backend est bien lancé avant les tests e2e.
-- Vérifiez la configuration du proxy (`proxy.conf.json`).
-- Nettoyez les artefacts Cypress si besoin (`cypress/screenshots`, `cypress/videos`).
+- Vérifiez la configuration du proxy (`front/proxy.conf.json`).
+- Nettoyez les artefacts Cypress si besoin (`front/cypress/screenshots`, `front/cypress/videos`).
 
 ### Autres conseils
 - Toujours relire les logs d’erreur pour repérer le vrai message bloquant.
-- En cas de doute, supprimez `node_modules` et refaites `npm install`.
+- En cas de doute, supprimez `front/node_modules` et refaites `npm install`.
 - Consultez `rules.md` pour les conventions et seuils qualité.
 
 ## Documentation et références
 
-- `agent.md` : rôle et comportement de l’agent assistant
-- `rules.md` : règles de qualité, couverture, documentation
 - `docs/FAQ-Utilisateurs.md` : FAQ utilisateur + espace captures d’écran (images à déposer dans `docs/screenshots/`)
 - `docs/dictionnaire-donnees.md` : dictionnaire de données (champs, contraintes, validations, mapping DTO ↔ tables)
 - `docs/analyse-besoins-frontend.md` : synthèse besoins → écrans → composants → endpoints API
-- `historique.md` : historique synthétique du projet et des actions de l’agent
-- `historique.git.md` : log brut des commits git (générable automatiquement)
 - `specs/` : spécifications fonctionnelles et techniques
 - `postman/` : collection Postman pour l’API
 
-## Notes
-
-- Les entités JPA sont exclues de la couverture de code.
-- Les variables sensibles (secrets JWT, accès DB) doivent être passées en variables d’environnement.
-- Pour toute question sur les exigences, consulter `specs/`.
-
-
-## FAQ – Problèmes fréquents
-- **Aucun risque de fuite de données de test/mock ou de persistance locale en production** : la configuration et le code garantissent l’isolation stricte.
-
-Pour plus de détails, voir : `src/environments/`, `core/providers/data-sources.providers.ts`, `core/auth/auth.service.ts`, `core/auth/auth-mock.service.ts`.
