@@ -72,6 +72,10 @@ E2E (depuis `front/`) :
 npm run e2e:run:coverage
 ```
 
+Note : pour travailler un test spécifique (sans couverture) quand le frontend tourne déjà, vous pouvez utiliser `npm run e2e:ci -- --spec cypress/e2e/full_flow.cy.ts`.
+
+Note : pour lancer tous les tests E2E (global, sans couverture) quand le frontend tourne déjà, vous pouvez utiliser `npm run e2e:ci`.
+
 ---
 
 ## Où trouver ça sur GitHub (Actions)

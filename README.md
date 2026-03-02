@@ -165,12 +165,12 @@ Exemples utilisés par l’API :
 
 3. **Backend** :
    - Placez-vous dans `back/`.
-   - Lancez `./mvnw.cmd clean package` (Windows) ou `./mvnw clean package` (Linux/Mac).
+   - Lancez `mvn clean package` (Windows) ou `mvn clean package` (Linux/Mac).
   - Fichier de config : `back/src/main/resources/application.properties`.
 
 4. **Frontend** :
    - Placez-vous dans `front/`.
-   - Lancez `npm install` puis `npm run start` (ou `npm run start:e2e` pour le port 4201 avec proxy).
+  - Lancez `npm install` puis `npm run start`.
 
 ## Gestion de l'environnement Spring Boot
 
@@ -190,7 +190,7 @@ Si aucune valeur n'est définie, le profil `dev` sera utilisé par défaut.
 	- L’API écoute sur `http://localhost:8080/api`
 - **Frontend** :
 	- `cd front`
-	- `npm run start` (http://localhost:4200) ou `npm run start:e2e` (http://localhost:4201)
+  - `npm run start` (http://localhost:4200)
 
 ## Tester le front Angular minifié en local (production) avec Lighthouse
 
@@ -286,14 +286,23 @@ Pour plus de détails, voir : `front/src/environments/`, `front/src/app/core/pr
 ## Tests et couverture
 
 - **Backend** :
-	- `./mvnw.cmd test` (generates reports in `target/`)
+	- `mvn test` (generates reports in `target/`)
   - Jacoco coverage: 70% threshold per package (see `back/pom.xml` and `rules.md`)
 - **Frontend** :
 	- `npm run test:unit:ci` (Jest, unit tests + coverage)
-	- `npm run e2e:ci` (Cypress, end-to-end tests + coverage)
+  - `npm run e2e:run:coverage` (Cypress, end-to-end tests + coverage)
 	- **Attention : le backend doit être lancé avant d’exécuter les tests e2e.**
 
-> ⚠️ Only these two commands are currently supported for frontend tests and coverage. Do not use `ng test` or `npm run test:e2e`.
+Optionnel (travail ciblé, sans couverture) :
+- `npm run e2e:ci -- --spec cypress/e2e/full_flow.cy.ts`
+  - Lance uniquement Cypress (le frontend doit déjà tourner).
+  - Pratique pour exécuter un test spécifique pendant un correctif frontend.
+
+Optionnel (global, sans couverture) :
+- `npm run e2e:ci`
+  - Lance tous les tests Cypress en headless (le frontend doit déjà tourner).
+
+> ⚠️ For frontend **tests + coverage reports**, the supported commands are `npm run test:unit:ci` and `npm run e2e:run:coverage`. Do not use `ng test` or `npm run test:e2e`.
 
 ## Notes
 

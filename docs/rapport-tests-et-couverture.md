@@ -139,10 +139,18 @@ Pré-requis (selon votre machine) :
 - backend accessible (ex. `http://localhost:8080`) si les specs E2E ne mockent pas toutes les routes,
 - port `4200` disponible.
 
-Alternative (sans couverture, si le frontend tourne déjà) :
+Commande utile pour travailler un test spécifique (sans couverture) :
 
 ```powershell
-npm run cypress:run
+# Lance uniquement Cypress : le frontend doit déjà tourner.
+npm run e2e:ci -- --spec cypress/e2e/full_flow.cy.ts
+```
+
+Commande utile pour lancer tous les tests E2E (global, sans couverture) :
+
+```powershell
+# Lance tous les tests Cypress en headless : le frontend doit déjà tourner.
+npm run e2e:ci
 ```
 
 Sorties potentielles (selon configuration Cypress/coverage) :
