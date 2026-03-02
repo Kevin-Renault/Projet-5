@@ -93,7 +93,7 @@ Ce stockage sert à rendre la session “persistante” (rotation du refresh tok
 
 ### Auth
 
-- `RegisterRequest.username` : `@NotBlank`, `@Size(max=50)`
+- `RegisterRequest.username` : `@NotBlank`, `@Size(max=100)`
 - `RegisterRequest.email` : `@NotBlank`, `@Email`, `@Size(max=254)`
 - `RegisterRequest.password` : `@NotBlank` + regex complexité :
 

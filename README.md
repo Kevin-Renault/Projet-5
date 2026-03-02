@@ -165,7 +165,7 @@ Exemples utilisés par l’API :
 
 3. **Backend** :
    - Placez-vous dans `back/`.
-   - Lancez `mvn clean package` (Windows) ou `mvn clean package` (Linux/Mac).
+  - Lancez `./mvnw.cmd clean package` (Windows) ou `./mvnw clean package` (Linux/Mac).
   - Fichier de config : `back/src/main/resources/application.properties`.
 
 4. **Frontend** :
@@ -178,7 +178,9 @@ Le profil actif de l'application backend est défini par la propriété `spring.
 
 - Par défaut, la valeur est `dev` (voir `back/src/main/resources/application.properties`).
 - Vous pouvez la surcharger via une variable d'environnement, un argument JVM ou un autre fichier de configuration.
-- Exemple : pour lancer en mode production : `SPRING_PROFILES_ACTIVE=prod mvn spring-boot:run`
+- Exemple : pour lancer en mode production :
+  - Windows (PowerShell) : `$env:SPRING_PROFILES_ACTIVE="prod"` puis `./mvnw.cmd spring-boot:run`
+  - Linux/Mac : `SPRING_PROFILES_ACTIVE=prod ./mvnw spring-boot:run`
 
 Si aucune valeur n'est définie, le profil `dev` sera utilisé par défaut.
 
@@ -186,7 +188,8 @@ Si aucune valeur n'est définie, le profil `dev` sera utilisé par défaut.
 
 - **Backend** :
 	- `cd back`
-  - `mvn spring-boot:run`
+  - Windows : `./mvnw.cmd spring-boot:run`
+  - Linux/Mac : `./mvnw spring-boot:run`
 	- L’API écoute sur `http://localhost:8080/api`
 - **Frontend** :
 	- `cd front`
@@ -221,7 +224,7 @@ Si aucune valeur n'est définie, le profil `dev` sera utilisé par défaut.
    - Placez-vous dans `back/`.
    - Lancez :
      ```
-     mvn spring-boot:run
+     ./mvnw.cmd spring-boot:run
      ```
    - Le backend écoute sur le port 8080.
 
@@ -286,7 +289,8 @@ Pour plus de détails, voir : `front/src/environments/`, `front/src/app/core/pr
 ## Tests et couverture
 
 - **Backend** :
-	- `mvn test` (generates reports in `target/`)
+  - Windows : `./mvnw.cmd test` (generates reports in `target/`)
+  - Linux/Mac : `./mvnw test` (generates reports in `target/`)
   - Jacoco coverage: 70% threshold per package (see `back/pom.xml` and `rules.md`)
 - **Frontend** :
 	- `npm run test:unit:ci` (Jest, unit tests + coverage)
@@ -363,6 +367,7 @@ La FAQ orientée “utilisation” (non technique) et l’espace pour les captur
 
 - `docs/FAQ-Utilisateurs.md` : FAQ utilisateur + espace captures d’écran (images à déposer dans `docs/screenshots/`)
 - `docs/dictionnaire-donnees.md` : dictionnaire de données (champs, contraintes, validations, mapping DTO ↔ tables)
+- `docs/api-et-schemas.md` : endpoints API + exemples JSON + diagramme des relations (SVG)
 - `docs/analyse-besoins-frontend.md` : synthèse besoins → écrans → composants → endpoints API
 - `specs/` : spécifications fonctionnelles et techniques
 - `postman/` : collection Postman pour l’API

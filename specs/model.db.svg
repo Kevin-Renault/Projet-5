@@ -56,13 +56,14 @@
 	<text x="920" y="495" class="fk">author_id (FK)</text>
 	<text x="920" y="515" class="fk">article_id (FK)</text>
 	<!-- Table: refresh_token (bottom, aligned) -->
-	<rect x="100" y="390" width="260" height="130" class="table"/>
+	<rect x="100" y="390" width="260" height="150" class="table"/>
 	<text x="230" y="410" text-anchor="middle" class="node">refresh_token</text>
 	<text x="120" y="435" class="pk">id (PK)</text>
 	<text x="120" y="455" class="fk">user_id (FK)</text>
 	<text x="120" y="475">token_hash</text>
 	<text x="120" y="495">expires_at</text>
 	<text x="120" y="515">created_at</text>
+	<text x="120" y="535">updated_at</text>
 	<!-- Relationships (direct, clear, updated) -->
 	<!-- mdd_user to user_topic_subscription (vertical up) -->
 	<line x1="230" y1="220" x2="230" y2="150" class="arrow"/>
