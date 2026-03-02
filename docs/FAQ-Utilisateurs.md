@@ -76,10 +76,10 @@ Objectif : garder une taille d’affichage identique par catégorie lors de la l
 - Desktop : largeur fixe `900`.
 - Mobile : largeur fixe `360`.
 
-## Liste des captures 
+## Liste des captures
 
 | Écran | Objectif | Fichier (desktop) | Fichier (mobile) |
-|---|---|---|
+|---|---|---|---|
 | Accueil | Page d’accueil avant connexion | `docs/screenshots/accueil.png` | `docs/screenshots/accueil-mobile.png` |
 | Inscription | Formulaire + validation OK | `docs/screenshots/inscription.png` | `docs/screenshots/inscription-mobile.png` |
 | Connexion | Formulaire de connexion | `docs/screenshots/connexion.png` | `docs/screenshots/connexion-mobile.png` |
