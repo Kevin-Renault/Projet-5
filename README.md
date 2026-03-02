@@ -170,7 +170,7 @@ Exemples utilisés par l’API :
 
 4. **Frontend** :
    - Placez-vous dans `front/`.
-  - Lancez `npm install` puis `npm run start`.
+  - Lancez `npm install` puis `npm run start` (équivalent à `ng serve`).
 
 ## Gestion de l'environnement Spring Boot
 
@@ -190,7 +190,7 @@ Si aucune valeur n'est définie, le profil `dev` sera utilisé par défaut.
 	- L’API écoute sur `http://localhost:8080/api`
 - **Frontend** :
 	- `cd front`
-  - `npm run start` (http://localhost:4200)
+  - `npm run start` (équivalent à `ng serve`) (http://localhost:4200)
 
 ## Tester le front Angular minifié en local (production) avec Lighthouse
 
@@ -339,7 +339,7 @@ La FAQ orientée “utilisation” (non technique) et l’espace pour les captur
 > Error: listen EADDRINUSE: address already in use 4200
 
 **Solution :**
-- Fermez l’application déjà en cours sur ce port ou lancez le front sur un autre port : `npm run start -- --port=4201`
+- Fermez l’application déjà en cours sur ce port ou lancez le front sur un autre port : `npm run start -- --port=4201` (équivalent à `ng serve --port 4201`)
 
 ### Problème de connexion à la base de données
 
