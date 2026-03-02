@@ -91,22 +91,68 @@ Objectif : garder une taille d’affichage identique par catégorie lors de la l
 
 ## Galerie desktop (liens)
 
+**Accueil (desktop)**
+
 <img src="screenshots/accueil.png" alt="Accueil" width="900" />
+
+**Inscription (desktop)**
+
 <img src="screenshots/inscription.png" alt="Inscription" width="900" />
+
+**Connexion (desktop)**
+
 <img src="screenshots/connexion.png" alt="Connexion" width="900" />
+
+**Articles (desktop)**
+
 <img src="screenshots/articles.png" alt="Articles" width="900" />
+
+**Thèmes (desktop)**
+
 <img src="screenshots/themes.png" alt="Thèmes" width="900" />
+
+**Profil (desktop)**
+
 <img src="screenshots/profil.png" alt="Profil" width="900" />
+
+**Créer un article (desktop)**
+
 <img src="screenshots/creer-article.png" alt="Créer un article" width="900" />
+
+**Détails article (desktop)**
+
 <img src="screenshots/article-details.png" alt="Détails article" width="900" />
 
 ## Galerie mobile (liens)
 
+**Accueil (mobile)**
+
 <img src="screenshots/accueil-mobile.png" alt="Accueil (mobile)" width="360" />
+
+**Inscription (mobile)**
+
 <img src="screenshots/inscription-mobile.png" alt="Inscription (mobile)" width="360" />
+
+**Connexion (mobile)**
+
 <img src="screenshots/connexion-mobile.png" alt="Connexion (mobile)" width="360" />
+
+**Articles (mobile)**
+
 <img src="screenshots/articles-mobile.png" alt="Articles (mobile)" width="360" />
+
+**Thèmes (mobile)**
+
 <img src="screenshots/themes-mobile.png" alt="Thèmes (mobile)" width="360" />
+
+**Profil (mobile)**
+
 <img src="screenshots/profil-mobile.png" alt="Profil (mobile)" width="360" />
+
+**Créer un article (mobile)**
+
 <img src="screenshots/creer-article-mobile.png" alt="Créer un article (mobile)" width="360" />
+
+**Détails article (mobile)**
+
 <img src="screenshots/article-details-mobile.png" alt="Détails article (mobile)" width="360" />
