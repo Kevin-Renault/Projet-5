@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1000" height="650" viewBox="0 0 1000 650" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .title { font: bold 18px sans-serif; fill: #222; }
+    .node { font: bold 14px sans-serif; fill: #222; }
+    .small { font: 12px sans-serif; fill: #444; }
+    .tiny { font: 11px sans-serif; fill: #666; }
+
+    .rect { fill: #e3eaff; stroke: #4a90e2; stroke-width: 2; rx: 10; }
+    .user { fill: #ffeaea; stroke: #e24a4a; stroke-width: 2; rx: 10; }
+    .ext  { fill: #e8f5e9; stroke: #388e3c; stroke-width: 2; rx: 10; }
+    .note { fill: #fffbe3; stroke: #e2b84a; stroke-width: 2; rx: 10; }
+
+    .arrow { stroke: #222; stroke-width: 2; marker-end: url(#arrowhead); }
+    .dash  { stroke: #555; stroke-width: 2; stroke-dasharray: 6,6; marker-end: url(#arrowhead); }
+    .dashedBox { fill: none; stroke: #555; stroke-width: 2; stroke-dasharray: 6,6; rx: 10; }
+  </style>
+
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#222" />
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect x="0" y="0" width="1000" height="650" fill="#f7f7fa"/>
+
+  <!-- Title -->
+  <text x="30" y="40" class="title">Architecture API (Spring Boot)</text>
+  <text x="30" y="62" class="tiny">Vue d’ensemble : couches Web/Sécurité/Services/Persistance + OpenAPI + gestion d’erreurs</text>
+
+  <!-- Clients -->
+  <rect x="40" y="110" width="100" height="70" class="user"/>
+  <text x="90" y="140" text-anchor="middle" class="node">Client Web</text>
+  <text x="90" y="160" text-anchor="middle" class="tiny">SPA Angular</text>
+
+  <rect x="40" y="210" width="100" height="70" class="user"/>
+  <text x="90" y="240" text-anchor="middle" class="node">Outils</text>
+  <text x="90" y="255" text-anchor="middle" class="tiny">Postman</text>
+  <text x="90" y="265" text-anchor="middle" class="tiny">Swagger UI</text>
+
+  <!-- API container -->
+  <rect x="215" y="90" width="590" height="470" class="rect"/>
+  <text x="510" y="120" text-anchor="middle" class="node">mdd-api (Spring Boot)</text>
+  <text x="510" y="142" text-anchor="middle" class="tiny">back/src/main/java/com/openclassrooms/mddapi</text>
+
+  <!-- Security layer -->
+  <rect x="245" y="158" width="530" height="90" class="rect"/>
+  <text x="510" y="186" text-anchor="middle" class="node">Sécurité (Spring Security)</text>
+  <text x="510" y="208" text-anchor="middle" class="tiny">SecurityConfig : CORS + CSRF cookie + Stateless</text>
+  <text x="510" y="230" text-anchor="middle" class="tiny">JwtAuthenticationFilter : cookie ou Bearer JWT</text>
+
+  <!-- Web layer -->
+  <rect x="255" y="275" width="230" height="95" class="rect"/>
+  <text x="370" y="303" text-anchor="middle" class="node">Web (Controllers)</text>
+  <text x="370" y="325" text-anchor="middle" class="tiny">/api/* (Auth, Articles, Topics…)</text>
+  <text x="370" y="347" text-anchor="middle" class="tiny">Validation + réponses JSON</text>
+
+  <!-- DTO + Mappers -->
+  <rect x="535" y="275" width="230" height="95" class="rect"/>
+  <text x="650" y="303" text-anchor="middle" class="node">DTO + Mappers</text>
+  <text x="650" y="325" text-anchor="middle" class="tiny">dto/ + mapper/</text>
+  <text x="650" y="347" text-anchor="middle" class="tiny">Mapping dédié (mappers)</text>
+
+  <!-- Service layer -->
+  <rect x="245" y="390" width="530" height="90" class="rect"/>
+  <text x="510" y="418" text-anchor="middle" class="node">Services (Business)</text>
+  <text x="510" y="440" text-anchor="middle" class="tiny">service/ : AuthService, ArticleService, TopicService…</text>
+  <text x="510" y="462" text-anchor="middle" class="tiny">Gestion cookies auth + refresh token</text>
+
+  <!-- Persistence layer -->
+  <rect x="245" y="510" width="530" height="45" class="rect"/>
+  <text x="510" y="528" text-anchor="middle" class="node">Persistance</text>
+  <text x="510" y="548" text-anchor="middle" class="tiny">repository/ + entity/ (JPA / Hibernate)</text>
+
+  <!-- Cross-cutting: errors + logging -->
+  <rect x="240" y="255" width="540" height="240" class="dashedBox"/>
+  <text x="510" y="268" text-anchor="middle" class="tiny">Transverse : GlobalExceptionHandler + Logging (AOP)</text>
+
+  <!-- OpenAPI -->
+  <rect x="850" y="110" width="100" height="90" class="note"/>
+  <text x="900" y="138" text-anchor="middle" class="node">OpenAPI</text>
+  <text x="900" y="160" text-anchor="middle" class="tiny">/v3/api-docs</text>
+  <text x="900" y="180" text-anchor="middle" class="tiny">swagger-ui</text>
+
+  <!-- Database -->
+  <rect x="840" y="300" width="120" height="105" class="note"/>
+  <text x="900" y="328" text-anchor="middle" class="node">MySQL</text>
+  <text x="900" y="350" text-anchor="middle" class="tiny">schema.sql / data.sql</text>
+  <text x="900" y="372" text-anchor="middle" class="tiny">users, topics, articles…</text>
+
+  <!-- Legend -->
+  <rect x="40" y="570" width="930" height="60" class="note"/>
+  <text x="60" y="585" class="node">Légende</text>
+  <text x="60" y="602" class="small">• Les requêtes passent par la chaîne de filtres (CORS/CSRF/JWT), puis Controllers → Services → Repositories → MySQL. .</text>
+  <text x="60" y="617" class="small">• Les erreurs sont normalisées par GlobalExceptionHandler.</text>
+
+  <!-- Arrows -->
+  <!-- Clients -> API -->
+  <line x1="140" y1="145" x2="215" y2="145" class="arrow"/>
+  <text x="180" y="135" text-anchor="middle" class="tiny">HTTP(S)</text>
+
+  <line x1="140" y1="245" x2="215" y2="245" class="arrow"/>
+  <text x="180" y="235" text-anchor="middle" class="tiny">tests / docs</text>
+
+  <!-- Security -> Web -->
+  <line x1="370" y1="248" x2="370" y2="275" class="arrow"/>
+
+  <!-- Web <-> DTO/Mappers -->
+  <line x1="485" y1="322" x2="535" y2="322" class="arrow"/>
+  <line x1="535" y1="342" x2="485" y2="342" class="arrow"/>
+  <text x="510" y="315" text-anchor="middle" class="tiny">mapping</text>
+
+  <!-- Web -> Services -->
+  <line x1="370" y1="370" x2="370" y2="390" class="arrow"/>
+
+  <!-- Services -> Persistence -->
+  <line x1="510" y1="480" x2="510" y2="510" class="arrow"/>
+
+  <!-- Persistence -> DB -->
+  <polyline points="775,530 900,530 900,405" fill="none" class="arrow"/>
+  <text x="840" y="520" text-anchor="middle" class="tiny">JPA</text>
+
+  <!-- OpenAPI -> API -->
+  <line x1="850" y1="155" x2="805" y2="155" class="dash"/>
+  <text x="827" y="145" text-anchor="middle" class="tiny">expose</text>
+</svg>

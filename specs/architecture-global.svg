@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .node { font: bold 14px sans-serif; fill: #222; }
+    .rect { fill: #e3eaff; stroke: #4a90e2; stroke-width: 2; rx: 10; }
+    .db { fill: #fffbe3; stroke: #e2b84a; stroke-width: 2;  }
+    .user { fill: #ffeaea; stroke: #e24a4a; stroke-width: 2; rx: 10; }
+    .arrow { stroke: #222; stroke-width: 2; marker-end: url(#arrowhead); }
+    .label { font: italic 12px sans-serif; fill: #444; }
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#222" />
+    </marker>
+  </defs>
+  <!-- Background -->
+  <rect x="0" y="0" width="800" height="600" fill="#f7f7fa"/>
+  <!-- Nodes -->
+  <!-- User -->
+  <rect x="350" y="20" width="100" height="50" class="user"/>
+  <text x="400" y="50" text-anchor="middle" class="node">User</text>
+
+  <!-- Frontend -->
+  <rect x="300" y="100" width="200" height="60" class="rect"/>
+  <text x="400" y="130" text-anchor="middle" class="node">Angular Frontend</text>
+  <text x="400" y="150" text-anchor="middle" font-size="10px" fill="#666">Components, Services, Guards</text>
+
+  <!-- API -->
+  <rect x="300" y="200" width="200" height="60" class="rect"/>
+  <text x="400" y="230" text-anchor="middle" class="node">REST API</text>
+  <text x="400" y="250" text-anchor="middle" font-size="10px" fill="#666">Spring Boot Controllers</text>
+
+  <!-- Business Logic -->
+  <rect x="300" y="300" width="200" height="60" class="rect"/>
+  <text x="400" y="330" text-anchor="middle" class="node">Business Logic</text>
+  <text x="400" y="350" text-anchor="middle" font-size="10px" fill="#666">Services, Security, AOP</text>
+
+  <!-- Data Layer -->
+  <rect x="300" y="400" width="200" height="60" class="rect"/>
+  <text x="400" y="430" text-anchor="middle" class="node">Data Layer</text>
+  <text x="400" y="450" text-anchor="middle" font-size="10px" fill="#666">JPA Entities, Repositories</text>
+
+
+
+<!-- Top ellipse (full) -->
+<ellipse cx="400" cy="520" rx="100" ry="10" fill="#fffbe3" stroke="#e2b84a" stroke-width="2"/>
+
+<!-- Sides of the cylinder (vertical lines) -->
+<line x1="300" y1="520" x2="300" y2="550" stroke="#e2b84a" stroke-width="2"/>
+<line x1="500" y1="520" x2="500" y2="550" stroke="#e2b84a" stroke-width="2"/>
+
+<!-- Bottom half-ellipse (open) -->
+<path d="M300,550 A100,10 0 0,0 500,550"
+      fill="none"
+      stroke="#e2b84a"
+      stroke-width="2"/>
+
+
+
+<!-- Text label -->
+<text x="400" y="550" text-anchor="middle" class="node">MySQL Database</text>
+
+
+
+
+  <!-- Testing (Frontend) -->
+  <rect x="20" y="105" width="150" height="50" class="rect"/>
+  <text x="95" y="125" text-anchor="middle" class="node">Testing</text>
+  <text x="95" y="140" text-anchor="middle" font-size="10px" fill="#666">Jest, Cypress</text>
+
+  <!-- Testing (Backend) -->
+  <rect x="630" y="300" width="150" height="50" class="rect"/>
+  <text x="705" y="325" text-anchor="middle" class="node">Testing</text>
+  <text x="705" y="340" text-anchor="middle" font-size="10px" fill="#666">JUnit, Jacoco</text>
+
+  <!-- Arrows -->
+  <line x1="400" y1="70" x2="400" y2="100" class="arrow"/>
+  <text x="410" y="90" class="label">HTTP Requests</text>
+
+  <line x1="400" y1="160" x2="400" y2="200" class="arrow"/>
+  <text x="410" y="185" class="label">REST Calls</text>
+
+  <line x1="400" y1="260" x2="400" y2="300" class="arrow"/>
+  <text x="410" y="285" class="label">Business Ops</text>
+
+  <line x1="400" y1="360" x2="400" y2="400" class="arrow"/>
+  <text x="410" y="385" class="label">Data Access</text>
+
+  <line x1="400" y1="460" x2="400" y2="510" class="arrow"/>
+  <text x="410" y="490" class="label">JDBC</text>
+
+  <!-- Testing arrows -->
+  <line x1="170" y1="130" x2="300" y2="130" class="arrow"/>
+  <text x="190" y="120" class="label">Unit/E2E Tests</text>
+
+  <line x1="630" y1="325" x2="500" y2="325" class="arrow"/>
+  <text x="510" y="315" class="label">Unit/Integration Tests</text>
+</svg>

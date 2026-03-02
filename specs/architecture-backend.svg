@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1000" height="650" viewBox="0 0 1000 650" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .title { font: bold 18px sans-serif; fill: #222; }
+    .node { font: bold 14px sans-serif; fill: #222; }
+    .small { font: 12px sans-serif; fill: #444; }
+    .tiny { font: 11px sans-serif; fill: #666; }
+
+    .rect { fill: #e3eaff; stroke: #4a90e2; stroke-width: 2; rx: 10; }
+    .user { fill: #ffeaea; stroke: #e24a4a; stroke-width: 2; rx: 10; }
+    .ext  { fill: #e8f5e9; stroke: #388e3c; stroke-width: 2; rx: 10; }
+    .note { fill: #fffbe3; stroke: #e2b84a; stroke-width: 2; rx: 10; }
+
+    .arrow { stroke: #222; stroke-width: 2; marker-end: url(#arrowhead); }
+    .dash  { stroke: #555; stroke-width: 2; stroke-dasharray: 6,6; marker-end: url(#arrowhead); }
+    .dashedBox { fill: none; stroke: #555; stroke-width: 2; stroke-dasharray: 6,6; rx: 10; }
+  </style>
+
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#222" />
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect x="0" y="0" width="1000" height="650" fill="#f7f7fa"/>
+
+  <!-- Title -->
+  <text x="30" y="40" class="title">Architecture Back-end (Spring Boot)</text>
+  <text x="30" y="62" class="tiny">Organisation du module back : configuration, sécurité, couches applicatives et persistance</text>
+
+  <!-- Entrées -->
+  <rect x="40" y="110" width="100" height="70" class="user"/>
+  <text x="90" y="140" text-anchor="middle" class="node">Frontend</text>
+  <text x="90" y="160" text-anchor="middle" class="tiny">Angular</text>
+
+  <rect x="40" y="210" width="100" height="70" class="user"/>
+  <text x="90" y="240" text-anchor="middle" class="node">Outils</text>
+  <text x="90" y="255" text-anchor="middle" class="tiny">Postman</text>
+  <text x="90" y="265" text-anchor="middle" class="tiny">Swagger UI</text>
+
+  <!-- Backend container -->
+  <rect x="215" y="90" width="590" height="470" class="rect"/>
+  <text x="510" y="120" text-anchor="middle" class="node">Application back (Spring Boot)</text>
+  <text x="510" y="142" text-anchor="middle" class="tiny">back/src/main/java/com/openclassrooms/mddapi</text>
+
+  <!-- Sécurité + Config -->
+  <rect x="245" y="158" width="530" height="90" class="rect"/>
+  <text x="510" y="186" text-anchor="middle" class="node">Sécurité + Config</text>
+  <text x="510" y="208" text-anchor="middle" class="tiny">SecurityConfig (CORS/CSRF/stateless) + filtres JWT</text>
+  <text x="510" y="230" text-anchor="middle" class="tiny">OpenApiConfig (documentation) + PasswordEncoder</text>
+
+  <!-- Web layer -->
+  <rect x="255" y="275" width="230" height="95" class="rect"/>
+  <text x="370" y="303" text-anchor="middle" class="node">Controllers</text>
+  <text x="370" y="325" text-anchor="middle" class="tiny">Auth, Articles, Topics…</text>
+  <text x="370" y="347" text-anchor="middle" class="tiny">/api/* (REST JSON)</text>
+
+  <!-- DTO + Mapper -->
+  <rect x="535" y="275" width="230" height="95" class="rect"/>
+  <text x="650" y="303" text-anchor="middle" class="node">DTO + Mappers</text>
+  <text x="650" y="325" text-anchor="middle" class="tiny">dto/ + mapper/</text>
+  <text x="650" y="347" text-anchor="middle" class="tiny">request/response ↔ modèle</text>
+
+  <!-- Service layer -->
+  <rect x="245" y="390" width="530" height="90" class="rect"/>
+  <text x="510" y="418" text-anchor="middle" class="node">Services (métier)</text>
+  <text x="510" y="440" text-anchor="middle" class="tiny">AuthService, ArticleService, TopicService…</text>
+  <text x="510" y="462" text-anchor="middle" class="tiny">Règles métier + orchestration</text>
+
+  <!-- Persistence layer -->
+  <rect x="245" y="510" width="530" height="45" class="rect"/>
+  <text x="510" y="528" text-anchor="middle" class="node">Persistance (JPA)</text>
+  <text x="510" y="548" text-anchor="middle" class="tiny">repository/ + entity/</text>
+
+  <!-- Cross-cutting -->
+  <rect x="240" y="255" width="540" height="240" class="dashedBox"/>
+  <text x="510" y="268" text-anchor="middle" class="tiny">Transverse : GlobalExceptionHandler + Logging (AOP)</text>
+
+  <!-- Resources -->
+  <rect x="850" y="110" width="100" height="90" class="note"/>
+  <text x="900" y="138" text-anchor="middle" class="node">Resources</text>
+  <text x="900" y="160" text-anchor="middle" class="tiny">application.properties</text>
+  <text x="900" y="180" text-anchor="middle" class="tiny">schema.sql / data.sql</text>
+
+  <!-- Database -->
+  <rect x="840" y="300" width="120" height="105" class="note"/>
+  <text x="900" y="328" text-anchor="middle" class="node">MySQL</text>
+  <text x="900" y="350" text-anchor="middle" class="tiny">Persistance des données</text>
+  <text x="900" y="372" text-anchor="middle" class="tiny">users, topics, articles…</text>
+
+  <!-- Legend -->
+  <rect x="40" y="570" width="930" height="60" class="note"/>
+  <text x="60" y="585" class="node">Légende</text>
+  <text x="60" y="602" class="small">• Flux principal : Controllers → Services → Repositories/Entities → MySQL.</text>
+  <text x="60" y="617" class="small">• La sécurité (JWT/CSRF/CORS) s’applique avant les controllers.</text>
+
+  <!-- Arrows -->
+  <!-- Entrées -> Controllers -->
+  <line x1="140" y1="145" x2="215" y2="145" class="arrow"/>
+  <text x="180" y="135" text-anchor="middle" class="tiny">HTTP(S)</text>
+
+  <line x1="140" y1="245" x2="215" y2="245" class="arrow"/>
+  <text x="180" y="235" text-anchor="middle" class="tiny">tests / docs</text>
+
+  <!-- Sécurité -> Controllers -->
+  <line x1="370" y1="248" x2="370" y2="275" class="arrow"/>
+
+  <!-- Controllers <-> DTO/Mappers -->
+  <line x1="485" y1="322" x2="535" y2="322" class="arrow"/>
+  <line x1="535" y1="342" x2="485" y2="342" class="arrow"/>
+  <text x="510" y="315" text-anchor="middle" class="tiny">mapping</text>
+
+  <!-- Controllers -> Services -->
+  <line x1="370" y1="370" x2="370" y2="390" class="arrow"/>
+
+  <!-- DTO/Mappers -> Services -->
+  <line x1="650" y1="370" x2="650" y2="390" class="arrow"/>
+
+  <!-- Services -> Persistance -->
+  <line x1="510" y1="480" x2="510" y2="510" class="arrow"/>
+
+  <!-- Persistance -> DB -->
+  <polyline points="775,530 900,530 900,405" fill="none" class="arrow"/>
+  <text x="840" y="520" text-anchor="middle" class="tiny">JPA</text>
+
+  <!-- Resources -> Backend -->
+  <line x1="850" y1="155" x2="805" y2="155" class="dash"/>
+  <text x="827" y="145" text-anchor="middle" class="tiny">charge</text>
+</svg>
