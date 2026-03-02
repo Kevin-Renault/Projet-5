@@ -2,6 +2,22 @@
 
 Projet OpenClassrooms : API et Frontend pour un réseau social de développeurs.  Option B
 
+## Sommaire
+
+- [Structure du projet](#structure-du-projet)
+- [Prérequis](#prérequis)
+- [Installation et configuration](#installation-et-configuration)
+- [Gestion de l'environnement Spring Boot](#gestion-de-lenvironnement-spring-boot)
+- [Lancement](#lancement)
+- [Tests et couverture](#tests-et-couverture)
+- [FAQ utilisateur](#faq-utilisateur)
+- [FAQ – Problèmes fréquents](#faq--problèmes-fréquents)
+- [Documentation et références](#documentation-et-références)
+- [Annexes visuelles (SVG)](#annexes-visuelles-svg)
+  - [Architecture globale de l’application](#architecture-globale-de-lapplication)
+  - [Modèle de données](#modèle-de-données)
+  - [Sécurité : séquence d’authentification/session](#sécurité--séquence-dauthentificationsession)
+
 ## Structure du projet
 
 - `back/` : API Java Spring Boot (`back/src/main/java`, `back/src/main/resources`, tests, `back/pom.xml`)
