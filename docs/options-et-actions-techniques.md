@@ -24,7 +24,7 @@ Format : pour chaque sujet, **options possibles** + **impacts** + **actions conc
 - Le profil est choisi au runtime via : `SPRING_PROFILES_ACTIVE=dev|prod` ou `--spring.profiles.active=prod`.
 - Les fichiers `application-<profil>.properties` ne contiennent pas `spring.profiles.active`.
 
-**Option B — Profil “fixé” dans `application.properties`**
+**Option B — Profil “fixé” dans `back/src/main/resources/application.properties`**
 - `spring.profiles.active=dev` dans le fichier de base.
 - Le passage en prod repose sur surcharge explicite (env/args) au déploiement.
 
