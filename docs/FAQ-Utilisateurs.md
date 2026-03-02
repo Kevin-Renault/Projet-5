@@ -70,43 +70,43 @@ Le bouton passe à **se désabonner** quand l’abonnement est actif.
 
 # Captures d’écran — espace livrable
 
-Ce document est prévu pour centraliser les captures d’écran de l’application (livrable). Les images sont à déposer dans `docs/screenshots/`.
+Les images sont à déposer dans `docs/screenshots/` (sans sous-dossier).
 
-## Convention de nommage
+Objectif : garder une taille d’affichage identique par catégorie lors de la lecture sur GitHub.
+- Desktop : largeur fixe `900`.
+- Mobile : largeur fixe `360`.
 
-- Format: `YYYY-MM-DD_<ecran>_<action>.png`
-- Exemple: `2026-03-01_login_erreur-mdp.png`
+## Liste des captures 
 
-## Liste des captures (à compléter)
-
-| Écran | Objectif | Fichier (à déposer) |
+| Écran | Objectif | Fichier (desktop) | Fichier (mobile) |
 |---|---|---|
-| Accueil | Page d’accueil avant connexion | `docs/screenshots/accueil.png` |
-| Inscription | Formulaire + validation OK | `docs/screenshots/inscription.png` |
-| Connexion | Formulaire de connexion | `docs/screenshots/connexion.png` |
-| Connexion (erreur) | Message en cas d’identifiants invalides | `docs/screenshots/connexion-erreur.png` |
-| Articles | Fil d’articles (après connexion) | `docs/screenshots/articles.png` |
-| Articles (tri) | Exemple de tri appliqué | `docs/screenshots/articles-tri.png` |
-| Thèmes | Liste des thèmes | `docs/screenshots/themes.png` |
-| Thèmes (abonnement) | Abonné / désabonné (un exemple) | `docs/screenshots/themes-abonnement.png` |
-| Profil | Page profil (avant/après modification) | `docs/screenshots/profil.png` |
-| Créer un article | Formulaire de création | `docs/screenshots/creer-article.png` |
-| Détails article | Page détail + commentaires | `docs/screenshots/article-details.png` |
-| Déconnexion | Retour à l’accueil après logout | `docs/screenshots/deconnexion.png` |
+| Accueil | Page d’accueil avant connexion | `docs/screenshots/accueil.png` | `docs/screenshots/accueil-mobile.png` |
+| Inscription | Formulaire + validation OK | `docs/screenshots/inscription.png` | `docs/screenshots/inscription-mobile.png` |
+| Connexion | Formulaire de connexion | `docs/screenshots/connexion.png` | `docs/screenshots/connexion-mobile.png` |
+| Articles | Fil d’articles (après connexion) | `docs/screenshots/articles.png` | `docs/screenshots/articles-mobile.png` |
+| Thèmes | Liste des thèmes | `docs/screenshots/themes.png` | `docs/screenshots/themes-mobile.png` |
+| Profil | Page profil (avant/après modification) | `docs/screenshots/profil.png` | `docs/screenshots/profil-mobile.png` |
+| Créer un article | Formulaire de création | `docs/screenshots/creer-article.png` | `docs/screenshots/creer-article-mobile.png` |
+| Détails article | Page détail + commentaires | `docs/screenshots/article-details.png` | `docs/screenshots/article-details-mobile.png` |
 
-## Galerie (liens)
+## Galerie desktop (liens)
 
-Ajoutez ici les images une fois déposées.
+<img src="screenshots/accueil.png" alt="Accueil" width="900" />
+<img src="screenshots/inscription.png" alt="Inscription" width="900" />
+<img src="screenshots/connexion.png" alt="Connexion" width="900" />
+<img src="screenshots/articles.png" alt="Articles" width="900" />
+<img src="screenshots/themes.png" alt="Thèmes" width="900" />
+<img src="screenshots/profil.png" alt="Profil" width="900" />
+<img src="screenshots/creer-article.png" alt="Créer un article" width="900" />
+<img src="screenshots/article-details.png" alt="Détails article" width="900" />
 
-- ![Accueil](screenshots/accueil.png)
-- ![Inscription](screenshots/inscription.png)
-- ![Connexion](screenshots/connexion.png)
-- ![Connexion — erreur](screenshots/connexion-erreur.png)
-- ![Articles](screenshots/articles.png)
-- ![Articles — tri](screenshots/articles-tri.png)
-- ![Thèmes](screenshots/themes.png)
-- ![Thèmes — abonnement](screenshots/themes-abonnement.png)
-- ![Profil](screenshots/profil.png)
-- ![Créer un article](screenshots/creer-article.png)
-- ![Détails article](screenshots/article-details.png)
-- ![Déconnexion](screenshots/deconnexion.png)
+## Galerie mobile (liens)
+
+<img src="screenshots/accueil-mobile.png" alt="Accueil (mobile)" width="360" />
+<img src="screenshots/inscription-mobile.png" alt="Inscription (mobile)" width="360" />
+<img src="screenshots/connexion-mobile.png" alt="Connexion (mobile)" width="360" />
+<img src="screenshots/articles-mobile.png" alt="Articles (mobile)" width="360" />
+<img src="screenshots/themes-mobile.png" alt="Thèmes (mobile)" width="360" />
+<img src="screenshots/profil-mobile.png" alt="Profil (mobile)" width="360" />
+<img src="screenshots/creer-article-mobile.png" alt="Créer un article (mobile)" width="360" />
+<img src="screenshots/article-details-mobile.png" alt="Détails article (mobile)" width="360" />
