@@ -187,7 +187,9 @@ Référence : `back/pom.xml`.
 
 ### 6.2 Frontend
 - Jest en CI : `npm run test:unit:ci` (coverage + json report).
-- Cypress E2E : `npm run cypress:run`.
+- Cypress E2E (ciblé, sans couverture) : `npm run e2e:ci -- --spec cypress/e2e/full_flow.cy.ts` (le frontend doit déjà tourner).
+- Cypress E2E (global, sans couverture) : `npm run e2e:ci` (le frontend doit déjà tourner).
+- Cypress E2E (+ couverture) : `npm run e2e:run:coverage` (commande de référence pour régénérer les rapports).
 
 Référence : `front/package.json`, `.github/workflows/sonarcloud-modular.yml`.
 
